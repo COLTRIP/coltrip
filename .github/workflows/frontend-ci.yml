@@ -22,16 +22,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for Flutter project
+        id: check
+        run: echo "exists=$([ -f pubspec.yaml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Flutter
+        if: steps.check.outputs.exists == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
       - name: Install dependencies
+        if: steps.check.outputs.exists == 'true'
         run: flutter pub get
 
       - name: Analyze
+        if: steps.check.outputs.exists == 'true'
         run: flutter analyze
 
       - name: Build (Android)
+        if: steps.check.outputs.exists == 'true'
         run: flutter build apk --debug
+
+      - name: Skip (no Flutter project yet)
+        if: steps.check.outputs.exists == 'false'
+        run: echo "frontend/pubspec.yaml not found yet, skipping."
