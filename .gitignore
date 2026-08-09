@@ -1,0 +1,43 @@
+# Claude Code (never commit local AI tool config/state)
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# ---- Backend (Gradle / Spring) ----
+backend/.gradle/
+backend/build/
+backend/out/
+backend/bin/
+backend/!gradle/wrapper/gradle-wrapper.jar
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-secret.yml
+backend/HELP.md
+
+# ---- Frontend (Flutter) ----
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/**/*.g.dart
+frontend/**/*.freezed.dart
+
+# env / secrets
+.env
+.env.*
+*.local
