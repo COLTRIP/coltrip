@@ -22,14 +22,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for Gradle project
+        id: check
+        run: echo "exists=$([ -f gradlew ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
       - name: Set up JDK 17
+        if: steps.check.outputs.exists == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Grant execute permission for gradlew
+        if: steps.check.outputs.exists == 'true'
         run: chmod +x gradlew
 
       - name: Build with Gradle
+        if: steps.check.outputs.exists == 'true'
         run: ./gradlew build -x test
+
+      - name: Skip (no Gradle project yet)
+        if: steps.check.outputs.exists == 'false'
+        run: echo "backend/gradlew not found yet, skipping."
