@@ -1,0 +1,160 @@
+# coltrip ERD / 스키마 설계
+
+- DB: MySQL
+- 마지막 갱신: 2026-08-17
+- 이 문서는 [api.md](./api.md)의 Request/Response DTO와 1:1로 대응됩니다.
+
+## 설계 전제 (팀 확정 사항)
+
+| 항목 | 결정 | 비고 |
+|---|---|---|
+| 인증 | 구글 로그인 + JWT | 소셜 로그인 ID, 리프레시 토큰을 User에 보관 |
+| QuietIndex 계산 | AI가 배치로 계산 → DB 저장, 백엔드는 읽기만 | 실시간 API 호출 없음 |
+| QuietIndex 저장 구조 | **이력 저장** (`quiet_index` 별도 테이블) | 향후 시계열 예측(정적 골든타임 가이드) 대비 |
+| 감성모드(Mode) | 고정 enum, 5종 | 기획서 "주요 추천 유형" 기준 |
+| 장소유형(Category) | 커스텀 enum (신규 정의) | ⚠️ 아래 목록은 기획서 예시 기반 제안, **팀 최종 확정 필요** |
+| 대체지(Alternative) | AI가 리스트+추천이유+유사도 포함해서 전달 | QuietIndex와 동일하게 배치 저장으로 가정 (아래 "확인 필요" 참고) |
+
+---
+
+## 1. User
+
+구글 소셜 로그인 사용자 정보 + JWT 리프레시 토큰 관리.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `google_sub` | VARCHAR(255) UNIQUE | 구글 idToken의 `sub` 클레임 (소셜 로그인 식별자) |
+| `email` | VARCHAR(255) UNIQUE | |
+| `nickname` | VARCHAR(50) | |
+| `profile_image_url` | VARCHAR(500) NULL | 구글 프로필 이미지 |
+| `refresh_token` | VARCHAR(500) NULL | 최신 발급 리프레시 토큰 (재발급 시 갱신, 로그아웃 시 NULL) |
+| `role` | ENUM('USER') | 확장 대비, 현재는 단일 값 |
+| `created_at` | DATETIME | |
+| `updated_at` | DATETIME | |
+
+---
+
+## 2. TouristSpot
+
+한국관광공사 TourAPI 원본 데이터를 정제해서 저장하는 관광지 기본 정보.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `tour_api_content_id` | VARCHAR(50) UNIQUE | TourAPI 원본 `contentId` (재수집 시 upsert 키) |
+| `name` | VARCHAR(200) | |
+| `address` | VARCHAR(300) | |
+| `latitude` | DECIMAL(10,7) | Naver Geocoding으로 보정된 좌표 |
+| `longitude` | DECIMAL(10,7) | |
+| `category` | ENUM(아래 표 참고) | 장소 유형 (탭 필터 기준) |
+| `description` | TEXT NULL | 소개글 |
+| `image_url` | VARCHAR(500) NULL | |
+| `recommend_reason` | VARCHAR(500) NULL | AI가 산출한 추천 이유 (감성 맥락 기반 추천 기능용) |
+| `current_quiet_score` | INT NULL | 최신 고요지수 **캐시** (아래 `quiet_index` 이력 테이블의 최신값 비정규화 저장, 조회 성능용) |
+| `quiet_score_updated_at` | DATETIME NULL | 위 캐시값의 계산 시각 |
+| `created_at` | DATETIME | |
+| `updated_at` | DATETIME | |
+
+**`category` enum 제안 (⚠️ 팀 확정 필요)** — 기획서 "알고리즘 작동 흐름"에 명시된 예시(카페, 공원, 도서관, 미술관 등)를 기반으로 초안만 잡음:
+
+```
+CAFE(카페), PARK(공원), LIBRARY(도서관), GALLERY(미술관/전시),
+BOOKSTORE(서점), TEMPLE(사찰), BEACH(해변), ALLEY(골목/거리)
+```
+
+> 회의에서 최종 목록/이름 확정 후 이 섹션 업데이트할 것.
+
+**`current_quiet_score` / `quiet_score_updated_at`를 왜 중복 저장하나:** `quiet_index` 이력 테이블만 있으면 지도 목록 조회할 때마다 스팟별로 "가장 최근 값" 서브쿼리를 돌려야 해서 느림. 배치 계산 시 이 두 컬럼도 같이 갱신해주는 방식(쓰기 시점에 비정규화)으로 조회 성능을 확보.
+
+---
+
+## 3. quiet_index (QuietIndex 이력)
+
+AI가 배치로 계산한 고요지수 원본 이력. TouristSpot의 캐시 컬럼은 이 테이블의 최신 행을 복사한 것.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `spot_id` | BIGINT FK → tourist_spot.id | |
+| `quiet_score` | INT | 0~100 (기획서: "이해하기 쉬운 점수 형태로 변환") |
+| `raw_metrics` | JSON NULL | 계산에 쓰인 원본 지표 스냅샷(유동인구, 면적 대비 밀도 등) — 디버깅/모델 개선용, MVP에서는 생략 가능 |
+| `calculated_at` | DATETIME | 배치 계산 시각 |
+
+인덱스: `(spot_id, calculated_at DESC)` — 특정 장소의 최신/이력 조회용.
+
+---
+
+## 4. spot_mode (Spot ↔ 감성모드 매핑)
+
+한 장소가 여러 감성모드에 동시에 해당할 수 있어 N:M 매핑 테이블로 설계 (예: 어떤 공원이 '산책'이면서 '풍경 감상'에도 해당).
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `spot_id` | BIGINT FK → tourist_spot.id | |
+| `mode` | ENUM (아래) | |
+
+**`mode` enum (팀 확정: 5종, "주요 추천 유형" 기준)**
+
+```
+WALK(산책), CONTEMPLATION(사유·명상), SCENERY(풍경 감상),
+WATER_GAZING(물멍), CULTURE(조용한 문화·전시)
+```
+
+유니크 제약: `(spot_id, mode)` 조합 unique.
+
+---
+
+## 5. spot_alternative (대체지 추천, 배치 저장)
+
+AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietIndex와 동일하게 배치 계산 후 저장하는 것으로 가정함.
+
+> ⚠️ **확인 필요**: 지금까지 나온 결정은 "AI가 리스트+추천이유+유사도를 준다"는 응답 형태에 대한 것이지, 이걸 QuietIndex처럼 **배치로 미리 계산해서 저장**해두는 건지, 아니면 사용자가 조회하는 시점에 AI 서버를 **실시간 호출**해서 받아오는 건지는 명시적으로 정해진 바가 없음. 이 스키마는 배치 저장을 전제로 설계했음 — 만약 실시간 호출이 맞다면 이 테이블은 필요 없고 API 레이어에서 AI 서버 응답을 그대로 패스스루하면 됨. **다음 AI 협의에서 확정 필요.**
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `origin_spot_id` | BIGINT FK → tourist_spot.id | 혼잡한 원래 목적지 |
+| `alternative_spot_id` | BIGINT FK → tourist_spot.id | 추천 대체지 |
+| `similarity_score` | DECIMAL(5,2) | AI가 산출한 유사도 (0~100 또는 0~1, AI팀과 스케일 통일 필요) |
+| `recommend_reason` | VARCHAR(500) | AI가 준 추천 이유 텍스트 |
+| `calculated_at` | DATETIME | |
+
+인덱스: `(origin_spot_id, similarity_score DESC)`.
+
+---
+
+## 6. visit (방문 시작/완료)
+
+"방문 시작" 버튼 플로우 지원용.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `user_id` | BIGINT FK → user.id | |
+| `spot_id` | BIGINT FK → tourist_spot.id | |
+| `status` | ENUM('STARTED','COMPLETED','CANCELED') | |
+| `start_latitude` / `start_longitude` | DECIMAL(10,7) | 방문 시작 버튼 누른 시점 위치 |
+| `started_at` | DATETIME | |
+| `arrived_at` | DATETIME NULL | 목적지 반경 진입 확인 시각 |
+| `completed_at` | DATETIME NULL | 체류시간 조건 충족 후 완료 처리 시각 |
+
+---
+
+## ERD 관계 요약
+
+```
+User 1───N Visit N───1 TouristSpot
+TouristSpot 1───N quiet_index
+TouristSpot 1───N spot_mode
+TouristSpot 1───N spot_alternative (origin_spot_id)
+TouristSpot 1───N spot_alternative (alternative_spot_id)
+```
+
+## 미확정 / 팀 확인 필요 목록
+
+- [ ] `category`(장소유형) enum 최종 값
+- [ ] `spot_alternative`를 배치 저장할지, 실시간 AI 호출로 할지
+- [ ] `similarity_score` 스케일 (0~1 vs 0~100) AI팀과 통일
+- [ ] QuietIndex 배치 계산 주기 (10분/1시간 등) — 스키마엔 영향 없지만 운영 계획에 필요
