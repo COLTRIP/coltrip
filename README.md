@@ -8,9 +8,12 @@ AI 기반 실시간 혼잡도 분석으로 부산의 한적한 관광지를 추�
 
 ```
 .
-├── backend/    # Spring (Gradle, Java 17)
-└── frontend/   # Flutter
+├── backend/    # Spring Boot (Gradle, Java 21)
+├── frontend/   # Flutter
+└── docs/       # API 명세서, ERD/스키마, 백엔드 태스크
 ```
+
+관련 문서: [docs/api.md](./docs/api.md) · [docs/schema.md](./docs/schema.md) · [docs/task.md](./docs/task.md)
 
 ## 브랜치 전략
 

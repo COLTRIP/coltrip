@@ -26,12 +26,12 @@ jobs:
         id: check
         run: echo "exists=$([ -f gradlew ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         if: steps.check.outputs.exists == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Grant execute permission for gradlew
         if: steps.check.outputs.exists == 'true'
