@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: coltrip-backend
+  config:
+    import: optional:application-secret.yml
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.SQL: debug
