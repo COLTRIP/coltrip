@@ -116,6 +116,8 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
 ```
 지도 화면에서 현재 보이는 영역(bounding box) 안의 장소를 감성모드·장소유형 필터와 함께 조회. `quietScore`가 응답에 포함되므로 별도 "고요지수 조회 API"는 없음.
 
+> **초기 추천 검색 반경 15km**(2026-08-18 확정) — API 파라미터가 아니라 **프론트가 지도 초기 진입 시 bounding box를 설정하는 가이드값**. 사용자 현재 위치 기준 대략 15km 반경이 보이는 정도로 초기 줌/영역을 잡을 것.
+
 **Request (query params)**
 
 | 파라미터 | 필수 | 설명 |
@@ -137,11 +139,13 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
       "latitude": 35.15,
       "longitude": 129.06,
       "quietScore": 82,
+      "quietLevel": "QUIET",
       "quietScoreUpdatedAt": "2026-08-17T09:00:00"
     }
   ]
 }
 ```
+`quietLevel`은 `quietScore`에서 백엔드가 파생 계산하는 값(0~40 `CROWDED`, 41~70 `NORMAL`, 71~100 `QUIET`). 별도 저장값 아님, `quietScore`가 없으면(NULL) `quietLevel`도 `null`.
 
 **Exception**: `InvalidBoundingBoxException` (400) — 좌표 범위 값 오류
 
@@ -165,6 +169,7 @@ GET /api/spots/{spotId}
   "latitude": 35.15,
   "longitude": 129.06,
   "quietScore": 82,
+  "quietLevel": "QUIET",
   "quietScoreUpdatedAt": "2026-08-17T09:00:00"
 }
 ```
@@ -241,7 +246,7 @@ POST /api/visits/start
 ```
 PATCH /api/visits/{visitId}/complete
 ```
-목적지 반경 진입 + 체류시간(예: 10분) 조건 충족 시 프론트가 호출.
+목적지 반경 진입 + 체류시간 조건 충족 시 프론트가 호출. 체류시간은 카테고리 무관 **10분(600초)** 고정. 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·팀 확정 필요).
 
 **Request**
 ```json
@@ -265,14 +270,48 @@ PATCH /api/visits/{visitId}/complete
 
 ---
 
+## [내부/AI 연동]
+
+일반 사용자 인증(JWT)이 아니라 **AI 배치 서버 전용** 인증(`X-Internal-Api-Key` 헤더)을 사용. 이 값은 노션 API KEY 페이지에 별도로 관리, AI팀과 동일한 값 공유 필요.
+
+### QuietIndex push (AI → 백엔드)
+```
+POST /api/internal/quiet-index
+```
+AI가 배치(1시간 주기)로 계산한 quietScore를 백엔드에 전달. `quiet_index` 이력 테이블에 저장 + `tourist_spot`의 캐시 컬럼(`current_quiet_score`, `quiet_score_updated_at`) 갱신.
+
+**Request** — Header `X-Internal-Api-Key: {sharedSecret}`
+```json
+{
+  "tourApiContentId": "126508",
+  "quietScore": 82,
+  "calculatedAt": "2026-08-18T15:00:00",
+  "rawMetrics": null
+}
+```
+`tourApiContentId`로 스팟을 식별(내부 `spotId` 아님 — AI는 TourAPI 원본 ID 기준으로 관리). `rawMetrics`는 선택, JSON 문자열.
+
+**Response `200`**
+```json
+{
+  "spotId": 1,
+  "quietScore": 82,
+  "quietLevel": "QUIET"
+}
+```
+
+**Exception**: `InvalidInternalApiKeyException` (401), `SpotNotFoundException` (404) — 백엔드에 아직 없는 `tourApiContentId`인 경우
+
+---
+
 ## 참고: API로 만들지 않기로 한 것
 
 - **`GET /api/modes`** — 감성모드는 고정 enum이라 문서(`schema.md`)에 값만 정의, 프론트/백엔드/AI가 각자 상수로 관리
 - **`GET /api/quiet-index`** — 별도 엔드포인트 없이 `/api/spots`, `/api/spots/{id}` 응답에 `quietScore` 필드로 포함
 
-## 미확정 / 팀 확인 필요 목록
+## 확정됐지만 구현 반영 전 (2026-08-18 회의)
 
-- [ ] `category` enum 최종 값 (schema.md와 동일 이슈)
-- [ ] 대체지 추천 배치 저장 vs 실시간 AI 호출
-- [ ] 대체지가 하나도 없을 때 응답 형태 (빈 배열 vs 404)
-- [ ] `similarityScore` 값 범위/스케일
+- [x] `category` enum 8종 확정 — 코드/문서 반영 완료
+- [x] 대체지 추천: **실시간 AI 호출**로 확정 — 아래 [대체지 추천] 섹션 재설계 예정 (미착수)
+- [x] 대체지가 하나도 없을 때: **빈 배열 + 안내 멘트** — 응답 스펙 반영 예정 (미착수)
+- [x] `similarityScore`: **0~1** 스케일 확정 — 반영 예정 (미착수)
