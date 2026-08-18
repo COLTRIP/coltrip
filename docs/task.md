@@ -21,14 +21,15 @@
 
 ## Phase 4/5 착수 전 문서 반영 필요 (미착수)
 
-- [ ] QuietIndex 수신 API 신설 (AI → 백엔드 push), `api.md`에 추가
+- [x] QuietIndex 수신 API 신설 (AI → 백엔드 push) — `POST /api/internal/quiet-index`, `X-Internal-Api-Key` 인증. `api.md` 반영 완료
 - [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토
-- [ ] 대체지 검색 반경 3km 캡, 최초 추천 검색 반경 15km 반영
+- [x] 최초 추천 검색 반경 15km — `api.md`에 프론트 가이드로 문서화 완료
+- [ ] 대체지 검색 반경 3km 캡 — 9b(대체지 실시간 호출 재설계)에서 함께 반영
 - [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 (3km 확장은 추후)
-- [ ] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
-- [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안
+- [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
+- [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
 - [ ] 방문완료 반경: 카테고리별(점형/면적형) 유동 적용, 체류시간 10분
-- [ ] 혼잡/보통/고요 구간 임계값(100점 만점) — 팀 확인 대기 중
+- [x] 혼잡/보통/고요 구간 임계값(100점 만점): 0~40 CROWDED, 41~70 NORMAL, 71~100 QUIET — `QuietLevel` enum, `TouristSpot.getQuietLevel()` 반영 완료
 
 ---
 
@@ -55,16 +56,19 @@
 - [x] JWT 인증 필터 (Authorization 헤더 검증, SecurityContext 등록, access/refresh 타입 구분)
 - [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`
 - [x] `GET /api/users/me`, `PATCH /api/users/me` — 닉네임 조회/설정(로그인 직후 필수 온보딩 + 마이페이지 수정 공용), 중복 허용
+- [x] `DELETE /api/users/me` — 회원 탈퇴(하드 삭제), 연관 Visit 이력 함께 삭제. end-to-end 테스트 완료
 - [x] 로컬 MySQL 대상 부트업 테스트 완료
 
 ## Phase 3 — 관광지 데이터 적재 + 조회 ([api.md](./api.md) [관광지] 섹션)
 
-- [ ] TourAPI 연동 배치/스크립트: 부산 지역 관광지 수집 → `TouristSpot` upsert (`tour_api_content_id` 기준)
-- [ ] Naver Geocoding 연동: TourAPI 주소 → 좌표 보정 스켈레톤
-- [ ] `category` enum 확정 후 분류 로직 (수동 매핑 또는 TourAPI `contentTypeId` 매핑 테이블)
+**범위 변경 (2026-08-18 회의)**: TourAPI 수집 + 카테고리 매핑(30종 세분류 → 8종 확정 enum)은 **AI가 소유**. 백엔드는 결과를 받아 저장/조회하는 쪽만 담당.
+
+- [ ] ⚠️ **AI → 백엔드 데이터 전달 방식 확인 필요** — QuietIndex처럼 `POST /api/internal/spots` 같은 push API로 받을지, AI가 직접 DB에 upsert하는지, 파일(CSV/JSON) 넘겨받아 백엔드가 적재하는지 미확정. 확인되는 대로 아래 항목 구체화
+- [ ] (전달 방식 확인 후) `TouristSpot` 데이터 적재 로직 — AI가 이미 8종으로 분류한 카테고리 값 그대로 저장
+- [ ] Naver Geocoding 연동: 필요 여부 재확인 (TourAPI 좌표를 AI 파이프라인에서 이미 정제해서 넘겨줄 수도 있음)
 - [ ] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회
 - [ ] `GET /api/spots/{spotId}` — 상세 조회
-- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`
+- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`(이미 구현됨)
 
 ## Phase 4 — QuietIndex 연동
 
@@ -79,13 +83,15 @@
 - [ ] `GET /api/spots/{spotId}/alternatives` 구현
 - [ ] 예외 처리: `SpotNotFoundException`, 대체지 없음 케이스 처리 방식 확정 후 반영
 
-## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션)
+## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션) — 완료 (트리거/대체지 제안 제외)
 
-- [ ] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`)
-- [ ] `PATCH /api/visits/{visitId}/complete` — 반경/체류시간 조건 검증 로직
-  - [ ] 목적지 반경(예: 100m) 계산 (Haversine 또는 Geocoding API 활용)
-  - [ ] 체류시간(예: 10분 이상) 검증
-- [ ] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
+- [x] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`), `start_quiet_score` 스냅샷 저장
+- [x] `PATCH /api/visits/{visitId}/complete` — 반경/체류시간 조건 검증 로직
+  - [x] 목적지 반경 계산 (Haversine, `GeoUtils`), 카테고리별 반경(`Category.getVisitRadiusMeters()`) — 점형 100m/면적형 250m 잠정값
+  - [x] 체류시간 10분(600초) 검증
+- [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
+- [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
+- [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
 ---
 
