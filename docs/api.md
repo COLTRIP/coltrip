@@ -108,6 +108,20 @@ PATCH /api/users/me
 
 ---
 
+### 회원 탈퇴
+```
+DELETE /api/users/me
+```
+**하드 삭제**(2026-08-19 확정) — User row와 연관된 Visit 이력을 모두 함께 삭제. 되돌릴 수 없음. iOS 앱스토어 심사 가이드라인(5.1.1(v)) 대응 목적으로 로그아웃과 함께 필수 제공.
+
+**Request** — Header `Authorization: Bearer {accessToken}`
+
+**Response `200`**: `"회원 탈퇴 완료"`
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
 ## [관광지]
 
 ### 목록 조회 (지도 히트맵 / 목록용)
