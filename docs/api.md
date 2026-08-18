@@ -116,6 +116,8 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
 ```
 지도 화면에서 현재 보이는 영역(bounding box) 안의 장소를 감성모드·장소유형 필터와 함께 조회. `quietScore`가 응답에 포함되므로 별도 "고요지수 조회 API"는 없음.
 
+> **초기 추천 검색 반경 15km**(2026-08-18 확정) — API 파라미터가 아니라 **프론트가 지도 초기 진입 시 bounding box를 설정하는 가이드값**. 사용자 현재 위치 기준 대략 15km 반경이 보이는 정도로 초기 줌/영역을 잡을 것.
+
 **Request (query params)**
 
 | 파라미터 | 필수 | 설명 |
