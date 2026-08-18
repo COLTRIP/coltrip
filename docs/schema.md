@@ -12,7 +12,7 @@
 | QuietIndex 계산 | AI가 배치로 계산 → DB 저장, 백엔드는 읽기만 | 실시간 API 호출 없음 |
 | QuietIndex 저장 구조 | **이력 저장** (`quiet_index` 별도 테이블) | 향후 시계열 예측(정적 골든타임 가이드) 대비 |
 | 감성모드(Mode) | 고정 enum, 5종 | 기획서 "주요 추천 유형" 기준 |
-| 장소유형(Category) | 커스텀 enum (신규 정의) | ⚠️ 아래 목록은 기획서 예시 기반 제안, **팀 최종 확정 필요** |
+| 장소유형(Category) | 커스텀 enum, **8종 확정** (2026-08-18) | "기타" 카테고리는 두지 않음. TourAPI 수집 중 특정 유형이 많이 확인되면 새 카테고리 추가로 확장 |
 | 대체지(Alternative) | AI가 리스트+추천이유+유사도 포함해서 전달 | QuietIndex와 동일하게 배치 저장으로 가정 (아래 "확인 필요" 참고) |
 
 ---
@@ -56,16 +56,18 @@
 | `created_at` | DATETIME | |
 | `updated_at` | DATETIME | |
 
-**`category` enum 제안 (⚠️ 팀 확정 필요)** — 기획서 "알고리즘 작동 흐름"에 명시된 예시(카페, 공원, 도서관, 미술관 등)를 기반으로 초안만 잡음:
+**`category` enum (8종 확정, 2026-08-18)** — "기타" 카테고리 없음. TourAPI 수집 시 이 8종에 안 맞는 스팟은 수집 대상에서 제외:
 
 ```
 CAFE(카페), PARK(공원), LIBRARY(도서관), GALLERY(미술관/전시),
 BOOKSTORE(서점), TEMPLE(사찰), BEACH(해변), ALLEY(골목/거리)
 ```
 
-> 회의에서 최종 목록/이름 확정 후 이 섹션 업데이트할 것.
+> 확장 가능: TourAPI 수집 중 특정 유형 데이터가 많이 확인되면 새 카테고리 추가로 늘릴 수 있음(고정 아님).
 
 **`current_quiet_score` / `quiet_score_updated_at`를 왜 중복 저장하나:** `quiet_index` 이력 테이블만 있으면 지도 목록 조회할 때마다 스팟별로 "가장 최근 값" 서브쿼리를 돌려야 해서 느림. 배치 계산 시 이 두 컬럼도 같이 갱신해주는 방식(쓰기 시점에 비정규화)으로 조회 성능을 확보.
+
+**`quietLevel`(혼잡/보통/고요)은 컬럼으로 저장하지 않음** — `current_quiet_score` 기준 0~40 `CROWDED`, 41~70 `NORMAL`, 71~100 `QUIET`로 API 응답 시점에 파생 계산(`TouristSpot.getQuietLevel()`). 구간값은 AI 실제 점수 분포 확인되면 재조정 가능.
 
 ---
 
@@ -136,6 +138,7 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 | `spot_id` | BIGINT FK → tourist_spot.id | |
 | `status` | ENUM('STARTED','COMPLETED','CANCELED') | |
 | `start_latitude` / `start_longitude` | DECIMAL(10,7) | 방문 시작 버튼 누른 시점 위치 |
+| `start_quiet_score` | INT NULL | 방문 시작 시점 목적지의 quietScore 스냅샷. 고요지수 하락 트리거(상대 기준)의 비교 기준값 |
 | `started_at` | DATETIME | |
 | `arrived_at` | DATETIME NULL | 목적지 반경 진입 확인 시각 |
 | `completed_at` | DATETIME NULL | 체류시간 조건 충족 후 완료 처리 시각 |
