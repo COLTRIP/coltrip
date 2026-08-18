@@ -35,9 +35,6 @@ public class User {
     @Column(length = 50)
     private String nickname;
 
-    @Column(name = "profile_image_url", length = 500)
-    private String profileImageUrl;
-
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
@@ -52,10 +49,9 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String googleSub, String email, String profileImageUrl) {
+    public User(String googleSub, String email) {
         this.googleSub = googleSub;
         this.email = email;
-        this.profileImageUrl = profileImageUrl;
         this.role = Role.USER;
     }
 
