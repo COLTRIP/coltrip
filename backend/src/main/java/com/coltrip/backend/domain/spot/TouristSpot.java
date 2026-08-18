@@ -98,4 +98,8 @@ public class TouristSpot {
         this.currentQuietScore = quietScore;
         this.quietScoreUpdatedAt = calculatedAt;
     }
+
+    public QuietLevel getQuietLevel() {
+        return QuietLevel.from(currentQuietScore);
+    }
 }

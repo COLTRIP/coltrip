@@ -21,14 +21,14 @@
 
 ## Phase 4/5 착수 전 문서 반영 필요 (미착수)
 
-- [ ] QuietIndex 수신 API 신설 (AI → 백엔드 push), `api.md`에 추가
+- [x] QuietIndex 수신 API 신설 (AI → 백엔드 push) — `POST /api/internal/quiet-index`, `X-Internal-Api-Key` 인증. `api.md` 반영 완료
 - [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토
 - [ ] 대체지 검색 반경 3km 캡, 최초 추천 검색 반경 15km 반영
 - [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 (3km 확장은 추후)
-- [ ] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
-- [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안
+- [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
+- [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
 - [ ] 방문완료 반경: 카테고리별(점형/면적형) 유동 적용, 체류시간 10분
-- [ ] 혼잡/보통/고요 구간 임계값(100점 만점) — 팀 확인 대기 중
+- [x] 혼잡/보통/고요 구간 임계값(100점 만점): 0~40 CROWDED, 41~70 NORMAL, 71~100 QUIET — `QuietLevel` enum, `TouristSpot.getQuietLevel()` 반영 완료
 
 ---
 
@@ -79,13 +79,15 @@
 - [ ] `GET /api/spots/{spotId}/alternatives` 구현
 - [ ] 예외 처리: `SpotNotFoundException`, 대체지 없음 케이스 처리 방식 확정 후 반영
 
-## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션)
+## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션) — 완료 (트리거/대체지 제안 제외)
 
-- [ ] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`)
-- [ ] `PATCH /api/visits/{visitId}/complete` — 반경/체류시간 조건 검증 로직
-  - [ ] 목적지 반경(예: 100m) 계산 (Haversine 또는 Geocoding API 활용)
-  - [ ] 체류시간(예: 10분 이상) 검증
-- [ ] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
+- [x] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`), `start_quiet_score` 스냅샷 저장
+- [x] `PATCH /api/visits/{visitId}/complete` — 반경/체류시간 조건 검증 로직
+  - [x] 목적지 반경 계산 (Haversine, `GeoUtils`), 카테고리별 반경(`Category.getVisitRadiusMeters()`) — 점형 100m/면적형 250m 잠정값
+  - [x] 체류시간 10분(600초) 검증
+- [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
+- [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
+- [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
 ---
 

@@ -49,6 +49,9 @@ public class Visit {
     @Column(name = "start_longitude", nullable = false, precision = 10, scale = 7)
     private BigDecimal startLongitude;
 
+    @Column(name = "start_quiet_score")
+    private Integer startQuietScore;
+
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;
 
@@ -65,6 +68,7 @@ public class Visit {
         this.status = VisitStatus.STARTED;
         this.startLatitude = startLatitude;
         this.startLongitude = startLongitude;
+        this.startQuietScore = spot.getCurrentQuietScore();
     }
 
     @PrePersist
