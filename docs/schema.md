@@ -21,6 +21,8 @@
 
 구글 소셜 로그인 사용자 정보 + JWT 리프레시 토큰 관리.
 
+**회원 탈퇴 = 하드 삭제** (2026-08-19 확정): `DELETE /api/users/me` 호출 시 User row 삭제 + 연관된 `visit` row도 함께 삭제(`VisitRepository.deleteByUser_Id`). `tourist_spot`, `quiet_index` 등 다른 데이터는 영향 없음.
+
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | `id` | BIGINT PK | |
