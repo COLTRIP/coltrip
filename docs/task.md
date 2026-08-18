@@ -23,7 +23,8 @@
 
 - [x] QuietIndex 수신 API 신설 (AI → 백엔드 push) — `POST /api/internal/quiet-index`, `X-Internal-Api-Key` 인증. `api.md` 반영 완료
 - [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토
-- [ ] 대체지 검색 반경 3km 캡, 최초 추천 검색 반경 15km 반영
+- [x] 최초 추천 검색 반경 15km — `api.md`에 프론트 가이드로 문서화 완료
+- [ ] 대체지 검색 반경 3km 캡 — 9b(대체지 실시간 호출 재설계)에서 함께 반영
 - [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 (3km 확장은 추후)
 - [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
 - [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
@@ -59,12 +60,14 @@
 
 ## Phase 3 — 관광지 데이터 적재 + 조회 ([api.md](./api.md) [관광지] 섹션)
 
-- [ ] TourAPI 연동 배치/스크립트: 부산 지역 관광지 수집 → `TouristSpot` upsert (`tour_api_content_id` 기준)
-- [ ] Naver Geocoding 연동: TourAPI 주소 → 좌표 보정 스켈레톤
-- [ ] `category` enum 확정 후 분류 로직 (수동 매핑 또는 TourAPI `contentTypeId` 매핑 테이블)
+**범위 변경 (2026-08-18 회의)**: TourAPI 수집 + 카테고리 매핑(30종 세분류 → 8종 확정 enum)은 **AI가 소유**. 백엔드는 결과를 받아 저장/조회하는 쪽만 담당.
+
+- [ ] ⚠️ **AI → 백엔드 데이터 전달 방식 확인 필요** — QuietIndex처럼 `POST /api/internal/spots` 같은 push API로 받을지, AI가 직접 DB에 upsert하는지, 파일(CSV/JSON) 넘겨받아 백엔드가 적재하는지 미확정. 확인되는 대로 아래 항목 구체화
+- [ ] (전달 방식 확인 후) `TouristSpot` 데이터 적재 로직 — AI가 이미 8종으로 분류한 카테고리 값 그대로 저장
+- [ ] Naver Geocoding 연동: 필요 여부 재확인 (TourAPI 좌표를 AI 파이프라인에서 이미 정제해서 넘겨줄 수도 있음)
 - [ ] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회
 - [ ] `GET /api/spots/{spotId}` — 상세 조회
-- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`
+- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`(이미 구현됨)
 
 ## Phase 4 — QuietIndex 연동
 
