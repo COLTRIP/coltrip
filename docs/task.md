@@ -56,6 +56,7 @@
 - [x] JWT 인증 필터 (Authorization 헤더 검증, SecurityContext 등록, access/refresh 타입 구분)
 - [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`
 - [x] `GET /api/users/me`, `PATCH /api/users/me` — 닉네임 조회/설정(로그인 직후 필수 온보딩 + 마이페이지 수정 공용), 중복 허용
+- [x] `DELETE /api/users/me` — 회원 탈퇴(하드 삭제), 연관 Visit 이력 함께 삭제. end-to-end 테스트 완료
 - [x] 로컬 MySQL 대상 부트업 테스트 완료
 
 ## Phase 3 — 관광지 데이터 적재 + 조회 ([api.md](./api.md) [관광지] 섹션)
