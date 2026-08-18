@@ -31,8 +31,7 @@ POST /api/auth/google
   "user": {
     "id": 1,
     "email": "user@gmail.com",
-    "nickname": null,
-    "profileImageUrl": "string"
+    "nickname": null
   }
 }
 ```
@@ -79,8 +78,7 @@ GET /api/users/me
 {
   "id": 1,
   "email": "user@gmail.com",
-  "nickname": "string",
-  "profileImageUrl": "string"
+  "nickname": "string"
 }
 ```
 
