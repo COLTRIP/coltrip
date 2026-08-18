@@ -2,7 +2,7 @@
 
 - Base URL: `/api` (예: `/api/spots`)
 - 인증: `Authorization: Bearer {accessToken}` (로그인/토큰재발급 제외 전부 필요)
-- 마지막 갱신: 2026-08-17
+- 마지막 갱신: 2026-08-18
 - 스키마 참고: [schema.md](./schema.md)
 
 ---
@@ -31,11 +31,12 @@ POST /api/auth/google
   "user": {
     "id": 1,
     "email": "user@gmail.com",
-    "nickname": "string",
+    "nickname": null,
     "profileImageUrl": "string"
   }
 }
 ```
+최초 가입 시 `nickname`은 `null`. 구글 프로필 이름을 자동으로 채우지 않음 — 로그인 직후 닉네임 설정은 필수이므로, 프론트는 `nickname == null`이면 닉네임 설정 화면으로 이동시켜야 함 (`isNewUser` 여부와 무관하게 `nickname`이 없으면 항상 이동).
 
 **Exception**: `InvalidGoogleTokenException` (401) — idToken 검증 실패
 
@@ -60,6 +61,48 @@ POST /api/auth/logout
 **Request** — Header `Authorization: Bearer {accessToken}`. 서버는 User의 `refresh_token`을 NULL 처리.
 
 **Response `200`**: `"로그아웃 성공"`
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+## [사용자]
+
+### 내 정보 조회
+```
+GET /api/users/me
+```
+**Request** — Header `Authorization: Bearer {accessToken}`
+
+**Response `200`** — `UserResponseDTO`
+```json
+{
+  "id": 1,
+  "email": "user@gmail.com",
+  "nickname": "string",
+  "profileImageUrl": "string"
+}
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 닉네임 설정/수정
+```
+PATCH /api/users/me
+```
+로그인 직후 필수 설정 화면과, 이후 마이페이지에서의 수정 화면에서 공용으로 사용. 닉네임 중복 제약 없음(중복 허용).
+
+**Request**
+```json
+{
+  "nickname": "string"
+}
+```
+`nickname`: 1~20자, 공백 불가
+
+**Response `200`** — `UserResponseDTO` (변경된 정보 반환)
 
 **Exception**: `UnauthorizedException` (401)
 

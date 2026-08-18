@@ -32,7 +32,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private String nickname;
 
     @Column(name = "profile_image_url", length = 500)
@@ -52,10 +52,9 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String googleSub, String email, String nickname, String profileImageUrl) {
+    public User(String googleSub, String email, String profileImageUrl) {
         this.googleSub = googleSub;
         this.email = email;
-        this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
         this.role = Role.USER;
     }
@@ -73,5 +72,9 @@ public class User {
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
     }
 }
