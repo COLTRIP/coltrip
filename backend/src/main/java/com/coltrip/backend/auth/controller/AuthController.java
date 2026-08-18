@@ -3,7 +3,6 @@ package com.coltrip.backend.auth.controller;
 import com.coltrip.backend.auth.dto.GoogleLoginRequest;
 import com.coltrip.backend.auth.dto.JwtTokenResponse;
 import com.coltrip.backend.auth.exception.InvalidRefreshTokenException;
-import com.coltrip.backend.auth.exception.UnauthorizedException;
 import com.coltrip.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +34,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@AuthenticationPrincipal Long userId) {
-        if (userId == null) {
-            throw new UnauthorizedException();
-        }
         authService.logout(userId);
         return ResponseEntity.ok("로그아웃 성공");
     }

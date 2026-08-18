@@ -29,7 +29,6 @@ public class AuthService {
                 .orElseGet(() -> userRepository.save(User.builder()
                         .googleSub(googleUserInfo.sub())
                         .email(googleUserInfo.email())
-                        .nickname(googleUserInfo.nickname())
                         .profileImageUrl(googleUserInfo.profileImageUrl())
                         .build()));
 

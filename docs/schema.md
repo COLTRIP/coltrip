@@ -1,7 +1,7 @@
 # coltrip ERD / 스키마 설계
 
 - DB: MySQL
-- 마지막 갱신: 2026-08-17
+- 마지막 갱신: 2026-08-18
 - 이 문서는 [api.md](./api.md)의 Request/Response DTO와 1:1로 대응됩니다.
 
 ## 설계 전제 (팀 확정 사항)
@@ -26,7 +26,7 @@
 | `id` | BIGINT PK | |
 | `google_sub` | VARCHAR(255) UNIQUE | 구글 idToken의 `sub` 클레임 (소셜 로그인 식별자) |
 | `email` | VARCHAR(255) UNIQUE | |
-| `nickname` | VARCHAR(50) | |
+| `nickname` | VARCHAR(50) NULL | 가입 시 비어있음(구글 프로필 이름 자동 채움 없음). 로그인 직후 필수 설정 화면에서 입력, 이후 마이페이지에서 수정 가능. 중복 허용 |
 | `profile_image_url` | VARCHAR(500) NULL | 구글 프로필 이미지 |
 | `refresh_token` | VARCHAR(500) NULL | 최신 발급 리프레시 토큰 (재발급 시 갱신, 로그아웃 시 NULL) |
 | `role` | ENUM('USER') | 확장 대비, 현재는 단일 값 |

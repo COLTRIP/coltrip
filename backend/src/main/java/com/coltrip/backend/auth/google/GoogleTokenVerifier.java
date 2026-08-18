@@ -29,7 +29,7 @@ public class GoogleTokenVerifier {
             throw new InvalidGoogleTokenException();
         }
 
-        return new GoogleUserInfo(response.sub(), response.email(), response.name(), response.picture());
+        return new GoogleUserInfo(response.sub(), response.email(), response.picture());
     }
 
     private GoogleTokenInfoResponse fetchTokenInfo(String idToken) {
