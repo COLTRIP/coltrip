@@ -96,6 +96,17 @@
 - [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
 - [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
+## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
+
+- [x] `/api/spots` GET 인증 해제 (지도 둘러보기는 비로그인 허용, 쓰기는 인증 유지)
+- [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
+- [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
+- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `DELETE /api/reviews/{reviewId}`
+  - [x] 별점 대신 고요함 피드백(`QuietFeedback` 3단계) — 기획서 차별점과 일관
+  - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
+- [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
+- [x] 로컬 MySQL end-to-end 테스트 완료
+
 ---
 
 ## 우선순위 제안
