@@ -1,8 +1,10 @@
 package com.coltrip.backend.common.exception;
 
+import com.coltrip.backend.auth.exception.AlreadyRegisteredUserException;
 import com.coltrip.backend.auth.exception.InvalidGoogleTokenException;
 import com.coltrip.backend.auth.exception.InvalidRefreshTokenException;
 import com.coltrip.backend.auth.exception.UnauthorizedException;
+import com.coltrip.backend.auth.exception.UserNotRegisteredException;
 import com.coltrip.backend.internal.exception.InvalidInternalApiKeyException;
 import com.coltrip.backend.review.exception.ReviewNotAllowedException;
 import com.coltrip.backend.review.exception.ReviewNotFoundException;
@@ -30,13 +32,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler({SpotNotFoundException.class, VisitNotFoundException.class, ReviewNotFoundException.class})
+    @ExceptionHandler({SpotNotFoundException.class, VisitNotFoundException.class, ReviewNotFoundException.class,
+            UserNotRegisteredException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e));
     }
 
     @ExceptionHandler({AlreadyOngoingVisitException.class, InvalidVisitStateException.class,
-            ReviewNotAllowedException.class})
+            ReviewNotAllowedException.class, AlreadyRegisteredUserException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e));
     }

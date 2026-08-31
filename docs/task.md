@@ -50,11 +50,11 @@
 ## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — PR #5, 머지 대기
 
 - [x] Spring Security 설정 (JWT 필터, stateless, 커스텀 401 EntryPoint로 일관된 에러 응답)
-- [x] `POST /api/auth/google` — 구글 idToken 검증 → User 조회/생성 → JWT 발급
+- [x] `POST /api/auth/google` — 구글 idToken 검증 → intent(LOGIN/SIGNUP)에 따라 기존 유저 로그인/신규 가입 분기 → JWT 발급
 - [x] `POST /api/auth/refresh` — 리프레시 토큰 검증/재발급
 - [x] `POST /api/auth/logout` — 리프레시 토큰 무효화
 - [x] JWT 인증 필터 (Authorization 헤더 검증, SecurityContext 등록, access/refresh 타입 구분)
-- [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`
+- [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`, `UserNotRegisteredException`, `AlreadyRegisteredUserException`
 - [x] `GET /api/users/me`, `PATCH /api/users/me` — 닉네임 조회/설정(로그인 직후 필수 온보딩 + 마이페이지 수정 공용), 중복 허용
 - [x] `DELETE /api/users/me` — 회원 탈퇴(하드 삭제), 연관 Visit 이력 함께 삭제. end-to-end 테스트 완료
 - [x] 로컬 MySQL 대상 부트업 테스트 완료
