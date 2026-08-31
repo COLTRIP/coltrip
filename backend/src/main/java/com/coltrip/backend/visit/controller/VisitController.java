@@ -5,6 +5,8 @@ import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
 import com.coltrip.backend.visit.dto.VisitStartResponse;
 import com.coltrip.backend.visit.service.VisitService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "방문", description = "방문 시작 / 완료 처리")
 @RestController
 @RequestMapping("/api/visits")
 @RequiredArgsConstructor
@@ -23,12 +26,14 @@ public class VisitController {
 
     private final VisitService visitService;
 
+    @Operation(summary = "방문 시작", description = "'조용한 여행 시작하기' 버튼. 진행 중인 방문이 있으면 409.")
     @PostMapping("/start")
     public ResponseEntity<VisitStartResponse> start(@AuthenticationPrincipal Long userId,
                                                       @Valid @RequestBody VisitStartRequest request) {
         return ResponseEntity.ok(visitService.start(userId, request));
     }
 
+    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 + 체류시간 600초 이상이어야 완료됩니다. 미충족 시 400.")
     @PatchMapping("/{visitId}/complete")
     public ResponseEntity<VisitCompleteResponse> complete(@AuthenticationPrincipal Long userId,
                                                             @PathVariable Long visitId,

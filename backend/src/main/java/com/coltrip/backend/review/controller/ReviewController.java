@@ -4,6 +4,9 @@ import com.coltrip.backend.review.dto.ReviewCreateRequest;
 import com.coltrip.backend.review.dto.ReviewListResponse;
 import com.coltrip.backend.review.dto.ReviewResponse;
 import com.coltrip.backend.review.service.ReviewService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "리뷰", description = "고요함 피드백 리뷰 (별점 아님)")
 @RestController
 @RequiredArgsConstructor
 public class ReviewController {
@@ -22,6 +26,14 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     // 방문 기록이 작성 자격의 근거라 visitId 하위에 둔다 (방문 1건당 리뷰 1건)
+    @Operation(summary = "리뷰 작성",
+            description = """
+                    별점이 아니라 '기대한 만큼 조용했는가'를 받습니다.
+                    `quietFeedback`: QUIETER_THAN_EXPECTED / AS_EXPECTED / NOISIER_THAN_EXPECTED
+
+                    **방문 완료(COMPLETED)한 사용자만**, **방문 1건당 1개**만 작성 가능합니다.
+                    그래서 경로가 spots가 아니라 visits 하위입니다.
+                    """)
     @PostMapping("/api/visits/{visitId}/review")
     public ResponseEntity<ReviewResponse> create(@AuthenticationPrincipal Long userId,
                                                    @PathVariable Long visitId,
@@ -29,11 +41,14 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.create(userId, visitId, request));
     }
 
+    @Operation(summary = "장소별 리뷰 목록", description = "인증 불필요. 최신순.")
+    @SecurityRequirements
     @GetMapping("/api/spots/{spotId}/reviews")
     public ResponseEntity<ReviewListResponse> findBySpot(@PathVariable Long spotId) {
         return ResponseEntity.ok(reviewService.findBySpot(spotId));
     }
 
+    @Operation(summary = "리뷰 삭제", description = "본인이 작성한 리뷰만 삭제할 수 있습니다.")
     @DeleteMapping("/api/reviews/{reviewId}")
     public ResponseEntity<String> delete(@AuthenticationPrincipal Long userId,
                                           @PathVariable Long reviewId) {

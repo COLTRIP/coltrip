@@ -31,6 +31,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/google", "/api/auth/refresh").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
+                        // Swagger UI (개발용 API 문서)
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // 관광지 조회(목록/상세/리뷰목록)는 비로그인 허용 - 지도 둘러보기는 로그인 없이 가능
                         // 좋아요/리뷰 작성 등 쓰기 작업은 아래 authenticated()에 걸림
                         .requestMatchers(HttpMethod.GET, "/api/spots/**").permitAll()
