@@ -23,7 +23,7 @@ public class AuthController {
 
     @PostMapping("/google")
     public ResponseEntity<JwtTokenResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
-        return ResponseEntity.ok(authService.googleLogin(request.idToken()));
+        return ResponseEntity.ok(authService.googleLogin(request.idToken(), request.intent()));
     }
 
     @PostMapping("/refresh")

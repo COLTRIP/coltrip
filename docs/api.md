@@ -13,7 +13,7 @@
 | `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
 | `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
-- 마지막 갱신: 2026-08-18
+- 마지막 갱신: 2026-08-31
 - 스키마 참고: [schema.md](./schema.md)
 
 ---
@@ -24,14 +24,18 @@
 ```
 POST /api/auth/google
 ```
-프론트(Flutter)에서 구글 SDK로 받은 idToken을 백엔드로 전달 → 서버가 구글에 검증 후 자체 JWT 발급. 최초 로그인이면 User 자동 생성(회원가입 겸용).
+프론트(Flutter)에서 구글 SDK로 받은 idToken과 진입 의도(intent)를 백엔드로 전달 → 서버가 구글에 검증 후 자체 JWT 발급. 로그인과 회원가입 플로우는 `intent`로 분리한다.
 
 **Request**
 ```json
 {
-  "idToken": "string"
+  "idToken": "string",
+  "intent": "LOGIN"
 }
 ```
+`intent`: `LOGIN` 또는 `SIGNUP`.
+- `LOGIN`: 이미 가입된 사용자만 로그인 처리
+- `SIGNUP`: 가입되지 않은 사용자만 신규 생성 후 로그인 처리
 
 **Response `200`** — `JwtTokenResponseDTO`
 ```json
@@ -48,7 +52,12 @@ POST /api/auth/google
 ```
 최초 가입 시 `nickname`은 `null`. 구글 프로필 이름을 자동으로 채우지 않음 — 로그인 직후 닉네임 설정은 필수이므로, 프론트는 `nickname == null`이면 닉네임 설정 화면으로 이동시켜야 함 (`isNewUser` 여부와 무관하게 `nickname`이 없으면 항상 이동).
 
-**Exception**: `InvalidGoogleTokenException` (401) — idToken 검증 실패
+**Exception**
+- `InvalidGoogleTokenException` (401) — idToken 검증 실패
+- `UserNotRegisteredException` (404) — `intent=LOGIN`인데 가입된 사용자가 없음
+- `AlreadyRegisteredUserException` (409) — `intent=SIGNUP`인데 이미 가입된 사용자임
+- `InvalidRequestBodyException` (400) — `intent` enum 값 오류 등 요청 바디 해석 실패
+- `ValidationException` (400) — `idToken` 누락/빈 값, `intent` 누락
 
 ---
 
