@@ -10,8 +10,9 @@
 |---|---|---|
 | `UnauthorizedException` | 401 | 토큰 없음/만료/위조 |
 | `MissingParameterException` | 400 | 필수 쿼리 파라미터 누락 |
-| `InvalidParameterException` | 400 | 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
-| `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임) |
+| `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
+| `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
+| `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
 - 마지막 갱신: 2026-08-18
 - 스키마 참고: [schema.md](./schema.md)
 
@@ -132,6 +133,8 @@ DELETE /api/users/me
 
 ## [관광지]
 
+> 관광지 **조회(GET)** 는 로그인 없이 호출 가능(2026-08-31 확정). 지도 둘러보기까지 로그인 벽을 세우면 이탈이 크고, 관광지 정보 자체는 공개 데이터이기 때문. 좋아요·리뷰 작성 등 쓰기 작업은 인증 필요.
+
 ### 목록 조회 (지도 히트맵 / 목록용)
 ```
 GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
@@ -158,8 +161,10 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
     {
       "id": 1,
       "name": "string",
+      "address": "부산광역시 중구 ...",
       "category": "CAFE",
       "modes": ["CONTEMPLATION", "SCENERY"],
+      "imageUrl": "https://...",
       "latitude": 35.15,
       "longitude": 129.06,
       "quietScore": 82,
@@ -291,6 +296,114 @@ PATCH /api/visits/{visitId}/complete
 ```
 
 **Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경/체류시간 조건 미충족
+
+---
+
+## [좋아요]
+
+### 좋아요 등록
+```
+POST /api/spots/{spotId}/like
+```
+**멱등** — 이미 좋아요한 상태에서 다시 호출해도 200. 프론트에서 따닥 눌러도 에러가 안 남.
+
+**Response `200`**
+```json
+{ "spotId": 1, "liked": true }
+```
+
+**Exception**: `UnauthorizedException` (401), `SpotNotFoundException` (404)
+
+---
+
+### 좋아요 취소
+```
+DELETE /api/spots/{spotId}/like
+```
+**멱등** — 좋아요하지 않은 상태에서 호출해도 200.
+
+**Response `200`**
+```json
+{ "spotId": 1, "liked": false }
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 내가 좋아요한 장소 목록
+```
+GET /api/users/me/likes
+```
+**Response `200`** — `SpotListResponseDTO` (`GET /api/spots`와 동일한 형태, 최근 좋아요순)
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+## [리뷰]
+
+기획서 차별점(별점·후기 중심이 아닌 고요함 중심)에 맞춰 **별점 대신 "기대한 만큼 조용했는가"** 를 묻는다. 추후 AI 고요지수 실측 보정 데이터로도 활용 가능.
+
+**작성 자격**: 해당 장소를 **방문 완료(`Visit.status == COMPLETED`)한 사용자만**, **방문 1건당 리뷰 1건**. 그래서 생성 엔드포인트가 `spots`가 아니라 `visits` 하위에 있다.
+
+`quietFeedback` enum: `QUIETER_THAN_EXPECTED`(기대보다 조용했다) / `AS_EXPECTED`(기대한 정도였다) / `NOISIER_THAN_EXPECTED`(기대보다 시끄러웠다)
+
+### 리뷰 작성
+```
+POST /api/visits/{visitId}/review
+```
+**Request**
+```json
+{
+  "quietFeedback": "QUIETER_THAN_EXPECTED",
+  "content": "평일 오후라 정말 조용했어요"
+}
+```
+`content`는 선택, 최대 300자.
+
+**Response `200`** — `ReviewResponseDTO`
+```json
+{
+  "id": 1,
+  "spotId": 3,
+  "userId": 4,
+  "nickname": "테스터",
+  "quietFeedback": "QUIETER_THAN_EXPECTED",
+  "content": "평일 오후라 정말 조용했어요",
+  "createdAt": "2026-08-31T16:36:29"
+}
+```
+
+**Exception**
+- `UnauthorizedException` (401)
+- `VisitNotFoundException` (404) — 없는 방문이거나 **본인 방문이 아닌 경우**(존재 여부를 노출하지 않기 위해 403이 아닌 404로 통일)
+- `ReviewNotAllowedException` (409) — 방문 미완료, 또는 해당 방문에 이미 리뷰를 작성함
+
+---
+
+### 장소별 리뷰 목록
+```
+GET /api/spots/{spotId}/reviews
+```
+로그인 없이 조회 가능. 최신순.
+
+**Response `200`**
+```json
+{ "reviews": [ /* ReviewResponseDTO 배열 */ ] }
+```
+
+---
+
+### 리뷰 삭제
+```
+DELETE /api/reviews/{reviewId}
+```
+본인이 작성한 리뷰만 삭제 가능.
+
+**Response `200`**: `"리뷰 삭제 완료"`
+
+**Exception**: `UnauthorizedException` (401), `ReviewNotFoundException` (404) — 없는 리뷰이거나 본인 리뷰가 아닌 경우
 
 ---
 

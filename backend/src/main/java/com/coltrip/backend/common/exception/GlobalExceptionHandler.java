@@ -4,6 +4,8 @@ import com.coltrip.backend.auth.exception.InvalidGoogleTokenException;
 import com.coltrip.backend.auth.exception.InvalidRefreshTokenException;
 import com.coltrip.backend.auth.exception.UnauthorizedException;
 import com.coltrip.backend.internal.exception.InvalidInternalApiKeyException;
+import com.coltrip.backend.review.exception.ReviewNotAllowedException;
+import com.coltrip.backend.review.exception.ReviewNotFoundException;
 import com.coltrip.backend.spot.exception.InvalidBoundingBoxException;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
 import com.coltrip.backend.visit.exception.AlreadyOngoingVisitException;
@@ -12,6 +14,7 @@ import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,12 +30,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler({SpotNotFoundException.class, VisitNotFoundException.class})
+    @ExceptionHandler({SpotNotFoundException.class, VisitNotFoundException.class, ReviewNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler({AlreadyOngoingVisitException.class, InvalidVisitStateException.class})
+    @ExceptionHandler({AlreadyOngoingVisitException.class, InvalidVisitStateException.class,
+            ReviewNotAllowedException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e));
     }
@@ -57,6 +61,13 @@ public class GlobalExceptionHandler {
         String message = "필수 파라미터가 없습니다: %s".formatted(e.getParameterName());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("MissingParameterException", message));
+    }
+
+    // 요청 바디 자체를 못 읽는 경우 (JSON 문법 오류, enum 값 오타 등)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("InvalidRequestBodyException", "요청 본문을 해석할 수 없습니다. 필드 형식과 enum 값을 확인해주세요."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
