@@ -8,11 +8,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -62,6 +65,10 @@ public class TouristSpot {
     @Column(name = "quiet_score_updated_at")
     private LocalDateTime quietScoreUpdatedAt;
 
+    // 조회 전용(읽기). 감성모드 매핑은 SpotMode 쪽에서 관리
+    @OneToMany(mappedBy = "spot")
+    private List<SpotMode> spotModes = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -101,5 +108,9 @@ public class TouristSpot {
 
     public QuietLevel getQuietLevel() {
         return QuietLevel.from(currentQuietScore);
+    }
+
+    public List<Mode> getModes() {
+        return spotModes.stream().map(SpotMode::getMode).toList();
     }
 }

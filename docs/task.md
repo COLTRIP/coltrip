@@ -66,9 +66,12 @@
 - [ ] ⚠️ **AI → 백엔드 데이터 전달 방식 확인 필요** — QuietIndex처럼 `POST /api/internal/spots` 같은 push API로 받을지, AI가 직접 DB에 upsert하는지, 파일(CSV/JSON) 넘겨받아 백엔드가 적재하는지 미확정. 확인되는 대로 아래 항목 구체화
 - [ ] (전달 방식 확인 후) `TouristSpot` 데이터 적재 로직 — AI가 이미 8종으로 분류한 카테고리 값 그대로 저장
 - [ ] Naver Geocoding 연동: 필요 여부 재확인 (TourAPI 좌표를 AI 파이프라인에서 이미 정제해서 넘겨줄 수도 있음)
-- [ ] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회
-- [ ] `GET /api/spots/{spotId}` — 상세 조회
-- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`(이미 구현됨)
+- [x] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회 **(AI 적재와 무관하게 선구현 완료)**
+- [x] `GET /api/spots/{spotId}` — 상세 조회
+- [x] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`
+- [x] 개발용 시드 데이터 (`backend/seed/seed-spots.sql`) — 부산 관광지 12곳, `SEED-` 접두어로 실제 데이터와 구분
+
+> **조회 API는 적재 방식과 독립적**이라 먼저 구현함. AI 적재 방식이 확정되어 실제 데이터가 들어와도 조회 API는 그대로 동작함. 시드 데이터는 `DELETE FROM tourist_spot WHERE tour_api_content_id LIKE 'SEED-%';`로 정리 가능.
 
 ## Phase 4 — QuietIndex 연동
 

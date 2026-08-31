@@ -2,6 +2,16 @@
 
 - Base URL: `/api` (예: `/api/spots`)
 - 인증: `Authorization: Bearer {accessToken}` (로그인/토큰재발급 제외 전부 필요)
+- 모든 에러 응답은 `{"code": "...", "message": "..."}` 형식
+
+**공통 에러 (모든 엔드포인트)**
+
+| code | HTTP | 발생 조건 |
+|---|---|---|
+| `UnauthorizedException` | 401 | 토큰 없음/만료/위조 |
+| `MissingParameterException` | 400 | 필수 쿼리 파라미터 누락 |
+| `InvalidParameterException` | 400 | 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
+| `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임) |
 - 마지막 갱신: 2026-08-18
 - 스키마 참고: [schema.md](./schema.md)
 
@@ -138,6 +148,8 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
 | `neLat`, `neLng` | Y | 지도 영역 북동쪽 좌표 |
 | `category` | N | 장소유형 enum (예: `CAFE`). 미지정 시 전체 |
 | `mode` | N | 감성모드 enum (예: `WALK`). 미지정 시 전체 |
+
+`mode`는 **필터 조건일 뿐**이며, 응답의 `modes` 필드에는 해당 장소가 가진 **모든 감성모드**가 담긴다. (예: `mode=WATER_GAZING`으로 조회해도 흰여울문화마을은 `["SCENERY","WALK","WATER_GAZING"]` 전체가 응답됨)
 
 **Response `200`** — `SpotListResponseDTO`
 ```json
