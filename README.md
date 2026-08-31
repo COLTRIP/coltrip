@@ -13,7 +13,9 @@ AI 기반 실시간 혼잡도 분석으로 부산의 한적한 관광지를 추�
 └── docs/       # API 명세서, ERD/스키마, 백엔드 태스크
 ```
 
-관련 문서: [docs/api.md](./docs/api.md) · [docs/schema.md](./docs/schema.md) · [docs/task.md](./docs/task.md)
+관련 문서: [docs/dev-guide.md](./docs/dev-guide.md) · [docs/api.md](./docs/api.md) · [docs/schema.md](./docs/schema.md) · [docs/task.md](./docs/task.md)
+
+로컬 실행·시드 데이터·테스트 계정 발급은 [개발 환경 가이드](./docs/dev-guide.md) 참고.
 
 ## 브랜치 전략
 
