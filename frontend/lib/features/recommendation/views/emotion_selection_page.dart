@@ -25,7 +25,7 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
       body: const Center(
         child: Column(
           children: [
-            const SizedBox(height: 100),
+            SizedBox(height: 100),
 
             Text(
               '원하시는 여행 감성을',

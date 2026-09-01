@@ -34,7 +34,7 @@ class PrimaryButton extends StatelessWidget {
           backgroundColor:
           isOutlined ? Colors.white : _primaryColor,
           disabledBackgroundColor:
-          isOutlined ? Colors.white : _primaryColor.withOpacity(0.5),
+          isOutlined ? Colors.white : _primaryColor.withValues(alpha: 0.5),
           side: BorderSide(
             color: _primaryColor,
             width: isOutlined ? 1.5 : 0,
