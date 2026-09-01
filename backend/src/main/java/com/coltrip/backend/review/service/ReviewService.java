@@ -40,7 +40,7 @@ public class ReviewService {
 
         Review review = reviewRepository.save(Review.builder()
                 .visit(visit)
-                .quietFeedback(request.quietFeedback())
+                .rating(request.rating())
                 .content(request.content())
                 .build());
 

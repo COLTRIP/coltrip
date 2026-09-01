@@ -102,9 +102,20 @@
 - [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
 - [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
 - [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `DELETE /api/reviews/{reviewId}`
-  - [x] 별점 대신 고요함 피드백(`QuietFeedback` 3단계) — 기획서 차별점과 일관
+  - [x] ~~별점 대신 고요함 피드백(`QuietFeedback` 3단계)~~ → **별점(1~5) + 한줄평으로 변경 (2026-09-01)**
   - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
 - [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
+- [x] 로컬 MySQL end-to-end 테스트 완료
+
+## Phase 8 — 사용자 통계 / 리뷰 방식 변경 (2026-09-01) — 완료
+
+- [x] `UserResponseDTO`에 `visitCount`(완료한 방문 수), `likeCount` 추가
+  - 로그인·재발급·내 정보 조회·닉네임 수정 응답 전부 동일한 모양 유지
+  - `UserStatsReader`로 집계 기준을 한 곳에 모아 로그인과 조회가 어긋나지 않게 함
+- [x] 리뷰를 고요함 피드백 3단계 → **별점(1~5) + 한줄평**으로 변경
+  - `QuietFeedback` enum 삭제, `Review.rating` 추가
+  - 기존 `quiet_feedback` 컬럼은 `ddl-auto: update`가 삭제하지 않으므로 수동 DROP 필요
+    (`ALTER TABLE review DROP COLUMN quiet_feedback;`)
 - [x] 로컬 MySQL end-to-end 테스트 완료
 
 ---

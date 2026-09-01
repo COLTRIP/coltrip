@@ -13,6 +13,8 @@ public interface SpotLikeRepository extends JpaRepository<SpotLike, Long> {
 
     boolean existsByUser_IdAndSpot_Id(Long userId, Long spotId);
 
+    long countByUser_Id(Long userId);
+
     @Query("""
             SELECT l.spot FROM SpotLike l
             LEFT JOIN FETCH l.spot.spotModes

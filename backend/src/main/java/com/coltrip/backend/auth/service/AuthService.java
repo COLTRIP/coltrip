@@ -11,6 +11,7 @@ import com.coltrip.backend.auth.google.GoogleUserInfo;
 import com.coltrip.backend.auth.jwt.JwtProvider;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
+import com.coltrip.backend.user.service.UserStatsReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final GoogleTokenVerifier googleTokenVerifier;
     private final JwtProvider jwtProvider;
+    private final UserStatsReader userStatsReader;
 
     public JwtTokenResponse googleLogin(String idToken, AuthIntent intent) {
         GoogleUserInfo googleUserInfo = googleTokenVerifier.verify(idToken);
@@ -78,6 +80,6 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
         user.updateRefreshToken(refreshToken);
-        return JwtTokenResponse.of(accessToken, refreshToken, isNewUser, user);
+        return JwtTokenResponse.of(accessToken, refreshToken, isNewUser, userStatsReader.toResponse(user));
     }
 }

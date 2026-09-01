@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "리뷰", description = "고요함 피드백 리뷰 (별점 아님)")
+@Tag(name = "리뷰", description = "별점(1~5) + 한줄평. 방문 완료자만 작성 가능")
 @RestController
 @RequiredArgsConstructor
 public class ReviewController {
@@ -28,8 +28,7 @@ public class ReviewController {
     // 방문 기록이 작성 자격의 근거라 visitId 하위에 둔다 (방문 1건당 리뷰 1건)
     @Operation(summary = "리뷰 작성",
             description = """
-                    별점이 아니라 '기대한 만큼 조용했는가'를 받습니다.
-                    `quietFeedback`: QUIETER_THAN_EXPECTED / AS_EXPECTED / NOISIER_THAN_EXPECTED
+                    `rating`(1~5 별점)과 `content`(한줄평, 선택·최대 300자)를 받습니다.
 
                     **방문 완료(COMPLETED)한 사용자만**, **방문 1건당 1개**만 작성 가능합니다.
                     그래서 경로가 spots가 아니라 visits 하위입니다.
