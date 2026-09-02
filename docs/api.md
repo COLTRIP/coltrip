@@ -46,7 +46,9 @@ POST /api/auth/google
   "user": {
     "id": 1,
     "email": "user@gmail.com",
-    "nickname": null
+    "nickname": null,
+    "visitCount": 0,
+    "likeCount": 0
   }
 }
 ```
@@ -98,9 +100,15 @@ GET /api/users/me
 {
   "id": 1,
   "email": "user@gmail.com",
-  "nickname": "string"
+  "nickname": "string",
+  "visitCount": 3,
+  "likeCount": 7
 }
 ```
+- `visitCount`: **방문을 완료(`COMPLETED`)한 횟수.** 시작만 하고 완료하지 않은 방문은 제외
+- `likeCount`: 좋아요한 장소 수
+
+이 두 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
 
 **Exception**: `UnauthorizedException` (401)
 
@@ -352,11 +360,11 @@ GET /api/users/me/likes
 
 ## [리뷰]
 
-기획서 차별점(별점·후기 중심이 아닌 고요함 중심)에 맞춰 **별점 대신 "기대한 만큼 조용했는가"** 를 묻는다. 추후 AI 고요지수 실측 보정 데이터로도 활용 가능.
+**별점(1~5) + 한줄평** 방식. (2026-09-01 변경: 기존 고요함 피드백 3단계에서 전환)
 
 **작성 자격**: 해당 장소를 **방문 완료(`Visit.status == COMPLETED`)한 사용자만**, **방문 1건당 리뷰 1건**. 그래서 생성 엔드포인트가 `spots`가 아니라 `visits` 하위에 있다.
 
-`quietFeedback` enum: `QUIETER_THAN_EXPECTED`(기대보다 조용했다) / `AS_EXPECTED`(기대한 정도였다) / `NOISIER_THAN_EXPECTED`(기대보다 시끄러웠다)
+`rating`은 1~5 정수(필수), `content`는 선택이며 최대 300자.
 
 ### 리뷰 작성
 ```
@@ -365,11 +373,10 @@ POST /api/visits/{visitId}/review
 **Request**
 ```json
 {
-  "quietFeedback": "QUIETER_THAN_EXPECTED",
+  "rating": 5,
   "content": "평일 오후라 정말 조용했어요"
 }
 ```
-`content`는 선택, 최대 300자.
 
 **Response `200`** — `ReviewResponseDTO`
 ```json
@@ -378,7 +385,7 @@ POST /api/visits/{visitId}/review
   "spotId": 3,
   "userId": 4,
   "nickname": "테스터",
-  "quietFeedback": "QUIETER_THAN_EXPECTED",
+  "rating": 5,
   "content": "평일 오후라 정말 조용했어요",
   "createdAt": "2026-08-31T16:36:29"
 }

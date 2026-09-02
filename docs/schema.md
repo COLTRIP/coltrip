@@ -161,9 +161,9 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 
 ---
 
-## 8. review (고요함 피드백 리뷰)
+## 8. review (별점 리뷰)
 
-별점이 아니라 **"기대한 만큼 조용했는가"** 를 묻는다. 기획서 차별점(별점·후기 중심이 아님)과 일관되며, 추후 AI 고요지수 실측 보정 데이터로 쓸 수 있다.
+별점(1~5)과 한줄평을 받는다. (2026-09-01 변경: 기존 고요함 피드백 3단계 방식에서 일반 별점 방식으로 전환)
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -171,7 +171,7 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 | `visit_id` | BIGINT FK → visit.id, **UNIQUE** | 작성 자격의 근거. unique 제약으로 "방문 1건당 리뷰 1건"을 DB 레벨에서 보장 |
 | `user_id` | BIGINT FK → user.id | visit에서 파생(조회 편의를 위한 비정규화) |
 | `spot_id` | BIGINT FK → tourist_spot.id | visit에서 파생(장소별 리뷰 조회용) |
-| `quiet_feedback` | ENUM('QUIETER_THAN_EXPECTED','AS_EXPECTED','NOISIER_THAN_EXPECTED') | |
+| `rating` | INT | 1~5 별점 |
 | `content` | VARCHAR(300) NULL | 한줄평(선택) |
 | `created_at` / `updated_at` | DATETIME | |
 

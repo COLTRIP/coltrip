@@ -8,7 +8,7 @@ public record ReviewResponse(
         Long spotId,
         Long userId,
         String nickname,
-        String quietFeedback,
+        Integer rating,
         String content,
         LocalDateTime createdAt
 ) {
@@ -18,7 +18,7 @@ public record ReviewResponse(
                 review.getSpot().getId(),
                 review.getUser().getId(),
                 review.getUser().getNickname(),
-                review.getQuietFeedback().name(),
+                review.getRating(),
                 review.getContent(),
                 review.getCreatedAt()
         );

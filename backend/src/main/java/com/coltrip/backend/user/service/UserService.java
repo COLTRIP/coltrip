@@ -20,16 +20,17 @@ public class UserService {
     private final VisitRepository visitRepository;
     private final SpotLikeRepository spotLikeRepository;
     private final ReviewRepository reviewRepository;
+    private final UserStatsReader userStatsReader;
 
     @Transactional(readOnly = true)
     public UserResponse getMe(Long userId) {
-        return UserResponse.from(findUser(userId));
+        return userStatsReader.toResponse(findUser(userId));
     }
 
     public UserResponse updateNickname(Long userId, String nickname) {
         User user = findUser(userId);
         user.updateNickname(nickname);
-        return UserResponse.from(user);
+        return userStatsReader.toResponse(user);
     }
 
     // 하드 삭제: User row와 연관 데이터를 모두 제거 (2026-08-19 확정)

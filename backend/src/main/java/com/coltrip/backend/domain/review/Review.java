@@ -5,8 +5,6 @@ import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.visit.Visit;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,7 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 방문 완료(Visit.COMPLETED)한 사용자만 작성 가능. visit 1건당 리뷰 1건.
+// 별점(1~5) + 한줄평. 방문 완료(Visit.COMPLETED)한 사용자만 작성 가능, visit 1건당 리뷰 1건.
 @Entity
 @Table(name = "review")
 @Getter
@@ -47,9 +45,9 @@ public class Review {
     @JoinColumn(name = "spot_id", nullable = false)
     private TouristSpot spot;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "quiet_feedback", nullable = false, length = 30)
-    private QuietFeedback quietFeedback;
+    // 1~5 별점
+    @Column(nullable = false)
+    private Integer rating;
 
     @Column(length = 300)
     private String content;
@@ -61,11 +59,11 @@ public class Review {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Review(Visit visit, QuietFeedback quietFeedback, String content) {
+    public Review(Visit visit, Integer rating, String content) {
         this.visit = visit;
         this.user = visit.getUser();
         this.spot = visit.getSpot();
-        this.quietFeedback = quietFeedback;
+        this.rating = rating;
         this.content = content;
     }
 
@@ -80,8 +78,8 @@ public class Review {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(QuietFeedback quietFeedback, String content) {
-        this.quietFeedback = quietFeedback;
+    public void update(Integer rating, String content) {
+        this.rating = rating;
         this.content = content;
     }
 
