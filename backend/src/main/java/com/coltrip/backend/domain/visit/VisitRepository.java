@@ -6,5 +6,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     boolean existsByUser_IdAndStatus(Long userId, VisitStatus status);
 
+    long countByUser_IdAndStatus(Long userId, VisitStatus status);
+
     void deleteByUser_Id(Long userId);
 }

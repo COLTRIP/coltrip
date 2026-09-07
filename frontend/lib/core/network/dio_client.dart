@@ -5,7 +5,7 @@ class DioClient {
 
   static final Dio instance = Dio(
     BaseOptions(
-      baseUrl: 'https://yeast-alphabetical-sandwich-vbulletin.trycloudflare.com',
+      baseUrl: 'https://organ-aimed-saying-revised.trycloudflare.com',
 
       connectTimeout: const Duration(seconds: 10),
       sendTimeout: const Duration(seconds: 10),

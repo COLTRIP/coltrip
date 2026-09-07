@@ -2,7 +2,18 @@
 
 - Base URL: `/api` (예: `/api/spots`)
 - 인증: `Authorization: Bearer {accessToken}` (로그인/토큰재발급 제외 전부 필요)
-- 마지막 갱신: 2026-08-18
+- 모든 에러 응답은 `{"code": "...", "message": "..."}` 형식
+
+**공통 에러 (모든 엔드포인트)**
+
+| code | HTTP | 발생 조건 |
+|---|---|---|
+| `UnauthorizedException` | 401 | 토큰 없음/만료/위조 |
+| `MissingParameterException` | 400 | 필수 쿼리 파라미터 누락 |
+| `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
+| `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
+| `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
+- 마지막 갱신: 2026-08-31
 - 스키마 참고: [schema.md](./schema.md)
 
 ---
@@ -13,14 +24,18 @@
 ```
 POST /api/auth/google
 ```
-프론트(Flutter)에서 구글 SDK로 받은 idToken을 백엔드로 전달 → 서버가 구글에 검증 후 자체 JWT 발급. 최초 로그인이면 User 자동 생성(회원가입 겸용).
+프론트(Flutter)에서 구글 SDK로 받은 idToken과 진입 의도(intent)를 백엔드로 전달 → 서버가 구글에 검증 후 자체 JWT 발급. 로그인과 회원가입 플로우는 `intent`로 분리한다.
 
 **Request**
 ```json
 {
-  "idToken": "string"
+  "idToken": "string",
+  "intent": "LOGIN"
 }
 ```
+`intent`: `LOGIN` 또는 `SIGNUP`.
+- `LOGIN`: 이미 가입된 사용자만 로그인 처리
+- `SIGNUP`: 가입되지 않은 사용자만 신규 생성 후 로그인 처리
 
 **Response `200`** — `JwtTokenResponseDTO`
 ```json
@@ -31,13 +46,20 @@ POST /api/auth/google
   "user": {
     "id": 1,
     "email": "user@gmail.com",
-    "nickname": null
+    "nickname": null,
+    "visitCount": 0,
+    "likeCount": 0
   }
 }
 ```
 최초 가입 시 `nickname`은 `null`. 구글 프로필 이름을 자동으로 채우지 않음 — 로그인 직후 닉네임 설정은 필수이므로, 프론트는 `nickname == null`이면 닉네임 설정 화면으로 이동시켜야 함 (`isNewUser` 여부와 무관하게 `nickname`이 없으면 항상 이동).
 
-**Exception**: `InvalidGoogleTokenException` (401) — idToken 검증 실패
+**Exception**
+- `InvalidGoogleTokenException` (401) — idToken 검증 실패
+- `UserNotRegisteredException` (404) — `intent=LOGIN`인데 가입된 사용자가 없음
+- `AlreadyRegisteredUserException` (409) — `intent=SIGNUP`인데 이미 가입된 사용자임
+- `InvalidRequestBodyException` (400) — `intent` enum 값 오류 등 요청 바디 해석 실패
+- `ValidationException` (400) — `idToken` 누락/빈 값, `intent` 누락
 
 ---
 
@@ -78,9 +100,15 @@ GET /api/users/me
 {
   "id": 1,
   "email": "user@gmail.com",
-  "nickname": "string"
+  "nickname": "string",
+  "visitCount": 3,
+  "likeCount": 7
 }
 ```
+- `visitCount`: **방문을 완료(`COMPLETED`)한 횟수.** 시작만 하고 완료하지 않은 방문은 제외
+- `likeCount`: 좋아요한 장소 수
+
+이 두 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
 
 **Exception**: `UnauthorizedException` (401)
 
@@ -122,6 +150,8 @@ DELETE /api/users/me
 
 ## [관광지]
 
+> 관광지 **조회(GET)** 는 로그인 없이 호출 가능(2026-08-31 확정). 지도 둘러보기까지 로그인 벽을 세우면 이탈이 크고, 관광지 정보 자체는 공개 데이터이기 때문. 좋아요·리뷰 작성 등 쓰기 작업은 인증 필요.
+
 ### 목록 조회 (지도 히트맵 / 목록용)
 ```
 GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
@@ -139,6 +169,8 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
 | `category` | N | 장소유형 enum (예: `CAFE`). 미지정 시 전체 |
 | `mode` | N | 감성모드 enum (예: `WALK`). 미지정 시 전체 |
 
+`mode`는 **필터 조건일 뿐**이며, 응답의 `modes` 필드에는 해당 장소가 가진 **모든 감성모드**가 담긴다. (예: `mode=WATER_GAZING`으로 조회해도 흰여울문화마을은 `["SCENERY","WALK","WATER_GAZING"]` 전체가 응답됨)
+
 **Response `200`** — `SpotListResponseDTO`
 ```json
 {
@@ -146,8 +178,10 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
     {
       "id": 1,
       "name": "string",
+      "address": "부산광역시 중구 ...",
       "category": "CAFE",
       "modes": ["CONTEMPLATION", "SCENERY"],
+      "imageUrl": "https://...",
       "latitude": 35.15,
       "longitude": 129.06,
       "quietScore": 82,
@@ -279,6 +313,113 @@ PATCH /api/visits/{visitId}/complete
 ```
 
 **Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경/체류시간 조건 미충족
+
+---
+
+## [좋아요]
+
+### 좋아요 등록
+```
+POST /api/spots/{spotId}/like
+```
+**멱등** — 이미 좋아요한 상태에서 다시 호출해도 200. 프론트에서 따닥 눌러도 에러가 안 남.
+
+**Response `200`**
+```json
+{ "spotId": 1, "liked": true }
+```
+
+**Exception**: `UnauthorizedException` (401), `SpotNotFoundException` (404)
+
+---
+
+### 좋아요 취소
+```
+DELETE /api/spots/{spotId}/like
+```
+**멱등** — 좋아요하지 않은 상태에서 호출해도 200.
+
+**Response `200`**
+```json
+{ "spotId": 1, "liked": false }
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 내가 좋아요한 장소 목록
+```
+GET /api/users/me/likes
+```
+**Response `200`** — `SpotListResponseDTO` (`GET /api/spots`와 동일한 형태, 최근 좋아요순)
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+## [리뷰]
+
+**별점(1~5) + 한줄평** 방식. (2026-09-01 변경: 기존 고요함 피드백 3단계에서 전환)
+
+**작성 자격**: 해당 장소를 **방문 완료(`Visit.status == COMPLETED`)한 사용자만**, **방문 1건당 리뷰 1건**. 그래서 생성 엔드포인트가 `spots`가 아니라 `visits` 하위에 있다.
+
+`rating`은 1~5 정수(필수), `content`는 선택이며 최대 300자.
+
+### 리뷰 작성
+```
+POST /api/visits/{visitId}/review
+```
+**Request**
+```json
+{
+  "rating": 5,
+  "content": "평일 오후라 정말 조용했어요"
+}
+```
+
+**Response `200`** — `ReviewResponseDTO`
+```json
+{
+  "id": 1,
+  "spotId": 3,
+  "userId": 4,
+  "nickname": "테스터",
+  "rating": 5,
+  "content": "평일 오후라 정말 조용했어요",
+  "createdAt": "2026-08-31T16:36:29"
+}
+```
+
+**Exception**
+- `UnauthorizedException` (401)
+- `VisitNotFoundException` (404) — 없는 방문이거나 **본인 방문이 아닌 경우**(존재 여부를 노출하지 않기 위해 403이 아닌 404로 통일)
+- `ReviewNotAllowedException` (409) — 방문 미완료, 또는 해당 방문에 이미 리뷰를 작성함
+
+---
+
+### 장소별 리뷰 목록
+```
+GET /api/spots/{spotId}/reviews
+```
+로그인 없이 조회 가능. 최신순.
+
+**Response `200`**
+```json
+{ "reviews": [ /* ReviewResponseDTO 배열 */ ] }
+```
+
+---
+
+### 리뷰 삭제
+```
+DELETE /api/reviews/{reviewId}
+```
+본인이 작성한 리뷰만 삭제 가능.
+
+**Response `200`**: `"리뷰 삭제 완료"`
+
+**Exception**: `UnauthorizedException` (401), `ReviewNotFoundException` (404) — 없는 리뷰이거나 본인 리뷰가 아닌 경우
 
 ---
 

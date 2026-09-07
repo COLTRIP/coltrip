@@ -50,11 +50,11 @@
 ## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — PR #5, 머지 대기
 
 - [x] Spring Security 설정 (JWT 필터, stateless, 커스텀 401 EntryPoint로 일관된 에러 응답)
-- [x] `POST /api/auth/google` — 구글 idToken 검증 → User 조회/생성 → JWT 발급
+- [x] `POST /api/auth/google` — 구글 idToken 검증 → intent(LOGIN/SIGNUP)에 따라 기존 유저 로그인/신규 가입 분기 → JWT 발급
 - [x] `POST /api/auth/refresh` — 리프레시 토큰 검증/재발급
 - [x] `POST /api/auth/logout` — 리프레시 토큰 무효화
 - [x] JWT 인증 필터 (Authorization 헤더 검증, SecurityContext 등록, access/refresh 타입 구분)
-- [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`
+- [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`, `UserNotRegisteredException`, `AlreadyRegisteredUserException`
 - [x] `GET /api/users/me`, `PATCH /api/users/me` — 닉네임 조회/설정(로그인 직후 필수 온보딩 + 마이페이지 수정 공용), 중복 허용
 - [x] `DELETE /api/users/me` — 회원 탈퇴(하드 삭제), 연관 Visit 이력 함께 삭제. end-to-end 테스트 완료
 - [x] 로컬 MySQL 대상 부트업 테스트 완료
@@ -66,9 +66,12 @@
 - [ ] ⚠️ **AI → 백엔드 데이터 전달 방식 확인 필요** — QuietIndex처럼 `POST /api/internal/spots` 같은 push API로 받을지, AI가 직접 DB에 upsert하는지, 파일(CSV/JSON) 넘겨받아 백엔드가 적재하는지 미확정. 확인되는 대로 아래 항목 구체화
 - [ ] (전달 방식 확인 후) `TouristSpot` 데이터 적재 로직 — AI가 이미 8종으로 분류한 카테고리 값 그대로 저장
 - [ ] Naver Geocoding 연동: 필요 여부 재확인 (TourAPI 좌표를 AI 파이프라인에서 이미 정제해서 넘겨줄 수도 있음)
-- [ ] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회
-- [ ] `GET /api/spots/{spotId}` — 상세 조회
-- [ ] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`(이미 구현됨)
+- [x] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회 **(AI 적재와 무관하게 선구현 완료)**
+- [x] `GET /api/spots/{spotId}` — 상세 조회
+- [x] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`
+- [x] 개발용 시드 데이터 (`backend/seed/seed-spots.sql`) — 부산 관광지 12곳, `SEED-` 접두어로 실제 데이터와 구분
+
+> **조회 API는 적재 방식과 독립적**이라 먼저 구현함. AI 적재 방식이 확정되어 실제 데이터가 들어와도 조회 API는 그대로 동작함. 시드 데이터는 `DELETE FROM tourist_spot WHERE tour_api_content_id LIKE 'SEED-%';`로 정리 가능.
 
 ## Phase 4 — QuietIndex 연동
 
@@ -92,6 +95,28 @@
 - [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
 - [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
 - [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
+
+## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
+
+- [x] `/api/spots` GET 인증 해제 (지도 둘러보기는 비로그인 허용, 쓰기는 인증 유지)
+- [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
+- [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
+- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `DELETE /api/reviews/{reviewId}`
+  - [x] ~~별점 대신 고요함 피드백(`QuietFeedback` 3단계)~~ → **별점(1~5) + 한줄평으로 변경 (2026-09-01)**
+  - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
+- [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
+- [x] 로컬 MySQL end-to-end 테스트 완료
+
+## Phase 8 — 사용자 통계 / 리뷰 방식 변경 (2026-09-01) — 완료
+
+- [x] `UserResponseDTO`에 `visitCount`(완료한 방문 수), `likeCount` 추가
+  - 로그인·재발급·내 정보 조회·닉네임 수정 응답 전부 동일한 모양 유지
+  - `UserStatsReader`로 집계 기준을 한 곳에 모아 로그인과 조회가 어긋나지 않게 함
+- [x] 리뷰를 고요함 피드백 3단계 → **별점(1~5) + 한줄평**으로 변경
+  - `QuietFeedback` enum 삭제, `Review.rating` 추가
+  - 기존 `quiet_feedback` 컬럼은 `ddl-auto: update`가 삭제하지 않으므로 수동 DROP 필요
+    (`ALTER TABLE review DROP COLUMN quiet_feedback;`)
+- [x] 로컬 MySQL end-to-end 테스트 완료
 
 ---
 

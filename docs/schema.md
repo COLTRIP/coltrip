@@ -21,7 +21,7 @@
 
 구글 소셜 로그인 사용자 정보 + JWT 리프레시 토큰 관리.
 
-**회원 탈퇴 = 하드 삭제** (2026-08-19 확정): `DELETE /api/users/me` 호출 시 User row 삭제 + 연관된 `visit` row도 함께 삭제(`VisitRepository.deleteByUser_Id`). `tourist_spot`, `quiet_index` 등 다른 데이터는 영향 없음.
+**회원 탈퇴 = 하드 삭제** (2026-08-19 확정): `DELETE /api/users/me` 호출 시 User row와 연관 데이터를 모두 삭제. `review`가 `visit`을 참조하므로 **review → spot_like → visit → user 순서**로 지워야 FK 제약에 걸리지 않는다. `tourist_spot`, `quiet_index` 등 공용 데이터는 영향 없음.
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -146,10 +146,46 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 
 ---
 
+## 7. spot_like (좋아요)
+
+"유저가 좋아요한 장소"는 User의 컬럼이 아니라 매핑 테이블로 관리한다(한 유저가 여러 장소를 누르므로).
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `user_id` | BIGINT FK → user.id | |
+| `spot_id` | BIGINT FK → tourist_spot.id | |
+| `created_at` | DATETIME | 좋아요 목록 정렬 기준(최신순) |
+
+유니크 제약: `(user_id, spot_id)` — 같은 장소를 중복으로 좋아요할 수 없음. API는 멱등하게 동작.
+
+---
+
+## 8. review (별점 리뷰)
+
+별점(1~5)과 한줄평을 받는다. (2026-09-01 변경: 기존 고요함 피드백 3단계 방식에서 일반 별점 방식으로 전환)
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| `id` | BIGINT PK | |
+| `visit_id` | BIGINT FK → visit.id, **UNIQUE** | 작성 자격의 근거. unique 제약으로 "방문 1건당 리뷰 1건"을 DB 레벨에서 보장 |
+| `user_id` | BIGINT FK → user.id | visit에서 파생(조회 편의를 위한 비정규화) |
+| `spot_id` | BIGINT FK → tourist_spot.id | visit에서 파생(장소별 리뷰 조회용) |
+| `rating` | INT | 1~5 별점 |
+| `content` | VARCHAR(300) NULL | 한줄평(선택) |
+| `created_at` / `updated_at` | DATETIME | |
+
+**작성 조건**: `visit.status == COMPLETED` 이고 `visit.user_id == 작성자`.
+
+---
+
 ## ERD 관계 요약
 
 ```
 User 1───N Visit N───1 TouristSpot
+User 1───N spot_like N───1 TouristSpot
+User 1───N review N───1 TouristSpot
+Visit 1───1 review
 TouristSpot 1───N quiet_index
 TouristSpot 1───N spot_mode
 TouristSpot 1───N spot_alternative (origin_spot_id)
