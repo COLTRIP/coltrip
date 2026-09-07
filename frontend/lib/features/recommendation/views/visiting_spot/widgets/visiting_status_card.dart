@@ -4,14 +4,21 @@ import '../../../models/visit_status.dart';
 class VisitingStatusCard extends StatelessWidget {
   final VisitStatus status;
 
-  const VisitingStatusCard({super.key, required this.status});
+  /// notAtSpot 안내를 닫고 방문 중 화면으로 복귀 (아이콘 버튼)
+  final VoidCallback? onReturnToVisiting;
+
+  const VisitingStatusCard({
+    super.key,
+    required this.status,
+    this.onReturnToVisiting,
+  });
 
   @override
   Widget build(BuildContext context) {
     return switch (status) {
       VisitStatus.visiting => const _VisitingBox(),
       VisitStatus.crowdingDetected => const _CrowdingBox(),
-      VisitStatus.notAtSpot => const _Missbox(),
+      VisitStatus.notAtSpot => _Missbox(onDismiss: onReturnToVisiting),
       VisitStatus.completed => const _CompletedBox(),
     };
   }
@@ -94,22 +101,24 @@ class _CompletedBox extends StatelessWidget {
 }
 
 class _Missbox extends StatelessWidget {
-  const _Missbox();
+  const _Missbox({this.onDismiss});
+
+  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10,horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF2CECE),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Expanded(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Expanded(
+            child: Text(
               '아직 방문 장소에 도착하지 않았어요.\n조금 더 가까이에서 다시 확인해주세요.',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
@@ -117,11 +126,13 @@ class _Missbox extends StatelessWidget {
                 fontSize: 16,
               ),
               textAlign: TextAlign.left,
-            ),IconButton(onPressed: () {
-              //TOdo: 뷰모델에서 스테이터스 바꾸기
-            },icon: const Icon(Icons.close, color: Colors.black),),
-          ],
-        ),
+            ),
+          ),
+          IconButton(
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close, color: Colors.black),
+          ),
+        ],
       ),
     );
   }

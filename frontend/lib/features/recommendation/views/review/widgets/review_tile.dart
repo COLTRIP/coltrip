@@ -31,7 +31,7 @@ class ReviewTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      review.userName,
+                      review.nickname,
                       style: const TextStyle(
                         fontFamily: 'Paperlogy',
                         fontSize: 14,
@@ -56,26 +56,28 @@ class ReviewTile extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: AlignmentGeometry.centerLeft,
-              child: Text(
-                review.content,
-                style: const TextStyle(
-                  fontFamily: 'Paperlogy',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.black,
+            if (review.content != null && review.content!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: AlignmentGeometry.centerLeft,
+                child: Text(
+                  review.content!,
+                  style: const TextStyle(
+                    fontFamily: 'Paperlogy',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
         Positioned(
           top: 0,
           right: 0,
           child: Text(
-            _formatDate(review.date),
+            _formatDate(review.createdAt),
             style: const TextStyle(
               fontFamily: 'Paperlogy',
               fontSize: 10,

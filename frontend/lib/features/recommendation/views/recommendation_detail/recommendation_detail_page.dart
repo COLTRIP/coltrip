@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../models/recommendation.dart';
 import '../../view_models/location_permission_view_model.dart';
 import '../../view_models/recommendation_detail_view_model.dart';
-import '../location_permission/location_permission_page.dart';
-import '../review/review_list_page.dart';
+import '../../view_models/review_view_model.dart';
 import '../review/widgets/review_section.dart';
-import '../visiting_spot/visiting_spot_page.dart';
 import 'widgets/quiet_score_gauge.dart';
 import 'widgets/quiet_score_timeline_chart.dart';
 
@@ -25,34 +24,42 @@ class RecommendationDetailPage extends StatefulWidget {
 
 class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
   late final _viewModel = RecommendationDetailViewModel(spotId: widget.spotId);
+  late final _reviewViewModel = ReviewViewModel(spotId: widget.spotId);
   bool _isFavorite = false; // TODO: 실제 좋아요 API 연결
 
   @override
   void dispose() {
     _viewModel.dispose();
+    _reviewViewModel.dispose();
     super.dispose();
   }
 
   Future<void> _startVisit(SpotDetail spot) async {
-    // TODO: 방문 시작 API(POST /api/visits/start) 호출은 아직 안 함
-
+    // 방문 시작 API(POST /api/visits/start)는 VisitingSpotViewModel 진입 시 호출된다.
     // 방문 완료 시 위치로 방문을 인증하므로, 시작 시점에 권한을 확보해 둔다.
     var granted = await LocationPermissionViewModel.isGranted();
     if (!mounted) return;
 
     if (!granted) {
       // 권한 없으면 허용 화면으로 → 허용받으면 true 반환
-      granted = await Get.to<bool>(() => const LocationPermissionPage()) ?? false;
+      granted = await Get.toNamed<bool>(AppRoutes.locationPermission) ?? false;
       if (!granted || !mounted) return;
     }
 
-    Get.to(() => VisitingSpotPage(spot: spot));
+    // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
+    final reviewed = await Get.toNamed<bool>(
+      AppRoutes.visitingSpot,
+      arguments: spot,
+    );
+    if (reviewed == true && mounted) {
+      _reviewViewModel.loadReviews();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([_viewModel, _reviewViewModel]),
       builder: (context, _) {
         if (_viewModel.isLoading) {
           return const Scaffold(
@@ -153,7 +160,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                       alignment: AlignmentGeometry.center,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: spotModes.map((mode) {
+                        children: spot.modes.map((mode) {
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: Container(
@@ -215,20 +222,22 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [QuietScoreGauge(quietScore: spot.quietScore)],
+                      children: [QuietScoreGauge(quietScore: spot.quietScore ?? 0)],
                     ),
-                    const SizedBox(height: 15),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        '${spot.quietScoreUpdatedAt.hour.toString().padLeft(2, '0')}:${spot.quietScoreUpdatedAt.minute.toString().padLeft(2, '0')} 기준',
-                        style: const TextStyle(
-                          fontFamily: 'Paperlogy',
-                          fontSize: 10,
-                          color: Color(0xFF7C7C7C),
+                    if (spot.quietScoreUpdatedAt != null) ...[
+                      const SizedBox(height: 15),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${spot.quietScoreUpdatedAt!.hour.toString().padLeft(2, '0')}:${spot.quietScoreUpdatedAt!.minute.toString().padLeft(2, '0')} 기준',
+                          style: const TextStyle(
+                            fontFamily: 'Paperlogy',
+                            fontSize: 10,
+                            color: Color(0xFF7C7C7C),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 32),
                     const Text(
                       '고요 지수 타임라인',
@@ -240,12 +249,15 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    QuietScoreTimelineChart(points: spot.quietScoreTimeline),
+                    // TODO: 고요지수 타임라인 API 연결 전까지 빈 값
+                    const QuietScoreTimelineChart(points: []),
                     const SizedBox(height: 32),
                     ReviewSection(
-                      reviews: spot.reviews,
-                      onSeeAllPressed: () =>
-                          Get.to(() => ReviewListPage(reviews: spot.reviews)),
+                      reviews: _reviewViewModel.reviews,
+                      onSeeAllPressed: () => Get.toNamed(
+                        AppRoutes.reviewList,
+                        arguments: _reviewViewModel.reviews,
+                      ),
                     ),
                   ],
                 ),

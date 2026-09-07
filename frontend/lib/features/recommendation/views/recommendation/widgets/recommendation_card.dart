@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../../app/routes/app_routes.dart';
 import '../../../models/recommendation.dart';
-import '../../recommendation_detail/recommendation_detail_page.dart';
 
 class RecommendationCard extends StatelessWidget {
   final Spot spot;
@@ -14,7 +14,8 @@ class RecommendationCard extends StatelessWidget {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final cardHeight = (screenHeight * 0.15).clamp(100.0, 150.0); //카드 높이
     return InkWell(
-      onTap: () => Get.to(() => RecommendationDetailPage(spotId: spot.id)),
+      onTap: () =>
+          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         height: cardHeight,
@@ -37,11 +38,13 @@ class RecommendationCard extends StatelessWidget {
                 topLeft: Radius.circular(10),
                 bottomLeft: Radius.circular(10),
               ),
-              child: Image.network(
-                spot.imageUrl,
-                width: 140,
-                fit: BoxFit.cover,
-              ),
+              child: (spot.imageUrl == null || spot.imageUrl!.isEmpty)
+                  ? Container(width: 140, color: const Color(0xFFE5E5E5))
+                  : Image.network(
+                      spot.imageUrl!,
+                      width: 140,
+                      fit: BoxFit.cover,
+                    ),
             ),
             Expanded(
               child: Padding(
@@ -73,7 +76,7 @@ class RecommendationCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    _QuietScoreBar(quietScore: spot.quietScore),
+                    _QuietScoreBar(quietScore: spot.quietScore ?? 0),
                   ],
                 ),
               ),

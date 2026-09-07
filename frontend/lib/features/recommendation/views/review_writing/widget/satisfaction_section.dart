@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class SatisfactionSection extends StatefulWidget {
-  const SatisfactionSection({super.key});
+class SatisfactionSection extends StatelessWidget {
+  const SatisfactionSection({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+  });
 
-  @override
-  State<SatisfactionSection> createState() => _SatisfactionSectionState();
-}
+  final int? selected;
+  final ValueChanged<int> onSelected;
 
-class _SatisfactionSectionState extends State<SatisfactionSection> {
   static const _primary = Color(0xFF589C7E);
   static const _idleBg = Color(0xFFE5E5E5);
   static const _iconColor = Color(0xFF111827);
@@ -21,8 +23,6 @@ class _SatisfactionSectionState extends State<SatisfactionSection> {
     _ScaleStep(score: 4, asset: 'assets/icons/face_smile.svg'),
     _ScaleStep(score: 5, asset: 'assets/icons/face_star.svg'),
   ];
-
-  int? _selected;
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +44,16 @@ class _SatisfactionSectionState extends State<SatisfactionSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _steps.map((step) {
-              final selected = _selected == step.score;
+              final isSelected = selected == step.score;
               return Column(
                 children: [
                   GestureDetector(
-                    onTap: () => setState(() => _selected = step.score),
+                    onTap: () => onSelected(step.score),
                     child: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: selected ? _primary : _idleBg,
+                        color: isSelected ? _primary : _idleBg,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -62,7 +62,7 @@ class _SatisfactionSectionState extends State<SatisfactionSection> {
                         width: 18,
                         height: 18,
                         colorFilter: ColorFilter.mode(
-                          selected ? Colors.white : _iconColor,
+                          isSelected ? Colors.white : _iconColor,
                           BlendMode.srcIn,
                         ),
                       ),

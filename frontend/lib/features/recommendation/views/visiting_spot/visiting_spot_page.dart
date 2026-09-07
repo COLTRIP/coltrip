@@ -32,6 +32,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
       latitude: 35.0294,
       longitude: 128.8103,
       quietScore: 88,
+      quietLevel: 'QUIET',
       quietScoreUpdatedAt: DateTime.now(),
       address: '부산광역시 강서구 가덕해안로',
       imageUrl: 'https://placehold.co/400x300/png?text=Alt+1',
@@ -44,6 +45,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
       latitude: 35.0511,
       longitude: 128.9645,
       quietScore: 81,
+      quietLevel: 'QUIET',
       quietScoreUpdatedAt: DateTime.now(),
       address: '부산광역시 사하구 몰운대1길',
       imageUrl: 'https://placehold.co/400x300/png?text=Alt+2',
@@ -56,28 +58,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
       latitude: 35.0489,
       longitude: 128.9651,
       quietScore: 76,
-      quietScoreUpdatedAt: DateTime.now(),
-      address: '부산광역시 사하구 다대동',
-      imageUrl: 'https://placehold.co/400x300/png?text=Alt+3',
-    ),Spot(
-      id: 103,
-      name: '다대포 해수욕장',
-      category: 'BEACH',
-      modes: const ['SCENERY'],
-      latitude: 35.0489,
-      longitude: 128.9651,
-      quietScore: 76,
-      quietScoreUpdatedAt: DateTime.now(),
-      address: '부산광역시 사하구 다대동',
-      imageUrl: 'https://placehold.co/400x300/png?text=Alt+3',
-    ),Spot(
-      id: 103,
-      name: '다대포 해수욕장',
-      category: 'BEACH',
-      modes: const ['SCENERY'],
-      latitude: 35.0489,
-      longitude: 128.9651,
-      quietScore: 76,
+      quietLevel: 'QUIET',
       quietScoreUpdatedAt: DateTime.now(),
       address: '부산광역시 사하구 다대동',
       imageUrl: 'https://placehold.co/400x300/png?text=Alt+3',
@@ -119,7 +100,12 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
             child: ListenableBuilder(
               listenable: _viewModel,
               builder: (context, _) {
-
+                if (_viewModel.isStarting) {
+                  return _buildStartingBody();
+                }
+                if (_viewModel.startError != null) {
+                  return _buildStartErrorBody(_viewModel.startError!);
+                }
                 if (_viewModel.status == VisitStatus.crowdingDetected) {
                   return _buildAlternativesBody(spot);
                 }
@@ -129,6 +115,49 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           ),
         ),
       ),
+    );
+  }
+
+  // 방문 시작 중 (visitId 발급 대기)
+  Widget _buildStartingBody() {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: Color(0xFF589C7E)),
+          SizedBox(height: 16),
+          Text(
+            '방문을 시작하는 중...',
+            style: TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 방문 시작 실패 (위치 조회 실패 / 진행 중 방문 존재 등)
+  Widget _buildStartErrorBody(String message) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+        ),
+        const SizedBox(height: 20),
+        PrimaryButton(
+          label: '다시 시도',
+          icon: Icons.refresh,
+          onPressed: _viewModel.retryStartVisit,
+        ),
+        const SizedBox(height: 5),
+        PrimaryButton(
+          isOutlined: true,
+          label: '돌아가기',
+          onPressed: () => Get.back(),
+        ),
+      ],
     );
   }
 
@@ -142,16 +171,32 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           children: [
             VisitingSpotCard(spot: spot),
             const SizedBox(height: 12),
-            VisitingStatusCard(status: _viewModel.status),
+            VisitingStatusCard(
+              status: _viewModel.status,
+              onReturnToVisiting: _viewModel.returnToVisiting,
+            ),
           ],
         ),
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_viewModel.errorMessage != null) ...[
+              Text(
+                _viewModel.errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Paperlogy',
+                  fontSize: 12,
+                  color: Color(0xFFC0392B),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             PrimaryButton(
               label: '방문 완료하기',
               icon: Icons.check,
-              onPressed: _viewModel.completeVisit, //TODO: 방문완료 로직 뷰모델에서 작성 필요
+              isLoading: _viewModel.isCompleting,
+              onPressed: _viewModel.completeVisit,
             ),
             const SizedBox(height: 5),
             PrimaryButton(
@@ -187,7 +232,10 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               children: [
                 VisitingSpotCard(spot: spot),
                 const SizedBox(height: 12),
-                VisitingStatusCard(status: _viewModel.status),
+                VisitingStatusCard(
+                  status: _viewModel.status,
+                  onReturnToVisiting: _viewModel.returnToVisiting,
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   '다른 장소 둘러보기',
@@ -211,9 +259,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
         const SizedBox(height: 12),
         PrimaryButton(
           label: '기존 목적지 유지하기',
-          onPressed: () {
-            // TODO: 대체지 무시하고 visiting 상태로 복귀하는 로직을 뷰모델에 작성 필요
-          },
+          onPressed: _viewModel.keepCurrentSpot,
         ),
       ],
     );

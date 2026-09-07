@@ -25,10 +25,15 @@ class _RecommendationPageState extends State<RecommendationPage> {
   void initState() {
     super.initState();
     _filterViewModel.addListener(_onFilterChanged);
+    _loadSpots();
   }
 
   void _onFilterChanged() {
-    _viewModel.loadSpots(); // 필터 바뀌면 추천 목록 다시 불러오기
+    _loadSpots(); // 필터 바뀌면 추천 목록 다시 불러오기
+  }
+
+  void _loadSpots() {
+    _viewModel.loadSpots(category: _filterViewModel.filter.category);
   }
 
   @override
@@ -122,7 +127,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
                         PrimaryButton(
                           label: '다시 시도',
                           isOutlined: true,
-                          onPressed: _viewModel.loadSpots,
+                          onPressed: _loadSpots,
                         ),
                       ],
                     ),

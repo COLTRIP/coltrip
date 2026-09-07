@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class TextReview extends StatelessWidget {
-  const TextReview({super.key});
+  const TextReview({super.key, this.controller});
+
+  final TextEditingController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -26,21 +29,26 @@ class TextReview extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              border: Border.all(color: const Color(0xFFD9D9D9), width: 1, ),
-              borderRadius: BorderRadius.circular(10)
+              border: Border.all(color: const Color(0xFFD9D9D9), width: 1),
+              borderRadius: BorderRadius.circular(10),
             ),
             height: 200,
-            child: const TextField(
+            child: TextField(
+              controller: controller,
               maxLines: null,
               expands: true,
               keyboardType: TextInputType.multiline,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(12),
+                hintStyle: TextStyle(
+                  fontFamily: 'Paperlogy',
+                  fontSize: 13,
+                  color: Color(0xFF9CA3AF),
+                ),
               ),
             ),
           ),
-
         ],
       ),
     );

@@ -42,7 +42,7 @@ class RecommendationFilterSheet extends StatelessWidget {
   }
 
   Future<void> _changeCategory(BuildContext context) async {
-    // TODO: 실제 카테고리 선택 화면 만들면 Get.to로 이동해서 결과값 받기
+    // TODO: 실제 카테고리 선택 화면 만들면 Get.toNamed로 이동해서 결과값 받기
   }
 
   @override
