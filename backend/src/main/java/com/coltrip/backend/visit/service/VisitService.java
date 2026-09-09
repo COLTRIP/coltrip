@@ -21,6 +21,7 @@ import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.coltrip.backend.visit.dto.CurrentVisitResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -70,6 +71,13 @@ public class VisitService {
         visit.complete();
 
         return VisitCompleteResponse.from(visit);
+    }
+    @Transactional(readOnly = true)
+    public CurrentVisitResponse getCurrent(Long userId) {
+        return visitRepository.findByUserIdAndStatusWithSpot(userId, VisitStatus.STARTED).stream()
+                .findFirst()
+                .map(CurrentVisitResponse::from)
+                .orElseGet(CurrentVisitResponse::empty);
     }
 
     private void validateCondition(Visit visit, VisitCompleteRequest request) {

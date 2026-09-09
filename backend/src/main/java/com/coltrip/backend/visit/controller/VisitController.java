@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.coltrip.backend.visit.dto.CurrentVisitResponse;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @Tag(name = "방문", description = "방문 시작 / 완료 처리")
 @RestController
@@ -25,6 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class VisitController {
 
     private final VisitService visitService;
+
+    @Operation(summary = "현재 방문 조회", description = "현재 로그인한 사용자의 진행 중인 방문을 조회합니다. 방문 중인 장소가 없으면 visit: null을 반환합니다.")
+    @GetMapping("/current")
+    public ResponseEntity<CurrentVisitResponse> getCurrent(@AuthenticationPrincipal Long userId) {
+        return ResponseEntity.ok(visitService.getCurrent(userId));
+    }
 
     @Operation(summary = "방문 시작", description = "'조용한 여행 시작하기' 버튼. 진행 중인 방문이 있으면 409.")
     @PostMapping("/start")
