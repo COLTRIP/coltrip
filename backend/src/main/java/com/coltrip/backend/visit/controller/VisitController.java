@@ -1,5 +1,6 @@
 package com.coltrip.backend.visit.controller;
 
+import com.coltrip.backend.visit.dto.VisitCancelResponse;
 import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitHistoryResponse;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coltrip.backend.visit.dto.CurrentVisitResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@Tag(name = "방문", description = "방문 시작 / 완료 / 이력 조회")
+@Tag(name = "방문", description = "방문 시작 / 완료 / 취소 / 이력 조회")
 @RestController
 @RequestMapping("/api/visits")
 @RequiredArgsConstructor
@@ -49,11 +50,18 @@ public class VisitController {
         return ResponseEntity.ok(visitService.start(userId, request));
     }
 
-    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 + 체류시간 600초 이상이어야 완료됩니다. 미충족 시 400.")
+    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 시 완료됩니다. 미충족 시 400. 반경 값은 장소 상세/현재 방문 조회 응답의 visitRadiusMeters로 안내됩니다.")
     @PatchMapping("/{visitId}/complete")
     public ResponseEntity<VisitCompleteResponse> complete(@AuthenticationPrincipal Long userId,
                                                             @PathVariable Long visitId,
                                                             @Valid @RequestBody VisitCompleteRequest request) {
         return ResponseEntity.ok(visitService.complete(userId, visitId, request));
+    }
+
+    @Operation(summary = "방문 취소", description = "진행 중인 방문을 취소합니다. 대체지 선택 등 목적지 전환 시에도 사용. STARTED가 아니면 409.")
+    @PatchMapping("/{visitId}/cancel")
+    public ResponseEntity<VisitCancelResponse> cancel(@AuthenticationPrincipal Long userId,
+                                                        @PathVariable Long visitId) {
+        return ResponseEntity.ok(visitService.cancel(userId, visitId));
     }
 }

@@ -142,7 +142,7 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 | `start_quiet_score` | INT NULL | 방문 시작 시점 목적지의 quietScore 스냅샷. 고요지수 하락 트리거(상대 기준)의 비교 기준값 |
 | `started_at` | DATETIME | |
 | `arrived_at` | DATETIME NULL | 목적지 반경 진입 확인 시각 |
-| `completed_at` | DATETIME NULL | 체류시간 조건 충족 후 완료 처리 시각 |
+| `completed_at` | DATETIME NULL | 목적지 반경 조건 충족 후 완료 처리 시각 |
 
 ---
 

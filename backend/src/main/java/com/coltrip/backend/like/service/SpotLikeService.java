@@ -44,6 +44,6 @@ public class SpotLikeService {
 
     @Transactional(readOnly = true)
     public SpotListResponse findMyLikedSpots(Long userId) {
-        return SpotListResponse.from(spotLikeRepository.findLikedSpotsByUserId(userId));
+        return SpotListResponse.allLiked(spotLikeRepository.findLikedSpotsByUserId(userId));
     }
 }

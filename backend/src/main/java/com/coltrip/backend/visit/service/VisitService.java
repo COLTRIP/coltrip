@@ -12,6 +12,7 @@ import com.coltrip.backend.domain.visit.Visit;
 import com.coltrip.backend.domain.visit.VisitRepository;
 import com.coltrip.backend.domain.visit.VisitStatus;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
+import com.coltrip.backend.visit.dto.VisitCancelResponse;
 import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitHistoryResponse;
@@ -33,20 +34,20 @@ import com.coltrip.backend.visit.dto.CurrentVisitResponse;
 @Transactional
 public class VisitService {
 
-    // 잠정값, 팀 확정 필요 - docs/schema.md, task.md 참고
-    private static final long REQUIRED_STAY_DURATION_SECONDS = 600;
-
     private final VisitRepository visitRepository;
     private final TouristSpotRepository touristSpotRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
 
     public VisitStartResponse start(Long userId, VisitStartRequest request) {
+        // 사용자 행에 쓰기 잠금을 먼저 걸어 같은 사용자의 동시 요청을 직렬화한다.
+        // 이 잠금이 없으면 두 요청이 모두 아래 존재 여부 조회를 통과해 STARTED 방문이 중복 생성될 수 있다.
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(UnauthorizedException::new);
+
         if (visitRepository.existsByUser_IdAndStatus(userId, VisitStatus.STARTED)) {
             throw new AlreadyOngoingVisitException();
         }
 
-        User user = userRepository.findById(userId).orElseThrow(UnauthorizedException::new);
         TouristSpot spot = touristSpotRepository.findById(request.spotId())
                 .orElseThrow(SpotNotFoundException::new);
 
@@ -61,6 +62,26 @@ public class VisitService {
     }
 
     public VisitCompleteResponse complete(Long userId, Long visitId, VisitCompleteRequest request) {
+        Visit visit = findOwnedStartedVisit(userId, visitId);
+
+        validateCondition(visit, request);
+
+        visit.markArrived();
+        visit.complete();
+
+        return VisitCompleteResponse.from(visit);
+    }
+
+    // 대체지 선택 등으로 목적지를 바꿀 때, 진행 중이던 방문을 중단하고 새 방문을 시작할 수 있게 한다.
+    public VisitCancelResponse cancel(Long userId, Long visitId) {
+        Visit visit = findOwnedStartedVisit(userId, visitId);
+
+        visit.cancel();
+
+        return VisitCancelResponse.from(visit);
+    }
+
+    private Visit findOwnedStartedVisit(Long userId, Long visitId) {
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(VisitNotFoundException::new);
 
@@ -70,14 +91,9 @@ public class VisitService {
         if (visit.getStatus() != VisitStatus.STARTED) {
             throw new InvalidVisitStateException();
         }
-
-        validateCondition(visit, request);
-
-        visit.markArrived();
-        visit.complete();
-
-        return VisitCompleteResponse.from(visit);
+        return visit;
     }
+
     @Transactional(readOnly = true)
     public CurrentVisitResponse getCurrent(Long userId) {
         return visitRepository.findByUserIdAndStatusWithSpot(userId, VisitStatus.STARTED).stream()
@@ -107,10 +123,7 @@ public class VisitService {
                 spot.getLatitude(), spot.getLongitude(),
                 request.arrivedLatitude(), request.arrivedLongitude());
 
-        boolean withinRadius = distance <= spot.getCategory().getVisitRadiusMeters();
-        boolean stayedLongEnough = request.stayDurationSeconds() >= REQUIRED_STAY_DURATION_SECONDS;
-
-        if (!withinRadius || !stayedLongEnough) {
+        if (distance > spot.getCategory().getVisitRadiusMeters()) {
             throw new VisitConditionNotMetException();
         }
     }
