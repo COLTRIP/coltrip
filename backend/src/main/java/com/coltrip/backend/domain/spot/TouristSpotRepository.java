@@ -1,15 +1,22 @@
 package com.coltrip.backend.domain.spot;
 
+import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> {
 
     Optional<TouristSpot> findByTourApiContentId(String tourApiContentId);
+
+    // 고요지수 push 시 같은 장소에 대한 동시 요청을 직렬화해 캐시 갱신이 최신 값을 잃지 않도록 한다.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM TouristSpot s WHERE s.tourApiContentId = :tourApiContentId")
+    Optional<TouristSpot> findByTourApiContentIdForUpdate(@Param("tourApiContentId") String tourApiContentId);
 
     // mode는 EXISTS로 "해당 모드를 가진 장소"만 거르고, 응답에 담을 모드 목록은 fetch join으로 전부 가져온다
     // (mode로 필터링했다고 해서 그 모드 하나만 응답에 담기면 안 되므로 조건절과 fetch를 분리)
