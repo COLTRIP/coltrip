@@ -41,7 +41,7 @@ public class VisitController {
         return ResponseEntity.ok(visitService.start(userId, request));
     }
 
-    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 + 체류시간 600초 이상이어야 완료됩니다. 미충족 시 400.")
+    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 시 완료됩니다. 미충족 시 400. 반경 값은 장소 상세/현재 방문 조회 응답의 visitRadiusMeters로 안내됩니다.")
     @PatchMapping("/{visitId}/complete")
     public ResponseEntity<VisitCompleteResponse> complete(@AuthenticationPrincipal Long userId,
                                                             @PathVariable Long visitId,

@@ -28,9 +28,6 @@ import com.coltrip.backend.visit.dto.CurrentVisitResponse;
 @Transactional
 public class VisitService {
 
-    // 잠정값, 팀 확정 필요 - docs/schema.md, task.md 참고
-    private static final long REQUIRED_STAY_DURATION_SECONDS = 600;
-
     private final VisitRepository visitRepository;
     private final TouristSpotRepository touristSpotRepository;
     private final UserRepository userRepository;
@@ -86,10 +83,7 @@ public class VisitService {
                 spot.getLatitude(), spot.getLongitude(),
                 request.arrivedLatitude(), request.arrivedLongitude());
 
-        boolean withinRadius = distance <= spot.getCategory().getVisitRadiusMeters();
-        boolean stayedLongEnough = request.stayDurationSeconds() >= REQUIRED_STAY_DURATION_SECONDS;
-
-        if (!withinRadius || !stayedLongEnough) {
+        if (distance > spot.getCategory().getVisitRadiusMeters()) {
             throw new VisitConditionNotMetException();
         }
     }
