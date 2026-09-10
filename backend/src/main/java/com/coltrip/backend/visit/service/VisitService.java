@@ -36,11 +36,14 @@ public class VisitService {
     private final UserRepository userRepository;
 
     public VisitStartResponse start(Long userId, VisitStartRequest request) {
+        // 사용자 행에 쓰기 잠금을 먼저 걸어 같은 사용자의 동시 요청을 직렬화한다.
+        // 이 잠금이 없으면 두 요청이 모두 아래 존재 여부 조회를 통과해 STARTED 방문이 중복 생성될 수 있다.
+        User user = userRepository.findByIdForUpdate(userId).orElseThrow(UnauthorizedException::new);
+
         if (visitRepository.existsByUser_IdAndStatus(userId, VisitStatus.STARTED)) {
             throw new AlreadyOngoingVisitException();
         }
 
-        User user = userRepository.findById(userId).orElseThrow(UnauthorizedException::new);
         TouristSpot spot = touristSpotRepository.findById(request.spotId())
                 .orElseThrow(SpotNotFoundException::new);
 
