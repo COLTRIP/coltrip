@@ -16,9 +16,11 @@ import com.coltrip.backend.auth.exception.AlreadyRegisteredUserException;
 import com.coltrip.backend.auth.exception.UserNotRegisteredException;
 import com.coltrip.backend.auth.google.GoogleTokenVerifier;
 import com.coltrip.backend.auth.google.GoogleUserInfo;
+import com.coltrip.backend.auth.dto.UserResponse;
 import com.coltrip.backend.auth.jwt.JwtProvider;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
+import com.coltrip.backend.user.service.UserStatsReader;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +43,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtProvider jwtProvider;
+
+    @Mock
+    private UserStatsReader userStatsReader;
 
     @InjectMocks
     private AuthService authService;
@@ -113,5 +118,7 @@ class AuthServiceTest {
     private void stubTokenIssue() {
         when(jwtProvider.createAccessToken(any())).thenReturn("access-token");
         when(jwtProvider.createRefreshToken(any())).thenReturn("refresh-token");
+        when(userStatsReader.toResponse(any(User.class)))
+                .thenAnswer(invocation -> UserResponse.of(invocation.getArgument(0), 0, 0, null));
     }
 }
