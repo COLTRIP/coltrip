@@ -224,6 +224,36 @@ GET /api/spots/{spotId}
 
 ---
 
+### 고요지수 24시간 타임라인 조회
+```
+GET /api/spots/{spotId}/quiet-index/timeline
+```
+장소 상세 화면의 시간대별 그래프용. **최근 24시간 관측 이력**을 1시간 슬롯으로 묶어 반환한다 — 미래 예측값이 아니다(예측은 별도 이슈 #44에서 AI 예측 데이터 구조가 확정되면 진행).
+
+슬롯 하나에 관측값이 여러 건이면 가장 최신 값을 대표값으로 쓰고, 관측값이 없는 슬롯은 `quietScore`/`observedAt`이 `null`이다(0점이나 현재값으로 임의 대체하지 않음). 항상 24개 슬롯을 오래된 순 → 최신 순으로 반환하며, 슬롯 시각은 서버 로컬 시간(Asia/Seoul 가정) 기준 정시로 절삭된다.
+
+**Response `200`** — `QuietIndexTimelineResponseDTO`
+```json
+{
+  "timeline": [
+    {
+      "slotStartAt": "2026-09-09T20:00:00",
+      "quietScore": null,
+      "observedAt": null
+    },
+    {
+      "slotStartAt": "2026-09-10T19:00:00",
+      "quietScore": 70,
+      "observedAt": "2026-09-10T19:52:24.873406"
+    }
+  ]
+}
+```
+
+**Exception**: `SpotNotFoundException` (404)
+
+---
+
 ## [대체지 추천]
 
 ### 대체지 목록 조회

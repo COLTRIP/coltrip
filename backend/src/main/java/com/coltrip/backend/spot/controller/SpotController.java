@@ -2,6 +2,7 @@ package com.coltrip.backend.spot.controller;
 
 import com.coltrip.backend.domain.spot.Category;
 import com.coltrip.backend.domain.spot.Mode;
+import com.coltrip.backend.spot.dto.QuietIndexTimelineResponse;
 import com.coltrip.backend.spot.dto.SpotDetailResponse;
 import com.coltrip.backend.spot.dto.SpotListResponse;
 import com.coltrip.backend.spot.service.SpotService;
@@ -48,5 +49,18 @@ public class SpotController {
     @GetMapping("/{spotId}")
     public ResponseEntity<SpotDetailResponse> findById(@PathVariable Long spotId) {
         return ResponseEntity.ok(spotService.findById(spotId));
+    }
+
+    @Operation(summary = "고요지수 24시간 타임라인 조회",
+            description = """
+                    최근 24시간 관측 이력을 1시간 슬롯으로 묶어 반환합니다. 인증 불필요. 미래 예측값이 아닙니다.
+
+                    슬롯 안에 관측값이 여러 건이면 가장 최신 값을 대표값으로 사용하고, 관측값이 없는 슬롯은
+                    quietScore/observedAt이 null입니다(0점이나 현재값으로 임의 대체하지 않음).
+                    """)
+    @SecurityRequirements
+    @GetMapping("/{spotId}/quiet-index/timeline")
+    public ResponseEntity<QuietIndexTimelineResponse> getQuietIndexTimeline(@PathVariable Long spotId) {
+        return ResponseEntity.ok(spotService.getQuietIndexTimeline(spotId));
     }
 }

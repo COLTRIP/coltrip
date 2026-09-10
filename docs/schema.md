@@ -86,6 +86,8 @@ AI가 배치로 계산한 고요지수 원본 이력. TouristSpot의 캐시 컬�
 
 인덱스: `(spot_id, calculated_at DESC)` — 특정 장소의 최신/이력 조회용.
 
+`GET /api/spots/{spotId}/quiet-index/timeline`(2026-09 추가)이 이 테이블을 최근 24시간 범위로 조회해 1시간 슬롯 그래프용 데이터를 만든다. 미래 예측은 이 테이블에 없음 — 예측 데이터 구조는 #44 확정 시 별도 저장소로 추가될 수 있음.
+
 ---
 
 ## 4. spot_mode (Spot ↔ 감성모드 매핑)
