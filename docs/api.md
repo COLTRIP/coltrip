@@ -319,6 +319,24 @@ PATCH /api/visits/{visitId}/complete
 
 ---
 
+### 방문 취소
+```
+PATCH /api/visits/{visitId}/cancel
+```
+진행 중인 방문을 취소한다. 대체지 선택 등 목적지를 바꿀 때도 재사용 — 취소 후 바로 다른 장소로 방문을 다시 시작할 수 있다. 취소된 방문은 현재 방문 조회/`currentVisitId`에서 제외되고, `visitCount`(완료 횟수)에도 포함되지 않으며 리뷰 작성 대상도 아니다.
+
+**Response `200`** — `VisitCancelResponseDTO`
+```json
+{
+  "visitId": 10,
+  "status": "CANCELED"
+}
+```
+
+**Exception**: `VisitNotFoundException` (404) — 존재하지 않거나 타인의 방문, `InvalidVisitStateException` (409) — 이미 완료/취소된 방문(반복 취소 포함)
+
+---
+
 ## [좋아요]
 
 ### 좋아요 등록

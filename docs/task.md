@@ -94,6 +94,7 @@
   - [x] ~~체류시간 10분(600초) 검증~~ → **2026-09 제거, 반경 진입만으로 판정 (팀 확정)**. 프론트 표시용으로 `visitRadiusMeters`를 장소 상세/현재 방문 조회 응답에 추가
 - [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
 - [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
+- [x] `PATCH /api/visits/{visitId}/cancel` — 진행 중 방문 취소. 대체지 선택 등 목적지 전환 시 재사용, 취소 후 재시작/현재 방문 제외/방문 횟수 미포함 확인 완료
 - [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
 ## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
