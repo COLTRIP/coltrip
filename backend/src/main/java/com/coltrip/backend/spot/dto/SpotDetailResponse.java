@@ -19,7 +19,8 @@ public record SpotDetailResponse(
         BigDecimal longitude,
         Integer quietScore,
         String quietLevel,
-        LocalDateTime quietScoreUpdatedAt
+        LocalDateTime quietScoreUpdatedAt,
+        Integer visitRadiusMeters
 ) {
     public static SpotDetailResponse from(TouristSpot spot) {
         QuietLevel quietLevel = spot.getQuietLevel();
@@ -36,7 +37,8 @@ public record SpotDetailResponse(
                 spot.getLongitude(),
                 spot.getCurrentQuietScore(),
                 quietLevel == null ? null : quietLevel.name(),
-                spot.getQuietScoreUpdatedAt()
+                spot.getQuietScoreUpdatedAt(),
+                spot.getCategory().getVisitRadiusMeters()
         );
     }
 }

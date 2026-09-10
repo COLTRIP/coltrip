@@ -30,7 +30,8 @@ public record CurrentVisitResponse(
             LocalDateTime startedAt,
             Integer startQuietScore,
             Integer currentQuietScore,
-            String currentQuietLevel
+            String currentQuietLevel,
+            Integer visitRadiusMeters
     ) {
         private static CurrentVisit from(Visit visit) {
             TouristSpot spot = visit.getSpot();
@@ -49,7 +50,8 @@ public record CurrentVisitResponse(
                     visit.getStartedAt(),
                     visit.getStartQuietScore(),
                     spot.getCurrentQuietScore(),
-                    quietLevel == null ? null : quietLevel.name()
+                    quietLevel == null ? null : quietLevel.name(),
+                    spot.getCategory().getVisitRadiusMeters()
             );
         }
     }
