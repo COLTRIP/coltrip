@@ -19,13 +19,13 @@
 - [x] QuietIndex 배치 계산 주기: **1시간**으로 확정 (하락 트리거 기능이 무의미해지면 재논의)
 - [x] AI↔백엔드 연동 방식: AI가 **API로 push** (DB 직접 쓰기 아님) — 수신용 엔드포인트 신규 설계 필요
 
-## Phase 4/5 착수 전 문서 반영 필요 (미착수)
+## Phase 4/5 착수 전 문서 반영 필요 (진행 중 — 일부 완료, 대체지 상세 파라미터는 여전히 미정)
 
 - [x] QuietIndex 수신 API 신설 (AI → 백엔드 push) — `POST /api/internal/quiet-index`, `X-Internal-Api-Key` 인증. `api.md` 반영 완료
-- [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토
+- [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토 — **실시간 호출 자체는 확정**(위 블로커 목록 참고)이지만 아래 세부 파라미터는 미정
 - [x] 최초 추천 검색 반경 15km — `api.md`에 프론트 가이드로 문서화 완료
-- [ ] 대체지 검색 반경 3km 캡 — 9b(대체지 실시간 호출 재설계)에서 함께 반영
-- [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 (3km 확장은 추후)
+- [ ] 대체지 검색 반경 3km 캡 — 미정. 9b(대체지 실시간 호출 재설계)에서 함께 반영
+- [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 — 미정(현재는 제안일 뿐 팀 확정 아님). 3km 확장은 추후
 - [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
 - [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
 - [ ] 방문완료 반경: 카테고리별(점형/면적형) 유동 적용, 체류시간 10분
@@ -33,21 +33,15 @@
 
 ---
 
-## Phase 1 — 프로젝트 스캐폴딩
+## Phase 1 — 프로젝트 스캐폴딩 — 완료
 
-- [ ] `backend/`에 Spring Boot 프로젝트 생성 (Gradle Groovy, Java 17)
-- [ ] 패키지 구조 설계 (`domain`, `api`, `config`, `infra` 등)
-- [ ] MySQL 연동 설정 (application-local.yml, application-secret.yml — 둘 다 `.gitignore` 처리됨)
-- [ ] JPA/Hibernate 설정, `schema.md` 기준 엔티티 6종 작성
-  - [ ] `User`
-  - [ ] `TouristSpot`
-  - [ ] `QuietIndex` (이력)
-  - [ ] `SpotMode`
-  - [ ] `SpotAlternative`
-  - [ ] `Visit`
-- [ ] 로컬 빌드/구동 확인, GitHub Actions CI 정상 통과 확인 (지금은 skip 처리되어 있음 — 실제로 도는지 확인)
+- [x] `backend/`에 Spring Boot 프로젝트 생성 (Gradle, Java 21 — 최초 계획은 17이었으나 진행하며 21로 상향)
+- [x] 패키지 구조 설계 (도메인별 패키지: `auth`, `user`, `spot`, `visit`, `like`, `review`, `internal`, `domain.*`, `config`, `common`)
+- [x] MySQL 연동 설정 (application.yml + application-secret.yml — 후자는 `.gitignore` 처리됨)
+- [x] JPA/Hibernate 설정, 엔티티 작성 — `User`, `TouristSpot`, `QuietIndex`, `SpotMode`, `SpotAlternative`, `Visit`, `SpotLike`, `Review` (좋아요/리뷰는 최초 계획엔 없었으나 Phase 7에서 추가)
+- [x] 로컬 빌드/구동 확인, GitHub Actions CI 정상 통과 확인 — `build -x test`로 테스트가 스킵되고 있던 문제 수정(2026-09). CI에 MySQL 서비스 컨테이너 + 환경변수 설정 추가해 실제 테스트 실행하도록 변경
 
-## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — PR #5, 머지 대기
+## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — 완료
 
 - [x] Spring Security 설정 (JWT 필터, stateless, 커스텀 401 EntryPoint로 일관된 에러 응답)
 - [x] `POST /api/auth/google` — 구글 idToken 검증 → intent(LOGIN/SIGNUP)에 따라 기존 유저 로그인/신규 가입 분기 → JWT 발급
