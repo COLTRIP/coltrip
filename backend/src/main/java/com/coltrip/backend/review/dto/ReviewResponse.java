@@ -10,7 +10,8 @@ public record ReviewResponse(
         String nickname,
         Integer rating,
         String content,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
     public static ReviewResponse from(Review review) {
         return new ReviewResponse(
@@ -20,7 +21,8 @@ public record ReviewResponse(
                 review.getUser().getNickname(),
                 review.getRating(),
                 review.getContent(),
-                review.getCreatedAt()
+                review.getCreatedAt(),
+                review.getUpdatedAt()
         );
     }
 }

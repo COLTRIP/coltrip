@@ -81,6 +81,9 @@ public class Review {
     public void update(Integer rating, String content) {
         this.rating = rating;
         this.content = content;
+        // @PreUpdate(onUpdate)는 flush/commit 시점에만 실행되어, 같은 요청 안에서 바로
+        // 응답으로 나가는 updatedAt이 갱신 전 값으로 보일 수 있어 여기서도 즉시 반영한다.
+        this.updatedAt = LocalDateTime.now();
     }
 
     public boolean isWrittenBy(Long userId) {

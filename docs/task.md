@@ -101,9 +101,10 @@
 - [x] `/api/spots` GET 인증 해제 (지도 둘러보기는 비로그인 허용, 쓰기는 인증 유지)
 - [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
 - [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
-- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `DELETE /api/reviews/{reviewId}`
+- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `PATCH /api/reviews/{reviewId}`, `DELETE /api/reviews/{reviewId}`
   - [x] ~~별점 대신 고요함 피드백(`QuietFeedback` 3단계)~~ → **별점(1~5) + 한줄평으로 변경 (2026-09-01)**
   - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
+  - [x] 리뷰 수정(2026-09 추가) — 팀에서 편집 허용으로 확정. 전체 재지정 방식(닉네임 수정과 동일 정책), 본인 확인은 삭제 API와 동일하게 404로 통일. 응답에 `updatedAt` 추가
 - [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
 - [x] 로컬 MySQL end-to-end 테스트 완료
 
