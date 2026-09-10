@@ -78,6 +78,7 @@
 - [ ] AI가 배치로 써주는 `quiet_index` 테이블 스키마 확정 (AI팀과 테이블/컬럼 형식 맞추기 — 같은 DB 공유인지, AI가 API로 백엔드에 밀어주는지 확인)
 - [ ] `TouristSpot.current_quiet_score` / `quiet_score_updated_at` 캐시 갱신 로직 (신규 `quiet_index` insert 시 트리거 or 별도 배치)
 - [ ] `/api/spots`, `/api/spots/{id}` 응답에 quietScore 필드 반영 확인
+- [x] `GET /api/spots/{spotId}/quiet-index/timeline` — 최근 24시간 관측 이력을 1시간 슬롯으로 반환(관측값만, 예측 아님). 데이터 없는 슬롯은 null
 
 ## Phase 5 — 대체지 추천 ([api.md](./api.md) [대체지 추천] 섹션)
 
