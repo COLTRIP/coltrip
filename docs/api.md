@@ -472,7 +472,8 @@ POST /api/visits/{visitId}/review
   "nickname": "테스터",
   "rating": 5,
   "content": "평일 오후라 정말 조용했어요",
-  "createdAt": "2026-08-31T16:36:29"
+  "createdAt": "2026-08-31T16:36:29",
+  "updatedAt": "2026-08-31T16:36:29"
 }
 ```
 
@@ -493,6 +494,26 @@ GET /api/spots/{spotId}/reviews
 ```json
 { "reviews": [ /* ReviewResponseDTO 배열 */ ] }
 ```
+
+---
+
+### 리뷰 수정
+```
+PATCH /api/reviews/{reviewId}
+```
+본인이 작성한 리뷰만 수정 가능. **부분 수정이 아니라 매번 `rating`·`content`를 전체 재지정**한다(닉네임 수정 API와 동일한 정책) — `rating`은 필수(1~5), `content`를 생략하거나 명시적으로 `null`을 보내면 한줄평이 삭제된다. `createdAt`은 유지되고 `updatedAt`만 갱신된다.
+
+**Request**
+```json
+{
+  "rating": 4,
+  "content": "다시 가보니 살짝 붐볐어요"
+}
+```
+
+**Response `200`** — `ReviewResponseDTO` (수정된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ReviewNotFoundException` (404) — 없는 리뷰이거나 본인 리뷰가 아닌 경우(삭제 API와 동일하게 통일), `ValidationException` (400) — rating 범위/필수 위반, content 300자 초과
 
 ---
 
