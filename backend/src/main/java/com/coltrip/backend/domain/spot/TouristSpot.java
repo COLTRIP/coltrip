@@ -101,9 +101,13 @@ public class TouristSpot {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateQuietScore(int quietScore, LocalDateTime calculatedAt) {
-        this.currentQuietScore = quietScore;
-        this.quietScoreUpdatedAt = calculatedAt;
+    // 오래된 배치가 늦게 도착해 최신 값을 과거 값으로 덮어쓰지 않도록, 더 이전이 아닌 시각만 반영한다.
+    // 같은 시각(calculatedAt이 동일)은 정정으로 간주해 반영을 허용한다.
+    public void updateQuietScoreIfNewer(int quietScore, LocalDateTime calculatedAt) {
+        if (quietScoreUpdatedAt == null || !calculatedAt.isBefore(quietScoreUpdatedAt)) {
+            this.currentQuietScore = quietScore;
+            this.quietScoreUpdatedAt = calculatedAt;
+        }
     }
 
     public QuietLevel getQuietLevel() {

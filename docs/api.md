@@ -219,6 +219,7 @@ GET /api/spots/{spotId}
   "quietScore": 82,
   "quietLevel": "QUIET",
   "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+  "visitRadiusMeters": 100,
   "isLiked": false
 }
 ```
@@ -295,14 +296,13 @@ POST /api/visits/start
 ```
 PATCH /api/visits/{visitId}/complete
 ```
-목적지 반경 진입 + 체류시간 조건 충족 시 프론트가 호출. 체류시간은 카테고리 무관 **10분(600초)** 고정. 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·팀 확정 필요).
+목적지 반경 진입 시 프론트가 호출. 체류시간 조건은 없다(2026-09 제거 — 위변조 여지가 있고 시연 시 대기가 길어 반경 진입만으로 판정하도록 팀 확정). 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·실측 검증 필요 — 장소 상세/현재 방문 조회 응답의 `visitRadiusMeters`로도 안내됨).
 
 **Request**
 ```json
 {
   "arrivedLatitude": 35.1502,
-  "arrivedLongitude": 129.0601,
-  "stayDurationSeconds": 620
+  "arrivedLongitude": 129.0601
 }
 ```
 
@@ -315,7 +315,7 @@ PATCH /api/visits/{visitId}/complete
 }
 ```
 
-**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경/체류시간 조건 미충족
+**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경 조건 미충족
 
 ---
 

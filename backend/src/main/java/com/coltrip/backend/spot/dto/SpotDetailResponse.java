@@ -20,6 +20,7 @@ public record SpotDetailResponse(
         Integer quietScore,
         String quietLevel,
         LocalDateTime quietScoreUpdatedAt,
+        Integer visitRadiusMeters,
         boolean isLiked
 ) {
     public static SpotDetailResponse from(TouristSpot spot, boolean isLiked) {
@@ -38,6 +39,7 @@ public record SpotDetailResponse(
                 spot.getCurrentQuietScore(),
                 quietLevel == null ? null : quietLevel.name(),
                 spot.getQuietScoreUpdatedAt(),
+                spot.getCategory().getVisitRadiusMeters(),
                 isLiked
         );
     }
