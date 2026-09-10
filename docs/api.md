@@ -134,6 +134,40 @@ PATCH /api/users/me
 
 ---
 
+### 대체 장소 알림 설정 조회
+```
+GET /api/users/me/notification-settings
+```
+고요지수 하락 시 대체 장소를 제안받을지 여부. 기본값 `true`(2026-09 확정, 사용자 단위 저장). 실제 혼잡 감지·제안 로직(대체지 트리거)에서 이 값을 확인하는 것은 별도 구현. 설정 저장만으로 백그라운드 푸시가 동작하는 것은 아님 — 필요 시 기기 토큰 등록은 별도로 정의.
+
+**Response `200`** — `NotificationSettingsResponseDTO`
+```json
+{
+  "alternativeNotificationEnabled": true
+}
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 대체 장소 알림 설정 변경
+```
+PATCH /api/users/me/notification-settings
+```
+**Request**
+```json
+{
+  "alternativeNotificationEnabled": false
+}
+```
+
+**Response `200`** — `NotificationSettingsResponseDTO` (변경된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ValidationException` (400) — 필드 누락
+
+---
+
 ### 회원 탈퇴
 ```
 DELETE /api/users/me
