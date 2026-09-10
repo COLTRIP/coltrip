@@ -30,6 +30,7 @@
 | `email` | VARCHAR(255) UNIQUE | |
 | `nickname` | VARCHAR(50) NULL | 가입 시 비어있음(구글 프로필 이름 자동 채움 없음). 로그인 직후 필수 설정 화면에서 입력, 이후 마이페이지에서 수정 가능. 중복 허용 |
 | `refresh_token` | VARCHAR(500) NULL | 최신 발급 리프레시 토큰 (재발급 시 갱신, 로그아웃 시 NULL) |
+| `alternative_notification_enabled` | TINYINT(1) NOT NULL DEFAULT 1 | 고요지수 하락 시 대체 장소 제안 수신 여부. 사용자 단위 설정(2026-09 확정) — 방문별 설정이 필요해지면 재검토 |
 | `role` | ENUM('USER') | 확장 대비, 현재는 단일 값 |
 | `created_at` | DATETIME | |
 | `updated_at` | DATETIME | |
