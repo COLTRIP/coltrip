@@ -28,7 +28,7 @@
 - [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 — 미정(현재는 제안일 뿐 팀 확정 아님). 3km 확장은 추후
 - [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
 - [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
-- [ ] 방문완료 반경: 카테고리별(점형/면적형) 유동 적용, 체류시간 10분
+- [x] 방문완료 반경: 카테고리별(점형/면적형) 적용 완료 (실측 검증은 #48 별도 진행). 체류시간 조건은 2026-09 제거
 - [x] 혼잡/보통/고요 구간 임계값(100점 만점): 0~40 CROWDED, 41~70 NORMAL, 71~100 QUIET — `QuietLevel` enum, `TouristSpot.getQuietLevel()` 반영 완료
 
 ---
@@ -72,6 +72,7 @@
 - [ ] AI가 배치로 써주는 `quiet_index` 테이블 스키마 확정 (AI팀과 테이블/컬럼 형식 맞추기 — 같은 DB 공유인지, AI가 API로 백엔드에 밀어주는지 확인)
 - [ ] `TouristSpot.current_quiet_score` / `quiet_score_updated_at` 캐시 갱신 로직 (신규 `quiet_index` insert 시 트리거 or 별도 배치)
 - [ ] `/api/spots`, `/api/spots/{id}` 응답에 quietScore 필드 반영 확인
+- [x] `GET /api/spots/{spotId}/quiet-index/timeline` — 최근 24시간 관측 이력을 1시간 슬롯으로 반환(관측값만, 예측 아님). 데이터 없는 슬롯은 null
 
 ## Phase 5 — 대체지 추천 ([api.md](./api.md) [대체지 추천] 섹션)
 
@@ -83,11 +84,13 @@
 ## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션) — 완료 (트리거/대체지 제안 제외)
 
 - [x] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`), `start_quiet_score` 스냅샷 저장
-- [x] `PATCH /api/visits/{visitId}/complete` — 반경/체류시간 조건 검증 로직
+- [x] `PATCH /api/visits/{visitId}/complete` — 반경 조건 검증 로직
   - [x] 목적지 반경 계산 (Haversine, `GeoUtils`), 카테고리별 반경(`Category.getVisitRadiusMeters()`) — 점형 100m/면적형 250m 잠정값
-  - [x] 체류시간 10분(600초) 검증
+  - [x] ~~체류시간 10분(600초) 검증~~ → **2026-09 제거, 반경 진입만으로 판정 (팀 확정)**. 프론트 표시용으로 `visitRadiusMeters`를 장소 상세/현재 방문 조회 응답에 추가
 - [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
 - [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
+- [x] `PATCH /api/visits/{visitId}/cancel` — 진행 중 방문 취소. 대체지 선택 등 목적지 전환 시 재사용, 취소 후 재시작/현재 방문 제외/방문 횟수 미포함 확인 완료
+- [x] `GET /api/visits/history` — 완료 이력 목록(최신 완료순), 리뷰 작성 여부(reviewId) 포함. 같은 장소 재방문은 건별로 표시(묶지 않음)
 - [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
 ## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
@@ -95,9 +98,10 @@
 - [x] `/api/spots` GET 인증 해제 (지도 둘러보기는 비로그인 허용, 쓰기는 인증 유지)
 - [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
 - [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
-- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `DELETE /api/reviews/{reviewId}`
+- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `PATCH /api/reviews/{reviewId}`, `DELETE /api/reviews/{reviewId}`
   - [x] ~~별점 대신 고요함 피드백(`QuietFeedback` 3단계)~~ → **별점(1~5) + 한줄평으로 변경 (2026-09-01)**
   - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
+  - [x] 리뷰 수정(2026-09 추가) — 팀에서 편집 허용으로 확정. 전체 재지정 방식(닉네임 수정과 동일 정책), 본인 확인은 삭제 API와 동일하게 404로 통일. 응답에 `updatedAt` 추가
 - [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
 - [x] 로컬 MySQL end-to-end 테스트 완료
 
