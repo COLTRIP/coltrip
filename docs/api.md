@@ -316,6 +316,36 @@ PATCH /api/visits/{visitId}/complete
 
 ---
 
+### 방문 완료 이력 조회
+```
+GET /api/visits/history
+```
+본인이 완료(`COMPLETED`)한 방문을 완료순(최신 먼저)으로 조회. 마이페이지 "다녀온 곳" 목록용. `STARTED`/`CANCELED` 방문은 제외되며, 같은 장소를 여러 번 방문했다면 방문 건별로 각각 표시된다(장소 단위로 묶지 않음).
+
+**Response `200`** — `VisitHistoryResponseDTO`
+```json
+{
+  "visits": [
+    {
+      "visitId": 10,
+      "spotId": 1,
+      "spotName": "string",
+      "spotAddress": "string",
+      "category": "CAFE",
+      "imageUrl": "string",
+      "startedAt": "2026-08-17T10:00:00",
+      "completedAt": "2026-08-17T10:15:00",
+      "reviewId": 4
+    }
+  ]
+}
+```
+`reviewId`는 해당 방문에 작성된 리뷰의 id. 아직 리뷰를 작성하지 않았다면 `null` — 프론트는 이 값으로 "리뷰 쓰기"/"리뷰 보기" 버튼을 분기할 수 있다. 방문이 없으면 `visits: []`.
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
 ## [좋아요]
 
 ### 좋아요 등록

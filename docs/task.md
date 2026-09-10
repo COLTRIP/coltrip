@@ -94,6 +94,7 @@
   - [x] 체류시간 10분(600초) 검증
 - [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
 - [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
+- [x] `GET /api/visits/history` — 완료 이력 목록(최신 완료순), 리뷰 작성 여부(reviewId) 포함. 같은 장소 재방문은 건별로 표시(묶지 않음)
 - [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
 
 ## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
