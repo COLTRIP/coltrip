@@ -21,5 +21,15 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByUserIdAndStatusWithSpot(@Param("userId") Long userId,
                                               @Param("status") VisitStatus status);
 
+    @Query("""
+            SELECT v FROM Visit v
+            JOIN FETCH v.spot
+            WHERE v.user.id = :userId
+              AND v.status = :status
+            ORDER BY v.completedAt DESC
+            """)
+    List<Visit> findByUserIdAndStatusOrderByCompletedAtDesc(@Param("userId") Long userId,
+                                                             @Param("status") VisitStatus status);
+
     void deleteByUser_Id(Long userId);
 }
