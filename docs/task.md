@@ -45,7 +45,7 @@
   - [ ] `SpotMode`
   - [ ] `SpotAlternative`
   - [ ] `Visit`
-- [ ] 로컬 빌드/구동 확인, GitHub Actions CI 정상 통과 확인 (지금은 skip 처리되어 있음 — 실제로 도는지 확인)
+- [x] 로컬 빌드/구동 확인, GitHub Actions CI 정상 통과 확인 — `build -x test`로 테스트가 스킵되고 있던 문제 수정(2026-09). CI에 MySQL 서비스 컨테이너 + 환경변수 설정 추가해 실제 테스트 실행하도록 변경
 
 ## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — PR #5, 머지 대기
 
