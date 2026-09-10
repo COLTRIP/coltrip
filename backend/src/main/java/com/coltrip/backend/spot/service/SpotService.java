@@ -1,5 +1,6 @@
 package com.coltrip.backend.spot.service;
 
+import com.coltrip.backend.domain.like.SpotLikeRepository;
 import com.coltrip.backend.domain.spot.Category;
 import com.coltrip.backend.domain.spot.Mode;
 import com.coltrip.backend.domain.spot.QuietIndex;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,19 +38,30 @@ public class SpotService {
 
     private final TouristSpotRepository touristSpotRepository;
     private final QuietIndexRepository quietIndexRepository;
+    private final SpotLikeRepository spotLikeRepository;
 
-    public SpotListResponse findInBounds(BigDecimal swLat, BigDecimal swLng,
+    // userId는 비로그인 요청이면 null (관광지 조회는 비로그인 허용)
+    public SpotListResponse findInBounds(Long userId, BigDecimal swLat, BigDecimal swLng,
                                           BigDecimal neLat, BigDecimal neLng,
                                           Category category, Mode mode) {
         validateBounds(swLat, swLng, neLat, neLng);
         List<TouristSpot> spots = touristSpotRepository.findInBounds(swLat, neLat, swLng, neLng, category, mode);
-        return SpotListResponse.from(spots);
+        Set<Long> likedSpotIds = findLikedSpotIds(userId, spots);
+        return SpotListResponse.from(spots, likedSpotIds);
     }
 
-    public SpotDetailResponse findById(Long spotId) {
-        return touristSpotRepository.findByIdWithModes(spotId)
-                .map(SpotDetailResponse::from)
+    public SpotDetailResponse findById(Long userId, Long spotId) {
+        TouristSpot spot = touristSpotRepository.findByIdWithModes(spotId)
                 .orElseThrow(SpotNotFoundException::new);
+        boolean isLiked = userId != null && spotLikeRepository.existsByUser_IdAndSpot_Id(userId, spotId);
+        return SpotDetailResponse.from(spot, isLiked);
+    }
+
+    private Set<Long> findLikedSpotIds(Long userId, List<TouristSpot> spots) {
+        if (userId == null || spots.isEmpty()) {
+            return Set.of();
+        }
+        return spotLikeRepository.findLikedSpotIds(userId, spots.stream().map(TouristSpot::getId).toList());
     }
 
     // 최근 24시간 관측 이력을 1시간 슬롯으로 묶어 반환한다(예측값 아님).

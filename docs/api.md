@@ -134,6 +134,40 @@ PATCH /api/users/me
 
 ---
 
+### 대체 장소 알림 설정 조회
+```
+GET /api/users/me/notification-settings
+```
+고요지수 하락 시 대체 장소를 제안받을지 여부. 기본값 `true`(2026-09 확정, 사용자 단위 저장). 실제 혼잡 감지·제안 로직(대체지 트리거)에서 이 값을 확인하는 것은 별도 구현. 설정 저장만으로 백그라운드 푸시가 동작하는 것은 아님 — 필요 시 기기 토큰 등록은 별도로 정의.
+
+**Response `200`** — `NotificationSettingsResponseDTO`
+```json
+{
+  "alternativeNotificationEnabled": true
+}
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 대체 장소 알림 설정 변경
+```
+PATCH /api/users/me/notification-settings
+```
+**Request**
+```json
+{
+  "alternativeNotificationEnabled": false
+}
+```
+
+**Response `200`** — `NotificationSettingsResponseDTO` (변경된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ValidationException` (400) — 필드 누락
+
+---
+
 ### 회원 탈퇴
 ```
 DELETE /api/users/me
@@ -186,12 +220,14 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
       "longitude": 129.06,
       "quietScore": 82,
       "quietLevel": "QUIET",
-      "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+      "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+      "isLiked": false
     }
   ]
 }
 ```
 `quietLevel`은 `quietScore`에서 백엔드가 파생 계산하는 값(0~40 `CROWDED`, 41~70 `NORMAL`, 71~100 `QUIET`). 별도 저장값 아님, `quietScore`가 없으면(NULL) `quietLevel`도 `null`.
+`isLiked`는 요청에 유효한 토큰이 있을 때만 본인의 좋아요 여부를 반영하고, 비로그인 요청은 항상 `false`. `GET /api/users/me/likes` 응답은 정의상 전부 `true`.
 
 **Exception**: `InvalidBoundingBoxException` (400) — 좌표 범위 값 오류
 
@@ -216,7 +252,9 @@ GET /api/spots/{spotId}
   "longitude": 129.06,
   "quietScore": 82,
   "quietLevel": "QUIET",
-  "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+  "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+  "visitRadiusMeters": 100,
+  "isLiked": false
 }
 ```
 
@@ -322,14 +360,13 @@ POST /api/visits/start
 ```
 PATCH /api/visits/{visitId}/complete
 ```
-목적지 반경 진입 + 체류시간 조건 충족 시 프론트가 호출. 체류시간은 카테고리 무관 **10분(600초)** 고정. 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·팀 확정 필요).
+목적지 반경 진입 시 프론트가 호출. 체류시간 조건은 없다(2026-09 제거 — 위변조 여지가 있고 시연 시 대기가 길어 반경 진입만으로 판정하도록 팀 확정). 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·실측 검증 필요 — 장소 상세/현재 방문 조회 응답의 `visitRadiusMeters`로도 안내됨).
 
 **Request**
 ```json
 {
   "arrivedLatitude": 35.1502,
-  "arrivedLongitude": 129.0601,
-  "stayDurationSeconds": 620
+  "arrivedLongitude": 129.0601
 }
 ```
 
@@ -342,7 +379,55 @@ PATCH /api/visits/{visitId}/complete
 }
 ```
 
-**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경/체류시간 조건 미충족
+**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경 조건 미충족
+
+---
+
+### 방문 취소
+```
+PATCH /api/visits/{visitId}/cancel
+```
+진행 중인 방문을 취소한다. 대체지 선택 등 목적지를 바꿀 때도 재사용 — 취소 후 바로 다른 장소로 방문을 다시 시작할 수 있다. 취소된 방문은 현재 방문 조회/`currentVisitId`에서 제외되고, `visitCount`(완료 횟수)에도 포함되지 않으며 리뷰 작성 대상도 아니다.
+
+**Response `200`** — `VisitCancelResponseDTO`
+```json
+{
+  "visitId": 10,
+  "status": "CANCELED"
+}
+```
+
+**Exception**: `VisitNotFoundException` (404) — 존재하지 않거나 타인의 방문, `InvalidVisitStateException` (409) — 이미 완료/취소된 방문(반복 취소 포함)
+
+---
+
+### 방문 완료 이력 조회
+```
+GET /api/visits/history
+```
+본인이 완료(`COMPLETED`)한 방문을 완료순(최신 먼저)으로 조회. 마이페이지 "다녀온 곳" 목록용. `STARTED`/`CANCELED` 방문은 제외되며, 같은 장소를 여러 번 방문했다면 방문 건별로 각각 표시된다(장소 단위로 묶지 않음).
+
+**Response `200`** — `VisitHistoryResponseDTO`
+```json
+{
+  "visits": [
+    {
+      "visitId": 10,
+      "spotId": 1,
+      "spotName": "string",
+      "spotAddress": "string",
+      "category": "CAFE",
+      "imageUrl": "string",
+      "startedAt": "2026-08-17T10:00:00",
+      "completedAt": "2026-08-17T10:15:00",
+      "reviewId": 4
+    }
+  ]
+}
+```
+`reviewId`는 해당 방문에 작성된 리뷰의 id. 아직 리뷰를 작성하지 않았다면 `null` — 프론트는 이 값으로 "리뷰 쓰기"/"리뷰 보기" 버튼을 분기할 수 있다. 방문이 없으면 `visits: []`.
+
+**Exception**: `UnauthorizedException` (401)
 
 ---
 
@@ -417,7 +502,8 @@ POST /api/visits/{visitId}/review
   "nickname": "테스터",
   "rating": 5,
   "content": "평일 오후라 정말 조용했어요",
-  "createdAt": "2026-08-31T16:36:29"
+  "createdAt": "2026-08-31T16:36:29",
+  "updatedAt": "2026-08-31T16:36:29"
 }
 ```
 
@@ -438,6 +524,26 @@ GET /api/spots/{spotId}/reviews
 ```json
 { "reviews": [ /* ReviewResponseDTO 배열 */ ] }
 ```
+
+---
+
+### 리뷰 수정
+```
+PATCH /api/reviews/{reviewId}
+```
+본인이 작성한 리뷰만 수정 가능. **부분 수정이 아니라 매번 `rating`·`content`를 전체 재지정**한다(닉네임 수정 API와 동일한 정책) — `rating`은 필수(1~5), `content`를 생략하거나 명시적으로 `null`을 보내면 한줄평이 삭제된다. `createdAt`은 유지되고 `updatedAt`만 갱신된다.
+
+**Request**
+```json
+{
+  "rating": 4,
+  "content": "다시 가보니 살짝 붐볐어요"
+}
+```
+
+**Response `200`** — `ReviewResponseDTO` (수정된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ReviewNotFoundException` (404) — 없는 리뷰이거나 본인 리뷰가 아닌 경우(삭제 API와 동일하게 통일), `ValidationException` (400) — rating 범위/필수 위반, content 300자 초과
 
 ---
 
