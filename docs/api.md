@@ -1,7 +1,11 @@
 # coltrip API 명세서
 
 - Base URL: `/api` (예: `/api/spots`)
-- 인증: `Authorization: Bearer {accessToken}` (로그인/토큰재발급 제외 전부 필요)
+- 인증: 기본은 `Authorization: Bearer {accessToken}` (JWT). 아래 예외 3가지는 다른 방식이거나 인증이 없다.
+  - 로그인(`POST /api/auth/google`), 토큰 재발급(`POST /api/auth/refresh`) — 인증 헤더 자체가 불필요(재발급은 액세스 토큰이 아니라 리프레시 토큰을 헤더에 넣음)
+  - 관광지 **조회(GET)** — `GET /api/spots`, `GET /api/spots/{id}`, `GET /api/spots/{id}/quiet-index/timeline`, `GET /api/spots/{id}/reviews` — 비로그인 허용(2026-08-31 확정). 토큰이 있으면 `isLiked` 등 개인화 필드에 반영되지만 없어도 200 응답
+  - 내부 연동(`/api/internal/**`) — JWT가 아니라 `X-Internal-Api-Key` 헤더(AI 배치 서버 전용, 프론트는 사용하지 않음)
+  - 그 외 전부(쓰기 작업 포함) 인증 필요
 - 모든 에러 응답은 `{"code": "...", "message": "..."}` 형식
 
 **공통 에러 (모든 엔드포인트)**
@@ -13,7 +17,7 @@
 | `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
 | `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
-- 마지막 갱신: 2026-08-31
+- 마지막 갱신: 2026-09 (백엔드 구현 현황 재정리)
 - 스키마 참고: [schema.md](./schema.md)
 
 ---
@@ -48,7 +52,8 @@ POST /api/auth/google
     "email": "user@gmail.com",
     "nickname": null,
     "visitCount": 0,
-    "likeCount": 0
+    "likeCount": 0,
+    "currentVisitId": null
   }
 }
 ```
@@ -102,13 +107,15 @@ GET /api/users/me
   "email": "user@gmail.com",
   "nickname": "string",
   "visitCount": 3,
-  "likeCount": 7
+  "likeCount": 7,
+  "currentVisitId": 10
 }
 ```
 - `visitCount`: **방문을 완료(`COMPLETED`)한 횟수.** 시작만 하고 완료하지 않은 방문은 제외
 - `likeCount`: 좋아요한 장소 수
+- `currentVisitId`: 현재 진행 중(`STARTED`)인 방문 ID. 없으면 `null` — `GET /api/visits/current`와 같은 기준
 
-이 두 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
+이 세 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
 
 **Exception**: `UnauthorizedException` (401)
 
@@ -300,7 +307,7 @@ GET /api/spots/{spotId}/alternatives
 ```
 `spotId`가 혼잡(quietScore 낮음)할 때, 유사한 분위기의 더 한적한 대체지를 조회. AI가 산출한 리스트+추천이유+유사도를 그대로 매핑.
 
-> ⚠️ [schema.md](./schema.md)에 적어둔 대로, 이 데이터가 배치 저장인지 실시간 AI 호출인지는 미확정. 아래는 배치 저장(스키마의 `spot_alternative` 테이블 조회) 기준으로 작성. 실시간으로 바뀌면 컨트롤러 내부 구현만 바뀌고 이 응답 스펙은 동일하게 유지 가능.
+> ⚠️ **아직 미구현** (`SpotAlternative` 엔티티만 존재, 컨트롤러/서비스 없음). 저장 방식(배치 vs 실시간 호출)은 **2026-08-18 실시간 AI 호출로 팀 확정됨** — `schema.md`의 배치 저장 가정(`spot_alternative` 테이블)은 재설계 대상. 아래 응답 스펙은 그대로 유효하나, 반경 캡(3km)·빈 배열일 때 안내 문구 등 세부 파라미터는 여전히 미정(`task.md` 참고).
 
 **Response `200`** — `AlternativeSpotListResponseDTO`
 ```json
@@ -327,6 +334,38 @@ GET /api/spots/{spotId}/alternatives
 ---
 
 ## [방문]
+
+### 현재 방문 조회
+```
+GET /api/visits/current
+```
+로그인한 사용자의 진행 중(`STARTED`)인 방문을 조회한다. 앱 재실행 시 진행 중이던 방문 화면을 복원하는 용도. `GET /api/users/me` 등 `UserResponseDTO`의 `currentVisitId`와 같은 기준(STARTED 여부)으로 판정되므로 두 값은 항상 일치한다.
+
+**Response `200`** — `CurrentVisitResponseDTO`. 진행 중인 방문이 없으면 `visit: null`.
+```json
+{
+  "visit": {
+    "visitId": 10,
+    "spotId": 1,
+    "spotName": "string",
+    "spotAddress": "string",
+    "category": "CAFE",
+    "imageUrl": "string",
+    "latitude": 35.15,
+    "longitude": 129.06,
+    "status": "STARTED",
+    "startedAt": "2026-08-17T10:00:00",
+    "startQuietScore": 40,
+    "currentQuietScore": 32,
+    "currentQuietLevel": "CROWDED"
+  }
+}
+```
+`startQuietScore`는 방문 시작 시점의 스냅샷(고요지수 하락 트리거 비교 기준), `currentQuietScore`/`currentQuietLevel`은 현재 시점 값 — 두 값의 차이로 프론트가 "혼잡해졌어요" 같은 안내를 만들 수 있다.
+
+**Exception**: `UnauthorizedException` (401)
+
+---
 
 ### 방문 시작
 ```
