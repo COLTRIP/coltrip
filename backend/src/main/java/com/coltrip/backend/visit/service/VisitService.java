@@ -10,6 +10,7 @@ import com.coltrip.backend.domain.visit.Visit;
 import com.coltrip.backend.domain.visit.VisitRepository;
 import com.coltrip.backend.domain.visit.VisitStatus;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
+import com.coltrip.backend.visit.dto.VisitCancelResponse;
 import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
@@ -55,6 +56,26 @@ public class VisitService {
     }
 
     public VisitCompleteResponse complete(Long userId, Long visitId, VisitCompleteRequest request) {
+        Visit visit = findOwnedStartedVisit(userId, visitId);
+
+        validateCondition(visit, request);
+
+        visit.markArrived();
+        visit.complete();
+
+        return VisitCompleteResponse.from(visit);
+    }
+
+    // 대체지 선택 등으로 목적지를 바꿀 때, 진행 중이던 방문을 중단하고 새 방문을 시작할 수 있게 한다.
+    public VisitCancelResponse cancel(Long userId, Long visitId) {
+        Visit visit = findOwnedStartedVisit(userId, visitId);
+
+        visit.cancel();
+
+        return VisitCancelResponse.from(visit);
+    }
+
+    private Visit findOwnedStartedVisit(Long userId, Long visitId) {
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(VisitNotFoundException::new);
 
@@ -64,14 +85,9 @@ public class VisitService {
         if (visit.getStatus() != VisitStatus.STARTED) {
             throw new InvalidVisitStateException();
         }
-
-        validateCondition(visit, request);
-
-        visit.markArrived();
-        visit.complete();
-
-        return VisitCompleteResponse.from(visit);
+        return visit;
     }
+
     @Transactional(readOnly = true)
     public CurrentVisitResponse getCurrent(Long userId) {
         return visitRepository.findByUserIdAndStatusWithSpot(userId, VisitStatus.STARTED).stream()

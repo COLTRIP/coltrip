@@ -1,5 +1,6 @@
 package com.coltrip.backend.visit.controller;
 
+import com.coltrip.backend.visit.dto.VisitCancelResponse;
 import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coltrip.backend.visit.dto.CurrentVisitResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@Tag(name = "방문", description = "방문 시작 / 완료 처리")
+@Tag(name = "방문", description = "방문 시작 / 완료 / 취소 처리")
 @RestController
 @RequestMapping("/api/visits")
 @RequiredArgsConstructor
@@ -47,5 +48,12 @@ public class VisitController {
                                                             @PathVariable Long visitId,
                                                             @Valid @RequestBody VisitCompleteRequest request) {
         return ResponseEntity.ok(visitService.complete(userId, visitId, request));
+    }
+
+    @Operation(summary = "방문 취소", description = "진행 중인 방문을 취소합니다. 대체지 선택 등 목적지 전환 시에도 사용. STARTED가 아니면 409.")
+    @PatchMapping("/{visitId}/cancel")
+    public ResponseEntity<VisitCancelResponse> cancel(@AuthenticationPrincipal Long userId,
+                                                        @PathVariable Long visitId) {
+        return ResponseEntity.ok(visitService.cancel(userId, visitId));
     }
 }
