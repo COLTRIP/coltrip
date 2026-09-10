@@ -186,12 +186,14 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
       "longitude": 129.06,
       "quietScore": 82,
       "quietLevel": "QUIET",
-      "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+      "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+      "isLiked": false
     }
   ]
 }
 ```
 `quietLevel`은 `quietScore`에서 백엔드가 파생 계산하는 값(0~40 `CROWDED`, 41~70 `NORMAL`, 71~100 `QUIET`). 별도 저장값 아님, `quietScore`가 없으면(NULL) `quietLevel`도 `null`.
+`isLiked`는 요청에 유효한 토큰이 있을 때만 본인의 좋아요 여부를 반영하고, 비로그인 요청은 항상 `false`. `GET /api/users/me/likes` 응답은 정의상 전부 `true`.
 
 **Exception**: `InvalidBoundingBoxException` (400) — 좌표 범위 값 오류
 
@@ -216,7 +218,8 @@ GET /api/spots/{spotId}
   "longitude": 129.06,
   "quietScore": 82,
   "quietLevel": "QUIET",
-  "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+  "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+  "isLiked": false
 }
 ```
 
