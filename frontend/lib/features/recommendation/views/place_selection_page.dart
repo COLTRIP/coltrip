@@ -6,6 +6,7 @@ import '../../../app/routes/app_routes.dart';
 import '../data/place_type_data.dart';
 import '../../../features/recommendation/widgets/place_type_grid.dart';
 import '../models/place_type_item.dart';
+import '../repositories/visiting_spot_repository.dart';
 
 
 class PlaceSelectionPage extends StatefulWidget {
@@ -17,6 +18,29 @@ class PlaceSelectionPage extends StatefulWidget {
 
 class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
   String? selectedPlaceId;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOngoingVisit();
+  }
+
+  Future<void> _checkOngoingVisit() async {
+    try {
+      final current = await VisitingSpotRepository().getCurrentVisit();
+      if (current == null || current.status != 'STARTED' || !mounted) return;
+
+      Get.toNamed(
+        AppRoutes.visitingSpot,
+        arguments: {
+          'spot': current.toPlaceholderSpotDetail(),
+          'visit': current,
+        },
+      );
+    } catch (_) {
+      return;
+    }
+  }
 
   void selectPlace(PlaceTypeItem item) {
     setState(() {

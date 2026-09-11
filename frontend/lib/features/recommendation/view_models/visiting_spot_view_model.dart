@@ -21,6 +21,23 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _startVisit();
   }
 
+  VisitingSpotViewModel.resume({
+    required this.spot,
+    required int resumedVisitId,
+    required int? startQuietScore,
+    required int? currentQuietScore,
+    VisitingSpotRepository? repository,
+  })  : _repository = repository ?? VisitingSpotRepository(),
+        // ignore: prefer_initializing_formals
+        _startQuietScore = startQuietScore,
+        // ignore: prefer_initializing_formals
+        _currentQuietScore = currentQuietScore {
+    visitId = resumedVisitId;
+    isStarting = false;
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleRefresh();
+  }
+
   final SpotDetail spot;
   final VisitingSpotRepository _repository;
   static const _refreshHours = [9, 13, 17, 21];
@@ -39,11 +56,13 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   int? visitId;
   bool isStarting = true;
   String? startError;
-  DateTime? _visitStartedAt;
 
   // 방문 완료
   bool isCompleting = false;
   String? errorMessage;
+
+  // 방문 취소
+  bool isCancelling = false;
 
   // 대체지 추천
   List<AlternativeSpot> alternatives = [];
@@ -88,14 +107,12 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         startLongitude: pos.longitude,
       );
       if (_disposed) return; // 시작 요청 중 화면이 닫혔으면 옵저버/타이머 안 검
-      _visitStartedAt = DateTime.now();
       WidgetsBinding.instance.addObserver(this);
       _scheduleRefresh();
     } on ApiException catch (e) {
       switch (e.code) {
         case 'AlreadyOngoingVisitException': // 409
-          // TODO(진행 중 방문 복구): 그 방문 조회 후 방문 화면으로 이동
-          startError = '이미 진행 중인 방문이 있어요.';
+          await _recoverOngoingVisit();
         case 'SpotNotFoundException': // 404
           startError = '장소를 찾을 수 없어요.';
         default:
@@ -109,6 +126,25 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _recoverOngoingVisit() async {
+    try {
+      final current = await _repository.getCurrentVisit();
+      if (_disposed) return;
+
+      if (current == null || current.status != 'STARTED') {
+        startError = '이미 진행 중인 방문이 있어요.';
+        return;
+      }
+
+      Get.offNamed(
+        AppRoutes.visitingSpot,
+        arguments: {'spot': current.toPlaceholderSpotDetail(), 'visit': current},
+      );
+    } catch (_) {
+      startError = '이미 진행 중인 방문이 있어요.';
+    }
+  }
+
   Future<void> retryStartVisit() => _startVisit();
 
   Future<Position> _currentPosition() {
@@ -118,6 +154,36 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         timeLimit: Duration(seconds: 10),
       ),
     );
+  }
+
+  Future<void> cancelVisit(int visitId) async {
+    if (isCancelling) return;
+
+    isCancelling = true;
+    errorMessage = null;
+    _safeNotify();
+
+    try {
+      await _repository.cancelVisit(visitId: visitId);
+      if (_disposed) return;
+
+      _refreshTimer?.cancel();
+      Get.back();
+    } on ApiException catch (e) {
+      switch (e.code) {
+        case 'InvalidVisitStateException':
+          errorMessage = '이미 종료된 방문이라 취소할 수 없어요.';
+        case 'VisitNotFoundException':
+          errorMessage = '방문 정보를 찾을 수 없어요.';
+        default:
+          errorMessage = e.message;
+      }
+    } catch (_) {
+      errorMessage = '방문 취소에 실패했어요. 다시 시도해주세요.';
+    } finally {
+      isCancelling = false;
+      _safeNotify();
+    }
   }
 
 
@@ -205,17 +271,10 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final pos = await _currentPosition();
 
-      // TODO: 체류시간 판정 방식(연속/누적, 반경 진입 시각 기준) 확정 후 교체.
-      //       현재는 방문 시작~완료 벽시계 차이로 임시 계산.
-      final stayed = _visitStartedAt == null
-          ? 0
-          : DateTime.now().difference(_visitStartedAt!).inSeconds;
-
       await _repository.completeVisit(
         visitId: visitId!,
         arrivedLatitude: pos.latitude,
         arrivedLongitude: pos.longitude,
-        stayDurationSeconds: stayed,
       );
       if (_disposed) return; // 완료 요청 중 화면이 닫혔으면 이동하지 않음
 

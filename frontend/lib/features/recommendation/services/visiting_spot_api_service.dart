@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
+import '../models/current_visit.dart';
 import '../models/recommendation.dart';
 
 // TODO(예외처리 통합): 아래 메서드마다 반복되는 try/catch(DioException) → ApiException 변환은
@@ -38,7 +39,6 @@ class VisitingSpotApiService {
     required int visitId,
     required double arrivedLatitude,
     required double arrivedLongitude,
-    required int stayDurationSeconds,
   }) async {
     try {
       await _dio.patch<Map<String, dynamic>>(
@@ -46,11 +46,10 @@ class VisitingSpotApiService {
         data: {
           'arrivedLatitude': arrivedLatitude,
           'arrivedLongitude': arrivedLongitude,
-          'stayDurationSeconds': stayDurationSeconds, //없어질 예정
         },
       );
     } on DioException catch (e) {
-      // 400 VisitConditionNotMetException(반경/체류시간 미충족),
+      // 400 VisitConditionNotMetException(반경 미충족),
       // 409 InvalidVisitStateException(이미 완료/취소) → 메시지는 ApiException 으로 전달
 
       throw ApiException.fromDioException(e);
@@ -73,6 +72,32 @@ class VisitingSpotApiService {
           .map(AlternativeSpot.fromJson)
           .toList();
     } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  Future<void> cancelVisit({
+    required int visitId,
+  }) async {
+    try {
+      await _dio.patch<Map<String, dynamic>>(
+        '/api/visits/$visitId/cancel',
+      );
+    } on DioException catch (e) {
+      // 404 VisitNotFoundException, 409 InvalidVisitStateException
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  Future<CurrentVisit?> getCurrentVisit() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/visits/current',
+      );
+      final visit = response.data?['visit'] as Map<String, dynamic>?;
+      return visit == null ? null : CurrentVisit.fromJson(visit);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
       throw ApiException.fromDioException(e);
     }
   }

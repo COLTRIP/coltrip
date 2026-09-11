@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../models/alternative_spot.dart';
+import '../../models/current_visit.dart';
 import '../../models/recommendation.dart';
 import '../../models/visit_status.dart';
 import '../../services/naver_map_service.dart';
@@ -13,15 +14,23 @@ import 'widgets/visiting_status_card.dart';
 
 class VisitingSpotPage extends StatefulWidget {
   final SpotDetail spot;
+  final CurrentVisit? resumeVisit;
 
-  const VisitingSpotPage({super.key, required this.spot});
+  const VisitingSpotPage({super.key, required this.spot, this.resumeVisit});
 
   @override
   State<VisitingSpotPage> createState() => _VisitingSpotPageState();
 }
 
 class _VisitingSpotPageState extends State<VisitingSpotPage> {
-  late final _viewModel = VisitingSpotViewModel(spot: widget.spot);
+  late final _viewModel = widget.resumeVisit == null
+      ? VisitingSpotViewModel(spot: widget.spot)
+      : VisitingSpotViewModel.resume(
+          spot: widget.spot,
+          resumedVisitId: widget.resumeVisit!.visitId,
+          startQuietScore: widget.resumeVisit!.startQuietScore,
+          currentQuietScore: widget.resumeVisit!.currentQuietScore,
+        );
 
 
   @override
@@ -77,7 +86,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     );
   }
 
-  // 방문 시작 중 (visitId 발급 대기)
   Widget _buildStartingBody() {
     return const Center(
       child: Column(
@@ -94,7 +102,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     );
   }
 
-  // 방문 시작 실패 (위치 조회 실패 / 진행 중 방문 존재 등)
   Widget _buildStartErrorBody(String message) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -120,7 +127,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     );
   }
 
-  // 평상시 방문 화면 (visiting / notAtSpot / completed 공용)
   Widget _buildVisitingBody(SpotDetail spot) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -172,7 +178,8 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               isOutlined: true,
               label: '방문 취소하기',
               icon: Icons.close,
-              onPressed: () => Get.back(), //TODO: 방문 취소 로직 api 연결해야댐
+              isLoading: _viewModel.isCancelling,
+              onPressed: () => _viewModel.cancelVisit(_viewModel.visitId!),
             ),
           ],
         ),
@@ -180,7 +187,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     );
   }
 
-  // 고요지수 하락 감지 화면 — 피그마 "대체 장소 추천 화면" 대응
   Widget _buildAlternativesBody(SpotDetail spot) {
     return Column(
       children: [

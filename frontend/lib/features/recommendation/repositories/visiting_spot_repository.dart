@@ -1,4 +1,5 @@
 import '../models/alternative_spot.dart';
+import '../models/current_visit.dart';
 import '../services/visiting_spot_api_service.dart';
 
 class VisitingSpotRepository {
@@ -29,18 +30,25 @@ class VisitingSpotRepository {
     return _api.getAlternatives(spotId: spotId);
   }
 
+  /// 진행 중인 방문 취소
+  Future<void> cancelVisit({required int visitId}) {
+    return _api.cancelVisit(visitId: visitId);
+  }
+
+  Future<CurrentVisit?> getCurrentVisit() {
+    return _api.getCurrentVisit();
+  }
+
   /// 방문 완료 처리
   Future<void> completeVisit({
     required int visitId,
     required double arrivedLatitude,
     required double arrivedLongitude,
-    required int stayDurationSeconds,
   }) {
     return _api.completeVisit(
       visitId: visitId,
       arrivedLatitude: arrivedLatitude,
       arrivedLongitude: arrivedLongitude,
-      stayDurationSeconds: stayDurationSeconds,
     );
   }
 }

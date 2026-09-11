@@ -6,7 +6,7 @@ import 'auth_interceptor.dart';
 class DioClient {
   DioClient._();
 
-  static const baseUrl = 'https://organ-aimed-saying-revised.trycloudflare.com';
+  static const baseUrl = 'https://api.coltrip.co.kr';
 
   static BaseOptions _baseOptions() => BaseOptions(
         baseUrl: baseUrl,

@@ -4,6 +4,7 @@ import '../../features/auth/views/login_page.dart';
 import '../../features/auth/views/nickname_setup_page.dart';
 import '../../features/map/views/map_page.dart';
 import '../../features/profile/views/profile_page.dart';
+import '../../features/recommendation/models/current_visit.dart';
 import '../../features/recommendation/models/recommendation.dart';
 import '../../features/recommendation/models/review.dart';
 import '../../features/recommendation/views/emotion_selection_page.dart';
@@ -60,7 +61,16 @@ abstract final class AppPages {
     ),
     GetPage(
       name: AppRoutes.visitingSpot,
-      page: () => VisitingSpotPage(spot: Get.arguments as SpotDetail),
+      page: () {
+        final args = Get.arguments;
+        if (args is Map) {
+          return VisitingSpotPage(
+            spot: args['spot'] as SpotDetail,
+            resumeVisit: args['visit'] as CurrentVisit?,
+          );
+        }
+        return VisitingSpotPage(spot: args as SpotDetail);
+      },
     ),
     GetPage(
       name: AppRoutes.reviewList,
