@@ -12,6 +12,8 @@ class RecommendationDetailViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
+  bool _disposed = false;
+
   RecommendationDetailViewModel({
     required this.spotId,
     RecommendationRepository? repository,
@@ -19,10 +21,16 @@ class RecommendationDetailViewModel extends ChangeNotifier {
     loadDetail();
   }
 
+  /// dispose 이후 비동기 콜백이 늦게 도착해도 죽지 않도록
+  void _safeNotify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
   Future<void> loadDetail() async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    _safeNotify();
 
     try {
       spot = await _repository.getSpotDetail(spotId: spotId);
@@ -35,7 +43,34 @@ class RecommendationDetailViewModel extends ChangeNotifier {
       errorMessage = '상세 정보를 불러오지 못했어요. 다시 시도해주세요.';
     } finally {
       isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
+  }
+
+  Future<void> toggleLike() async {
+    if (spot == null) return;
+
+    final wasLiked = spot!.isLiked;
+    spot = spot!.copyWith(isLiked: !wasLiked);
+    _safeNotify();
+
+    var liked = !wasLiked;
+    try {
+      liked = wasLiked
+          ? await _repository.unlikeSpot(spotId: spotId)
+          : await _repository.likeSpot(spotId: spotId);
+    } catch (_) {
+      liked = wasLiked; // 실패 시 낙관적 업데이트 롤백
+    }
+
+    if (_disposed || spot == null) return;
+    spot = spot!.copyWith(isLiked: liked);
+    _safeNotify();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

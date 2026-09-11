@@ -60,6 +60,7 @@ class SpotDetail {
   final int? quietScore;
   final String? quietLevel;
   final DateTime? quietScoreUpdatedAt; // quietScore 미계산 스팟은 null
+  final bool isLiked;
 
   const SpotDetail({
     required this.id,
@@ -75,6 +76,7 @@ class SpotDetail {
     required this.quietScore,
     required this.quietLevel,
     required this.quietScoreUpdatedAt,
+    required this.isLiked,
   });
 
   factory SpotDetail.fromJson(Map<String, dynamic> json) {
@@ -94,6 +96,26 @@ class SpotDetail {
           ? null
           : DateTime.parse(json['quietScoreUpdatedAt'] as String),
       quietLevel: json['quietLevel'] as String?,
+      isLiked: json['isLiked'] as bool? ?? false,
+    );
+  }
+
+  SpotDetail copyWith({bool? isLiked}) {
+    return SpotDetail(
+      id: id,
+      name: name,
+      address: address,
+      category: category,
+      modes: modes,
+      description: description,
+      imageUrl: imageUrl,
+      recommendReason: recommendReason,
+      latitude: latitude,
+      longitude: longitude,
+      quietScore: quietScore,
+      quietLevel: quietLevel,
+      quietScoreUpdatedAt: quietScoreUpdatedAt,
+      isLiked: isLiked ?? this.isLiked,
     );
   }
 }

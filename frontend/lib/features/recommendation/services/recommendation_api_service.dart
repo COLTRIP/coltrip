@@ -54,7 +54,25 @@ class RecommendationApiService {
     }
   }
 
-  Future<void> toggleLike(int spotId) async {
+  Future<bool> likeSpot({required int spotId}) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/spots/$spotId/like',
+      );
+      return response.data!['liked'] as bool;
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
 
+  Future<bool> unlikeSpot({required int spotId}) async {
+    try {
+      final response = await _dio.delete<Map<String, dynamic>>(
+        '/api/spots/$spotId/like',
+      );
+      return response.data!['liked'] as bool;
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
   }
 }

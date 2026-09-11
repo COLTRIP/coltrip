@@ -25,7 +25,6 @@ class RecommendationDetailPage extends StatefulWidget {
 class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
   late final _viewModel = RecommendationDetailViewModel(spotId: widget.spotId);
   late final _reviewViewModel = ReviewViewModel(spotId: widget.spotId);
-  bool _isFavorite = false; // TODO: 실제 좋아요 API 연결
 
   @override
   void dispose() {
@@ -136,10 +135,9 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                           ),
                           const SizedBox(width: 8),
                           _FavoriteButton(
-                            isFavorite: _isFavorite,
+                            isFavorite: spot.isLiked,
                             size: 20,
-                            onPressed: () =>
-                                setState(() => _isFavorite = !_isFavorite),
+                            onPressed: _viewModel.toggleLike,
                           ),
                         ],
                       ),

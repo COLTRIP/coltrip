@@ -16,5 +16,11 @@ class RecommendationRepository {
     return _api.getSpotDetail(spotId: spotId);
   }
 
+  Future<bool> likeSpot({required int spotId}) {
+    return _api.likeSpot(spotId: spotId);
+  }
 
+  Future<bool> unlikeSpot({required int spotId}) {
+    return _api.unlikeSpot(spotId: spotId);
+  }
 }
