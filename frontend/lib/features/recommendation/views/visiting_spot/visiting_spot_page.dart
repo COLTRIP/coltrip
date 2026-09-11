@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../models/alternative_spot.dart';
 import '../../models/recommendation.dart';
 import '../../models/visit_status.dart';
 import '../../services/naver_map_service.dart';
 import '../../view_models/visiting_spot_view_model.dart';
-import '../recommendation/widgets/recommendation_card.dart';
 import 'widgets/visiting_spot_card.dart';
 import 'widgets/visiting_status_card.dart';
 
@@ -22,48 +23,6 @@ class VisitingSpotPage extends StatefulWidget {
 class _VisitingSpotPageState extends State<VisitingSpotPage> {
   late final _viewModel = VisitingSpotViewModel(spot: widget.spot);
 
-  // TODO: _viewModel.findAlternatives() 연동 전까지 화면 확인용 더미. 실제로는 대체지 API 응답으로 교체.
-  static final List<Spot> _dummyAlternatives = [
-    Spot(
-      id: 101,
-      name: '가덕도 해안공원',
-      category: 'PARK',
-      modes: const ['SCENERY'],
-      latitude: 35.0294,
-      longitude: 128.8103,
-      quietScore: 88,
-      quietLevel: 'QUIET',
-      quietScoreUpdatedAt: DateTime.now(),
-      address: '부산광역시 강서구 가덕해안로',
-      imageUrl: 'https://placehold.co/400x300/png?text=Alt+1',
-    ),
-    Spot(
-      id: 102,
-      name: '몰운대',
-      category: 'PARK',
-      modes: const ['CONTEMPLATION'],
-      latitude: 35.0511,
-      longitude: 128.9645,
-      quietScore: 81,
-      quietLevel: 'QUIET',
-      quietScoreUpdatedAt: DateTime.now(),
-      address: '부산광역시 사하구 몰운대1길',
-      imageUrl: 'https://placehold.co/400x300/png?text=Alt+2',
-    ),
-    Spot(
-      id: 103,
-      name: '다대포 해수욕장',
-      category: 'BEACH',
-      modes: const ['SCENERY'],
-      latitude: 35.0489,
-      longitude: 128.9651,
-      quietScore: 76,
-      quietLevel: 'QUIET',
-      quietScoreUpdatedAt: DateTime.now(),
-      address: '부산광역시 사하구 다대동',
-      imageUrl: 'https://placehold.co/400x300/png?text=Alt+3',
-    ),
-  ];
 
   @override
   void dispose() {
@@ -213,7 +172,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               isOutlined: true,
               label: '방문 취소하기',
               icon: Icons.close,
-              onPressed: () => Get.back(),
+              onPressed: () => Get.back(), //TODO: 방문 취소 로직 api 연결해야댐
             ),
           ],
         ),
@@ -247,11 +206,30 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // TODO: _viewModel.findAlternatives() 결과(List<AlternativeSpot>)로 교체
-                for (final alt in _dummyAlternatives) ...[
-                  RecommendationCard(spot: alt),
-                  const SizedBox(height: 16),
-                ],
+                if (_viewModel.isLoadingAlternatives)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: CircularProgressIndicator(color: Color(0xFF589C7E)),
+                    ),
+                  )
+                else if (_viewModel.alternativesError != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      _viewModel.alternativesError!,
+                      style: const TextStyle(
+                        fontFamily: 'Paperlogy',
+                        fontSize: 13,
+                        color: Color(0xFF7C7C7C),
+                      ),
+                    ),
+                  )
+                else
+                  for (final alt in _viewModel.alternatives) ...[
+                    _AlternativeCard(alternative: alt),
+                    const SizedBox(height: 16),
+                  ],
               ],
             ),
           ),
@@ -262,6 +240,77 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           onPressed: _viewModel.keepCurrentSpot,
         ),
       ],
+    );
+  }
+}
+
+/// 대체지 한 곳 카드. 탭하면 해당 장소 상세로 이동.
+class _AlternativeCard extends StatelessWidget {
+  final AlternativeSpot alternative;
+
+  const _AlternativeCard({required this.alternative});
+
+  @override
+  Widget build(BuildContext context) {
+    final spot = alternative.spot;
+    return InkWell(
+      onTap: () => Get.toNamed(
+        AppRoutes.recommendationDetail,
+        arguments: spot.id,
+      ),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 7,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  spot.name,
+                  style: const TextStyle(
+                    fontFamily: 'Paperlogy',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  '고요지수 ${spot.quietScore}',
+                  style: const TextStyle(
+                    fontFamily: 'Paperlogy',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF589C7E),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              alternative.recommendReason,
+              style: const TextStyle(
+                fontFamily: 'Paperlogy',
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+                color: Color(0xFF474444),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

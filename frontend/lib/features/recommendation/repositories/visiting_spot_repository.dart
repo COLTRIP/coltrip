@@ -1,3 +1,4 @@
+import '../models/alternative_spot.dart';
 import '../services/visiting_spot_api_service.dart';
 
 class VisitingSpotRepository {
@@ -17,6 +18,15 @@ class VisitingSpotRepository {
       startLatitude: startLatitude,
       startLongitude: startLongitude,
     );
+  }
+
+  Future<int?> viewQuietValue({
+    required int spotId,
+  }) {
+    return _api.viewQuietValue(spotId: spotId);
+  }
+  Future<List<AlternativeSpot>> getAlternatives({required int spotId}) {
+    return _api.getAlternatives(spotId: spotId);
   }
 
   /// 방문 완료 처리

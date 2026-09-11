@@ -1,35 +1,39 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/api_exception.dart';
+import '../models/alternative_spot.dart';
 import '../models/recommendation.dart';
 import '../models/visit_status.dart';
 import '../repositories/visiting_spot_repository.dart';
 
-class VisitingSpotViewModel extends ChangeNotifier {
+class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   VisitingSpotViewModel({
     required this.spot,
     VisitingSpotRepository? repository,
   })  : _repository = repository ?? VisitingSpotRepository(),
-        _startQuietScore = spot.quietScore ?? 0,
-        _currentQuietScore = spot.quietScore ?? 0 {
+        _startQuietScore = spot.quietScore,
+        _currentQuietScore = spot.quietScore {
     _startVisit();
   }
 
   final SpotDetail spot;
   final VisitingSpotRepository _repository;
+  static const _refreshHours = [9, 13, 17, 21];
 
-  static const Duration _pollInterval = Duration(minutes: 5);
   static const int _dropThreshold = 15;
   static const int _absoluteThreshold = 40;
 
   VisitStatus status = VisitStatus.visiting;
-  final int _startQuietScore;
-  int _currentQuietScore;
+
+  /// 방문 시작 시점의 고요지수 기준선. 시작 시 미계산(null)이면
+  /// 첫 유효 재조회값으로 지연 설정한다. (null 로 두고 0 으로 굳히지 않음)
+  int? _startQuietScore;
+  int? _currentQuietScore;
 
   // 방문 세션
   int? visitId;
@@ -41,10 +45,35 @@ class VisitingSpotViewModel extends ChangeNotifier {
   bool isCompleting = false;
   String? errorMessage;
 
-  Timer? _pollTimer;
+  // 대체지 추천
+  List<AlternativeSpot> alternatives = [];
+  bool isLoadingAlternatives = false;
+  String? alternativesError; // 빈 배열이면 "대체지 없음" 안내
 
-  int get startQuietScore => _startQuietScore;
-  int get currentQuietScore => _currentQuietScore;
+  Timer? _refreshTimer;
+  bool _disposed = false;
+
+  int? get startQuietScore => _startQuietScore;
+  int? get currentQuietScore => _currentQuietScore;
+
+  /// dispose 이후 비동기 콜백이 늦게 도착해도 죽지 않도록
+  void _safeNotify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
+  DateTime _nextBoundary() {
+    DateTime from = DateTime.now();
+
+    for(final h in _refreshHours) {
+      final c = DateTime(from.year, from.month, from.day, h);
+      if (c.isAfter(from)) return c;
+    }
+    final t = from.add(const Duration(days: 1));
+    return DateTime(t.year, t.month, t.day, _refreshHours.first);
+  }
+
+
 
   Future<void> _startVisit() async {
     isStarting = true;
@@ -52,23 +81,31 @@ class VisitingSpotViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 위치 권한은 진입 전(RecommendationDetailPage._startVisit)에서 확보됨
       final pos = await _currentPosition();
       visitId = await _repository.startVisit(
         spotId: spot.id,
         startLatitude: pos.latitude,
         startLongitude: pos.longitude,
       );
+      if (_disposed) return; // 시작 요청 중 화면이 닫혔으면 옵저버/타이머 안 검
       _visitStartedAt = DateTime.now();
-      _startPolling();
+      WidgetsBinding.instance.addObserver(this);
+      _scheduleRefresh();
     } on ApiException catch (e) {
-      // 409 AlreadyOngoingVisitException 등
-      startError = e.message;
+      switch (e.code) {
+        case 'AlreadyOngoingVisitException': // 409
+          // TODO(진행 중 방문 복구): 그 방문 조회 후 방문 화면으로 이동
+          startError = '이미 진행 중인 방문이 있어요.';
+        case 'SpotNotFoundException': // 404
+          startError = '장소를 찾을 수 없어요.';
+        default:
+          startError = e.message;
+      }
     } catch (_) {
       startError = '방문을 시작하지 못했어요. 위치 확인 후 다시 시도해주세요.';
     } finally {
       isStarting = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -76,29 +113,73 @@ class VisitingSpotViewModel extends ChangeNotifier {
 
   Future<Position> _currentPosition() {
     return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      ),
     );
   }
 
-  void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _checkQuietScore());
+
+  /// 다음 리프레시 경계 시각에 맞춰 one-shot 타이머 예약
+  void _scheduleRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer(_nextBoundary().difference(DateTime.now()), () {
+      _checkQuietScore();
+      _scheduleRefresh(); // 방문이 계속되면 다음 경계로
+    });
   }
 
-  Future<void> _checkQuietScore() async {
-    // TODO: GET /api/spots/{spot.id} 로 현재 고요지수 재조회 후 _currentQuietScore 갱신
-    final dropped = _startQuietScore - _currentQuietScore >= _dropThreshold;
-    final tooCrowded = _currentQuietScore < _absoluteThreshold;
-
-    if (status == VisitStatus.visiting && (dropped || tooCrowded)) {
-      status = VisitStatus.crowdingDetected;
-      notifyListeners();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkQuietScore();
+      _scheduleRefresh();
     }
   }
 
+  Future<void> _checkQuietScore() async {
+    final int? latest;
+    try {
+      latest = await _repository.viewQuietValue(spotId: spot.id);
+    } catch (_) {
+      return; // 재조회 실패 시 이번 주기는 건너뜀
+    }
+    if (_disposed) return; // 조회 도중 화면이 닫혔으면 중단
+    if (latest == null) return; // 고요지수 미계산 스팟 → 판정 스킵
+
+    _currentQuietScore = latest;
+    // 방문 시작 때 고요지수가 없었으면 첫 유효 조회값을 기준선으로 삼는다
+    final baseline = _startQuietScore ??= latest;
+
+    final dropped = baseline - latest >= _dropThreshold;
+    final tooCrowded = latest < _absoluteThreshold;
+
+    if (status == VisitStatus.visiting && (dropped || tooCrowded)) {
+      status = VisitStatus.crowdingDetected;
+      findAlternatives(); // 대체지 목록 미리 로드
+    }
+    _safeNotify(); // 고요지수 표시 갱신 (+ 위에서 상태가 바뀌었으면 그것도 반영)
+  }
+
   Future<void> findAlternatives() async {
-    // TODO: 위치 권한 확인/요청(LocationPermissionViewModel) 후
-    //       GET /api/spots/{spot.id}/alternatives 호출 -> 결과 노출
+    isLoadingAlternatives = true;
+    alternativesError = null;
+    _safeNotify();
+
+    try {
+      alternatives = await _repository.getAlternatives(spotId: spot.id);
+      if (alternatives.isEmpty) {
+        alternativesError = '지금은 추천할 만한 대체지가 없어요.';
+      }
+    } on ApiException catch (e) {
+      alternativesError = e.message;
+    } catch (_) {
+      alternativesError = '대체지를 불러오지 못했어요.';
+    } finally {
+      isLoadingAlternatives = false;
+      _safeNotify();
+    }
   }
 
   /// 대체지 추천을 무시하고 기존 목적지로 방문 유지
@@ -119,7 +200,7 @@ class VisitingSpotViewModel extends ChangeNotifier {
 
     isCompleting = true;
     errorMessage = null;
-    notifyListeners();
+    _safeNotify();
 
     try {
       final pos = await _currentPosition();
@@ -136,8 +217,9 @@ class VisitingSpotViewModel extends ChangeNotifier {
         arrivedLongitude: pos.longitude,
         stayDurationSeconds: stayed,
       );
+      if (_disposed) return; // 완료 요청 중 화면이 닫혔으면 이동하지 않음
 
-      _pollTimer?.cancel();
+      _refreshTimer?.cancel();
       status = VisitStatus.completed;
       notifyListeners();
 
@@ -146,25 +228,30 @@ class VisitingSpotViewModel extends ChangeNotifier {
         arguments: {'spot': spot, 'visitId': visitId!},
       );
     } on ApiException catch (e) {
-      if (e.statusCode == 400) {
-        // VisitConditionNotMetException — 목적지 반경 밖 / 체류시간 미충족.
-        // 안내 박스를 띄우고, 사용자가 아이콘 버튼을 눌러야 visiting 으로 복귀.
-        status = VisitStatus.notAtSpot;
-      } else {
-        // 409 InvalidVisitStateException(이미 완료/취소) 등
-        errorMessage = e.message;
+      switch (e.code) {
+        case 'VisitConditionNotMetException': // 400 — 목적지 반경 밖
+          // 안내 박스 표시, 사용자가 아이콘 버튼 눌러야 visiting 으로 복귀
+          status = VisitStatus.notAtSpot;
+        case 'InvalidVisitStateException': // 409 — 이미 완료/취소된 방문
+          errorMessage = '이미 완료되었거나 취소된 방문이에요.';
+        case 'VisitNotFoundException': // 404
+          errorMessage = '방문 정보를 찾을 수 없어요.';
+        default:
+          errorMessage = e.message;
       }
     } catch (_) {
       errorMessage = '방문 완료 처리에 실패했어요. 다시 시도해주세요.';
     } finally {
       isCompleting = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _disposed = true;
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 }

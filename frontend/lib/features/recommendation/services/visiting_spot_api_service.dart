@@ -1,15 +1,17 @@
+import 'package:coltrip/features/recommendation/models/alternative_spot.dart';
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
+import '../models/recommendation.dart';
 
+// TODO(예외처리 통합): 아래 메서드마다 반복되는 try/catch(DioException) → ApiException 변환은
+//   api_exception.dart 의 통합 계획대로 에러 인터셉터로 옮길 예정. 그때 여기 catch 들 제거.
 class VisitingSpotApiService {
   VisitingSpotApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
   final Dio _dio;
 
-  // TODO: 로그인 연동 전 임시. 협업자에게 받은 테스트용 accessToken을 넣을 것.
-  static const _tempAccessToken = '';
 
   Future<int> startVisit({
     required int spotId,
@@ -24,9 +26,6 @@ class VisitingSpotApiService {
           'startLatitude': startLatitude,
           'startLongitude': startLongitude,
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
       );
       return response.data!['visitId'] as int;
     } on DioException catch (e) {
@@ -47,16 +46,51 @@ class VisitingSpotApiService {
         data: {
           'arrivedLatitude': arrivedLatitude,
           'arrivedLongitude': arrivedLongitude,
-          'stayDurationSeconds': stayDurationSeconds,
+          'stayDurationSeconds': stayDurationSeconds, //없어질 예정
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
       );
     } on DioException catch (e) {
       // 400 VisitConditionNotMetException(반경/체류시간 미충족),
       // 409 InvalidVisitStateException(이미 완료/취소) → 메시지는 ApiException 으로 전달
+
       throw ApiException.fromDioException(e);
     }
   }
+
+  /// GET /api/spots/{spotId}/alternatives — 혼잡 시 유사 분위기의 더 한적한 대체지 목록.
+  /// 대체지가 없으면 빈 배열(200).
+  Future<List<AlternativeSpot>> getAlternatives({
+    required int spotId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/spots/$spotId/alternatives',
+      );
+
+      final list = response.data?['alternatives'] as List? ?? const [];
+      return list
+          .cast<Map<String, dynamic>>()
+          .map(AlternativeSpot.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+
+
+  /// 현재 고요지수 재조회. 아직 계산 안 된 스팟이면 null.
+  Future<int?> viewQuietValue({
+    required int spotId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/spots/$spotId',
+      );
+      return SpotDetail.fromJson(response.data!).quietScore;
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
 }
