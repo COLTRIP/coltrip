@@ -3,6 +3,8 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/recommendation.dart';
 
+// TODO(예외처리 통합): try/catch(DioException) → ApiException 변환 반복.
+//   api_exception.dart 계획대로 에러 인터셉터로 중앙화 예정.
 class RecommendationApiService {
   RecommendationApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
@@ -14,8 +16,6 @@ class RecommendationApiService {
   static const _busanNeLat = 35.40;
   static const _busanNeLng = 129.30;
 
-  // TODO: 로그인 연동 전 임시. 협업자에게 받은 테스트용 accessToken을 넣을 것.
-  static const _tempAccessToken = '';
 
   /// GET /api/spots — bounding box 안의 추천 장소 목록
   Future<List<Spot>> getSpots({String? category, String? mode}) async {
@@ -31,9 +31,6 @@ class RecommendationApiService {
             'category': category,
           if (mode != null && mode.isNotEmpty) 'mode': mode,
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
       );
 
       final list = response.data?['spots'] as List? ?? const [];
@@ -49,10 +46,7 @@ class RecommendationApiService {
   Future<SpotDetail> getSpotDetail({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/api/spots/$spotId',
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
+        '/api/spots/$spotId'
       );
       return SpotDetail.fromJson(response.data!);
     } on DioException catch (e) {

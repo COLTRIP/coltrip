@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../view_models/recommendation_filter_view_model.dart';
 
 class RecommendationFilterSheet extends StatelessWidget {

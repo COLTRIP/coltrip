@@ -43,8 +43,12 @@ class WriteReviewViewModel extends ChangeNotifier {
       );
       return true;
     } on ApiException catch (e) {
-      // 409 ReviewNotAllowedException(방문 미완료 / 이미 작성), 404 VisitNotFound 등
-      errorMessage = e.message;
+      errorMessage = switch (e.code) {
+        'ReviewNotAllowedException' => '이미 리뷰를 작성했거나 방문이 완료되지 않았어요.',
+        'ValidationException' => '별점을 선택해주세요.',
+        'VisitNotFoundException' => '방문 정보를 찾을 수 없어요.',
+        _ => e.message,
+      };
       return false;
     } catch (_) {
       errorMessage = '리뷰 작성에 실패했어요. 다시 시도해주세요.';

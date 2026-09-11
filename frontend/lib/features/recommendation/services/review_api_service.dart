@@ -3,22 +3,19 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/review.dart';
 
+// TODO(예외처리 통합): try/catch(DioException) → ApiException 변환 반복.
+//   api_exception.dart 계획대로 에러 인터셉터로 중앙화 예정 (특히 404/409 code 분기).
 class ReviewApiService {
 
   ReviewApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
   final Dio _dio;
 
-  // TODO: 로그인 연동 전 임시. 협업자에게 받은 테스트용 accessToken을 넣을 것.
-  static const _tempAccessToken = '';
 
   Future<List<SpotReview>> getReviews({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/api/spots/$spotId/reviews',
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
+        '/api/spots/$spotId/reviews'
       );
 
       final list = response.data?['reviews'] as List? ?? const [];
@@ -43,10 +40,7 @@ class ReviewApiService {
         data: {
           'rating': rating,
           if (content != null && content.isNotEmpty) 'content': content,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer $_tempAccessToken'},
-        ),
+        }
       );
       return SpotReview.fromJson(response.data!);
     } on DioException catch (e) {

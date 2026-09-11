@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../exceptions/recommendation_exception.dart';
+import '../../../core/network/api_exception.dart';
 import '../models/recommendation.dart';
 import '../repositories/recommendation_repository.dart';
 
@@ -25,15 +25,14 @@ class RecommendationDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      spot = await _repository.getSpotDetail(
-        spotId: spotId,
-      ); // TODO: 실제 API 연결되면 repository 호출로 교체
-    } on RecommendationLoadException catch (e) {
-      errorMessage = e.message;
-    } catch (e) {
-      errorMessage = const RecommendationLoadException(
-        '상세 정보를 불러오지 못했어요. 다시 시도해주세요.',
-      ).message;
+      spot = await _repository.getSpotDetail(spotId: spotId);
+    } on ApiException catch (e) {
+      errorMessage = switch (e.code) {
+        'SpotNotFoundException' => '삭제되었거나 존재하지 않는 장소예요.', // 404
+        _ => e.message,
+      };
+    } catch (_) {
+      errorMessage = '상세 정보를 불러오지 못했어요. 다시 시도해주세요.';
     } finally {
       isLoading = false;
       notifyListeners();
