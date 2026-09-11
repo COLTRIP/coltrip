@@ -109,28 +109,34 @@ class _Missbox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: const Color(0xFFF2CECE),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          const Expanded(
+          const Padding(
+            padding: EdgeInsets.only(right: 20, left: 6),
             child: Text(
               '아직 방문 장소에 도착하지 않았어요.\n조금 더 가까이에서 다시 확인해주세요.',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Paperlogy',
-                fontSize: 16,
+                fontSize: 14,
               ),
               textAlign: TextAlign.left,
             ),
           ),
-          IconButton(
-            onPressed: onDismiss,
-            icon: const Icon(Icons.close, color: Colors.black),
+          Positioned(
+            top: -6,
+            right: -8,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close, color: Colors.black, size: 20),
+            ),
           ),
         ],
       ),
