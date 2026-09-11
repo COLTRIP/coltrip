@@ -193,7 +193,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 32),
                     Align(
                       alignment: AlignmentGeometry.center,
-                      child: Container(
+                      child: SizedBox(
                         width: 350,
                         child: Text(
                           spot.description,
