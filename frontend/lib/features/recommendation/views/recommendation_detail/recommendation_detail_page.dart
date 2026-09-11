@@ -41,15 +41,20 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
 
     if (!granted) {
       // 권한 없으면 허용 화면으로 → 허용받으면 true 반환
-      granted = await Get.toNamed<bool>(AppRoutes.locationPermission) ?? false;
+      // Get.toNamed<bool>() 제네릭 지정 시 GetX 내부에서 GetPageRoute<dynamic> →
+      // Route<bool?> 캐스팅 중 터지는 알려진 버그가 있어 제네릭 없이 호출 후 직접 캐스팅
+      final permissionResult = await Get.toNamed(AppRoutes.locationPermission);
+      granted = (permissionResult as bool?) ?? false;
       if (!granted || !mounted) return;
     }
 
+
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
-    final reviewed = await Get.toNamed<bool>(
+    final visitingResult = await Get.toNamed(
       AppRoutes.visitingSpot,
       arguments: spot,
     );
+    final reviewed = visitingResult as bool?;
     if (reviewed == true && mounted) {
       _reviewViewModel.loadReviews();
     }
@@ -73,12 +78,16 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_viewModel.errorMessage!),
-                    const SizedBox(height: 12),
-                    PrimaryButton(
-                      label: '다시 시도',
-                      isOutlined: true,
-                      onPressed: _viewModel.loadDetail,
+                    Text(_viewModel.errorMessage!, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+
+                      child: PrimaryButton(
+                        label: '다시 시도',
+                        isOutlined: true,
+                        onPressed: _viewModel.loadDetail,
+                      ),
                     ),
                   ],
                 ),
@@ -105,15 +114,20 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                       onPressed: () => Get.back(),
                       icon: const Icon(Icons.arrow_back, color: Colors.black),
                     ),
-                    const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: Image.network(
-                        spot.imageUrl,
-                        width: double.infinity,
-                        height: 208,
-                        fit: BoxFit.cover,
-                      ),
+                      child: (spot.imageUrl == null || spot.imageUrl!.isEmpty)
+                          ? Container(
+                              width: double.infinity,
+                              height: 208,
+                              color: const Color(0xFFE5E5E5),
+                            )
+                          : Image.network(
+                              spot.imageUrl!,
+                              width: double.infinity,
+                              height: 208,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     const SizedBox(height: 10),
                     Align(
@@ -153,42 +167,44 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: AlignmentGeometry.center,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: spot.modes.map((mode) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Container(
-                              height: 29,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFAFAFA),
-                                border: Border.all(
-                                  color: const Color(0xFFE5E5E5),
+                    if (spot.modes != null && spot.modes!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: AlignmentGeometry.center,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: spot.modes!.map((mode) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Container(
+                                height: 29,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
                                 ),
-                                borderRadius: BorderRadius.circular(45),
-                              ),
-                              child: Text(
-                                mode,
-                                style: const TextStyle(
-                                  fontFamily: 'Paperlogy',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF474444),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFAFAFA),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E5E5),
+                                  ),
+                                  borderRadius: BorderRadius.circular(45),
+                                ),
+                                child: Text(
+                                  mode,
+                                  style: const TextStyle(
+                                    fontFamily: 'Paperlogy',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF474444),
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
+                    ],
+                    const SizedBox(height: 20),
                     Align(
                       alignment: AlignmentGeometry.center,
                       child: SizedBox(
@@ -205,9 +221,9 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 12),
                     const Divider(height: 24, color: Color(0x33252B28)),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     const Text(
                       '고요 지수',
                       style: TextStyle(

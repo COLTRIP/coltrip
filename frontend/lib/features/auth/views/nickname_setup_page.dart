@@ -47,7 +47,7 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
     debugPrint('닉네임 저장 상태: ${response.statusCode}');
     debugPrint('닉네임 저장 응답: ${response.data}');
 
-    Get.offAllNamed(AppRoutes.map);
+    Get.offAllNamed(AppRoutes.main);
   }
 
   @override

@@ -26,12 +26,18 @@ class VisitingSpotCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-            child: Image.network(
-              spot.imageUrl,
-              width: double.infinity,
-              height: 140,
-              fit: BoxFit.cover,
-            ),
+            child: (spot.imageUrl == null || spot.imageUrl!.isEmpty)
+                ? Container(
+                    width: double.infinity,
+                    height: 140,
+                    color: const Color(0xFFE5E5E5),
+                  )
+                : Image.network(
+                    spot.imageUrl!,
+                    width: double.infinity,
+                    height: 140,
+                    fit: BoxFit.cover,
+                  ),
           ),
           Positioned(
             left: 0,

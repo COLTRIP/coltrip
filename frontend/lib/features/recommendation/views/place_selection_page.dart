@@ -18,6 +18,7 @@ class PlaceSelectionPage extends StatefulWidget {
 
 class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
   String? selectedPlaceId;
+  String? selectedCategory;
 
   @override
   void initState() {
@@ -45,18 +46,19 @@ class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
   void selectPlace(PlaceTypeItem item) {
     setState(() {
       selectedPlaceId = item.id;
+      selectedCategory = item.category;
     });
   }
 
   void moveToEmotionSelection() {
-    if (selectedPlaceId == null) {
+    if (selectedCategory == null) {
       return;
     }
 
     Get.toNamed(
       AppRoutes.emotionSelection,
       arguments: {
-        'placeId': selectedPlaceId,
+        'category': selectedCategory,
       },
     );
   }
@@ -66,9 +68,7 @@ class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
     return Scaffold(
       appBar: RecommendationAppBar(
         showBackButton: false,
-        onPressed: () {
-          Get.toNamed(AppRoutes.emotionSelection);
-        },
+        onPressed: () => moveToEmotionSelection(),
       ),
       body: Column(
         children: [

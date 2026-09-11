@@ -46,12 +46,15 @@ abstract final class AppPages {
     ),
     GetPage(
       name: AppRoutes.emotionSelection,
-      page: () => const EmotionSelectionPage(),
+      page: () {
+        final args = Get.arguments;
+        final category = args is Map ? args['category'] as String? : null;
+        return EmotionSelectionPage(category: category);
+      },
     ),
     GetPage(
       name: AppRoutes.recommendationList,
       page: () => RecommendationPage(
-        // TODO: 감성/장소 선택 화면에서 넘어온 값으로 교체
         category: Get.arguments as String? ?? '전체',
       ),
     ),

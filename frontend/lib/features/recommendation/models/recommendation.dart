@@ -51,9 +51,9 @@ class SpotDetail {
   final String name;
   final String address;
   final String category;
-  final List<String> modes;
+  final List<String>? modes;
   final String description;
-  final String imageUrl;
+  final String? imageUrl;
   final String recommendReason;
   final double latitude;
   final double longitude;
@@ -85,9 +85,9 @@ class SpotDetail {
       name: json['name'] as String,
       address: json['address'] as String,
       category: json['category'] as String,
-      modes: (json['modes'] as List).cast<String>(),
+      modes: (json['modes'] as List?)?.cast<String>(),
       description: json['description'] as String,
-      imageUrl: json['imageUrl'] as String,
+      imageUrl: json['imageUrl'] as String?,
       recommendReason: json['recommendReason'] as String,
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),

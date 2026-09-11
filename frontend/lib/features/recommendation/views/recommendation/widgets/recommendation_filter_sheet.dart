@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
+import '../../../../../app/routes/app_routes.dart';
 import '../../../view_models/recommendation_filter_view_model.dart';
 
 class RecommendationFilterSheet extends StatelessWidget {
@@ -42,6 +45,7 @@ class RecommendationFilterSheet extends StatelessWidget {
 
   Future<void> _changeCategory(BuildContext context) async {
     // TODO: 실제 카테고리 선택 화면 만들면 Get.toNamed로 이동해서 결과값 받기
+    Get.toNamed(AppRoutes.recommendation);
   }
 
   @override
