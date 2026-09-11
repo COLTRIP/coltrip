@@ -6,7 +6,10 @@ import '../widgets/recommendation_selection_app_bar.dart';
 
 
 class EmotionSelectionPage extends StatefulWidget {
-  const EmotionSelectionPage({super.key});
+  /// 장소선택에서 넘어온 백엔드 category enum 값 (예: 'CAFE'). 없으면 전체.
+  final String? category;
+
+  const EmotionSelectionPage({super.key, this.category});
 
   @override
   State<EmotionSelectionPage> createState() => _EmotionSelectionPageState();
@@ -19,7 +22,7 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
       appBar: RecommendationAppBar(
         action: RecommendationAppBarAction.skip,
         onPressed: () {
-          Get.toNamed(AppRoutes.emotionSelection);
+          Get.toNamed(AppRoutes.recommendationList, arguments: widget.category);
         },
       ),
       body: const Center(

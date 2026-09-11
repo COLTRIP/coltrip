@@ -6,33 +6,59 @@ import '../../../app/routes/app_routes.dart';
 import '../data/place_type_data.dart';
 import '../../../features/recommendation/widgets/place_type_grid.dart';
 import '../models/place_type_item.dart';
+import '../repositories/visiting_spot_repository.dart';
 
 
-class RecommendationPage extends StatefulWidget {
-  const RecommendationPage({super.key});
+class PlaceSelectionPage extends StatefulWidget {
+  const PlaceSelectionPage({super.key});
 
   @override
-  State<RecommendationPage> createState() => _RecommendationPageState();
+  State<PlaceSelectionPage> createState() => _PlaceSelectionPageState();
 }
 
-class _RecommendationPageState extends State<RecommendationPage> {
+class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
   String? selectedPlaceId;
+  String? selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOngoingVisit();
+  }
+
+  Future<void> _checkOngoingVisit() async {
+    try {
+      final current = await VisitingSpotRepository().getCurrentVisit();
+      if (current == null || current.status != 'STARTED' || !mounted) return;
+
+      Get.toNamed(
+        AppRoutes.visitingSpot,
+        arguments: {
+          'spot': current.toPlaceholderSpotDetail(),
+          'visit': current,
+        },
+      );
+    } catch (_) {
+      return;
+    }
+  }
 
   void selectPlace(PlaceTypeItem item) {
     setState(() {
       selectedPlaceId = item.id;
+      selectedCategory = item.category;
     });
   }
 
   void moveToEmotionSelection() {
-    if (selectedPlaceId == null) {
+    if (selectedCategory == null) {
       return;
     }
 
     Get.toNamed(
       AppRoutes.emotionSelection,
       arguments: {
-        'placeId': selectedPlaceId,
+        'category': selectedCategory,
       },
     );
   }
@@ -42,9 +68,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
     return Scaffold(
       appBar: RecommendationAppBar(
         showBackButton: false,
-        onPressed: () {
-          Get.toNamed(AppRoutes.emotionSelection);
-        },
+        onPressed: () => moveToEmotionSelection(),
       ),
       body: Column(
         children: [
