@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:coltrip/core/network/token_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -87,6 +88,8 @@ class GoogleAuthService {
         name: logName,
       );
 
+      await const TokenStorage().saveTokens(accessToken: authResponse.accessToken, refreshToken: authResponse.refreshToken);
+
       return authResponse;
     } on GoogleSignInException catch (error, stackTrace) {
       developer.log(
@@ -159,6 +162,7 @@ class GoogleAuthService {
     );
 
     await GoogleSignIn.instance.signOut();
+    await const TokenStorage().clearTokens();
 
     developer.log(
       'Google 로그아웃 완료',
