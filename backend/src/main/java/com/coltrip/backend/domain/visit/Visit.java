@@ -52,6 +52,18 @@ public class Visit {
     @Column(name = "start_quiet_score")
     private Integer startQuietScore;
 
+    @Column(name = "start_quiet_score_observed_at")
+    private LocalDateTime startQuietScoreObservedAt;
+
+    @Column(name = "alternative_suggestion_json", columnDefinition = "LONGTEXT")
+    private String alternativeSuggestionJson;
+
+    @Column(name = "alternative_dismissed_at")
+    private LocalDateTime alternativeDismissedAt;
+
+    @Column(name = "alternative_selected_visit_id")
+    private Long alternativeSelectedVisitId;
+
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;
 
@@ -69,6 +81,7 @@ public class Visit {
         this.startLatitude = startLatitude;
         this.startLongitude = startLongitude;
         this.startQuietScore = spot.getCurrentQuietScore();
+        this.startQuietScoreObservedAt = spot.getQuietScoreUpdatedAt();
     }
 
     @PrePersist
@@ -87,5 +100,17 @@ public class Visit {
 
     public void cancel() {
         this.status = VisitStatus.CANCELED;
+    }
+
+    public void saveAlternativeSuggestion(String json) {
+        this.alternativeSuggestionJson = json;
+    }
+
+    public void dismissAlternativeSuggestion(LocalDateTime dismissedAt) {
+        this.alternativeDismissedAt = dismissedAt;
+    }
+
+    public void selectAlternativeVisit(Long visitId) {
+        this.alternativeSelectedVisitId = visitId;
     }
 }

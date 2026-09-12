@@ -82,6 +82,8 @@ public class VisitService {
     }
 
     private Visit findOwnedStartedVisit(Long userId, Long visitId) {
+        // 시작/완료/취소/대체지 선택은 동일한 사용자 행 잠금 순서를 사용한다.
+        userRepository.findByIdForUpdate(userId).orElseThrow(UnauthorizedException::new);
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(VisitNotFoundException::new);
 

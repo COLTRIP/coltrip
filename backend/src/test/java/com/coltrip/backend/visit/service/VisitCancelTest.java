@@ -3,6 +3,7 @@ package com.coltrip.backend.visit.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import com.coltrip.backend.domain.spot.Category;
 import com.coltrip.backend.domain.spot.TouristSpot;
@@ -17,6 +18,7 @@ import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -40,6 +42,15 @@ class VisitCancelTest {
 
     @InjectMocks
     private VisitService visitService;
+
+    @BeforeEach
+    void allowUserLock() {
+        when(userRepository.findByIdForUpdate(anyLong()))
+                .thenReturn(Optional.of(User.builder()
+                        .googleSub("lock-user")
+                        .email("lock@example.com")
+                        .build()));
+    }
 
     @Test
     void cancelsStartedVisit() {
