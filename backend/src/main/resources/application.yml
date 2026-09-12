@@ -17,3 +17,10 @@ server:
 logging:
   level:
     org.hibernate.SQL: debug
+
+ai:
+  base-url: ${AI_BASE_URL:}
+  api-key: ${AI_API_KEY:}
+  data-source: ${AI_DATA_SOURCE:real}
+  connect-timeout-millis: 3000
+  read-timeout-millis: 30000

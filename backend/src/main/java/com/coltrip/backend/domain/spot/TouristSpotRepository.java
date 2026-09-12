@@ -42,4 +42,11 @@ public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> 
             WHERE s.id = :spotId
             """)
     Optional<TouristSpot> findByIdWithModes(@Param("spotId") Long spotId);
+
+    @Query("""
+            SELECT DISTINCT s FROM TouristSpot s
+            LEFT JOIN FETCH s.spotModes
+            WHERE s.tourApiContentId IN :contentIds
+            """)
+    List<TouristSpot> findByTourApiContentIdsWithModes(@Param("contentIds") List<String> contentIds);
 }
