@@ -1,4 +1,4 @@
-package com.example.coltrip
+package com.coltrip.app
 
 import io.flutter.embedding.android.FlutterActivity
 
