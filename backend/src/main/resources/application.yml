@@ -24,3 +24,8 @@ ai:
   data-source: ${AI_DATA_SOURCE:real}
   connect-timeout-millis: 3000
   read-timeout-millis: 30000
+
+visit:
+  nudge:
+    max-score-age: PT5H
+    proposal-ttl: PT10M
