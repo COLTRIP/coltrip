@@ -30,7 +30,7 @@ public class VisitController {
 
     private final VisitService visitService;
 
-    @Operation(summary = "현재 방문 조회", description = "현재 로그인한 사용자의 진행 중인 방문을 조회합니다. 방문 중인 장소가 없으면 visit: null을 반환합니다.")
+    @Operation(summary = "현재 방문 조회", description = "본인의 STARTED 방문을 조회합니다. 없으면 200과 visit: null을 반환합니다. 시작/현재 고요지수는 미수신 시 null이며 visitRadiusMeters는 완료 판정 반경(m)입니다. 체류시간 필드는 없습니다.")
     @GetMapping("/current")
     public ResponseEntity<CurrentVisitResponse> getCurrent(@AuthenticationPrincipal Long userId) {
         return ResponseEntity.ok(visitService.getCurrent(userId));

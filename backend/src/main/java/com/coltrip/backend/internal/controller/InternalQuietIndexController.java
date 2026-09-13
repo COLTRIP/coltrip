@@ -28,7 +28,8 @@ public class InternalQuietIndexController {
             description = """
                     **JWT가 아니라 `X-Internal-Api-Key` 헤더로 인증합니다.** (우측 상단 Authorize와 무관)
 
-                    AI가 배치(1시간 주기)로 계산한 quietScore를 전달합니다.
+                    AI가 계산한 quietScore를 전달합니다. 실제 전송 주기는 공급자 설정에서 확인합니다.
+                    이 수신 API 자체는 1시간 스케줄러나 AI 지도 수집기를 실행하지 않습니다.
                     `quiet_index` 이력에 저장하고 `tourist_spot`의 캐시 값을 갱신합니다.
                     스팟 식별은 내부 ID가 아니라 TourAPI 원본 `tourApiContentId`로 합니다.
                     """)
