@@ -1,13 +1,6 @@
 // TODO: 이전 화면에서 받은 감성 모드 받아와서 띄우기
 const spotModes = ['ASMR', '풍경위주', '적막함'];
 
-class RecommendationResult {
-  const RecommendationResult({required this.spots, this.message});
-
-  final List<Spot> spots;
-  final String? message;
-}
-
 class Spot {
   final int id;
   final String name;
@@ -20,6 +13,7 @@ class Spot {
   final int? quietScore;
   final String? quietLevel;
   final DateTime quietScoreUpdatedAt;
+
 
   const Spot({
     required this.id,
@@ -44,35 +38,10 @@ class Spot {
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       quietScore: json['quietScore'] as int?,
-      quietLevel: json['quietLevel'] as String?,
-      quietScoreUpdatedAt: DateTime.parse(
-        json['quietScoreUpdatedAt'] as String,
-      ),
+      quietLevel : json['quietLevel'] as String?,
+      quietScoreUpdatedAt: DateTime.parse(json['quietScoreUpdatedAt'] as String),
       address: json['address'] as String,
       imageUrl: json['imageUrl'] as String?,
-    );
-  }
-
-  factory Spot.fromRecommendationJson(Map<String, dynamic> json) {
-    final spot = json['spot'] as Map<String, dynamic>;
-    final forecast = json['forecast'] as Map<String, dynamic>;
-    final quietIndex = forecast['quietIndex'] as num?;
-    final targetAt = forecast['targetAt'] as String?;
-
-    return Spot(
-      id: (spot['id'] as num).toInt(),
-      name: spot['name'] as String,
-      address: spot['address'] as String,
-      category: spot['category'] as String,
-      modes: (spot['modes'] as List? ?? const []).cast<String>(),
-      imageUrl: spot['imageUrl'] as String?,
-      latitude: (spot['latitude'] as num).toDouble(),
-      longitude: (spot['longitude'] as num).toDouble(),
-      quietScore: quietIndex?.round(),
-      quietLevel: null,
-      quietScoreUpdatedAt: targetAt == null
-          ? DateTime.now()
-          : DateTime.parse(targetAt),
     );
   }
 }

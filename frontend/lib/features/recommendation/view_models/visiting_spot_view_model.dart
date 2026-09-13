@@ -15,9 +15,9 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   VisitingSpotViewModel({
     required this.spot,
     VisitingSpotRepository? repository,
-  }) : _repository = repository ?? VisitingSpotRepository(),
-       _startQuietScore = spot.quietScore,
-       _currentQuietScore = spot.quietScore {
+  })  : _repository = repository ?? VisitingSpotRepository(),
+        _startQuietScore = spot.quietScore,
+        _currentQuietScore = spot.quietScore {
     _startVisit();
   }
 
@@ -27,11 +27,11 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     required int? startQuietScore,
     required int? currentQuietScore,
     VisitingSpotRepository? repository,
-  }) : _repository = repository ?? VisitingSpotRepository(),
-       // ignore: prefer_initializing_formals
-       _startQuietScore = startQuietScore,
-       // ignore: prefer_initializing_formals
-       _currentQuietScore = currentQuietScore {
+  })  : _repository = repository ?? VisitingSpotRepository(),
+        // ignore: prefer_initializing_formals
+        _startQuietScore = startQuietScore,
+        // ignore: prefer_initializing_formals
+        _currentQuietScore = currentQuietScore {
     visitId = resumedVisitId;
     isStarting = false;
     WidgetsBinding.instance.addObserver(this);
@@ -84,13 +84,15 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   DateTime _nextBoundary() {
     DateTime from = DateTime.now();
 
-    for (final h in _refreshHours) {
+    for(final h in _refreshHours) {
       final c = DateTime(from.year, from.month, from.day, h);
       if (c.isAfter(from)) return c;
     }
     final t = from.add(const Duration(days: 1));
     return DateTime(t.year, t.month, t.day, _refreshHours.first);
   }
+
+
 
   Future<void> _startVisit() async {
     isStarting = true;
@@ -136,10 +138,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
       Get.offNamed(
         AppRoutes.visitingSpot,
-        arguments: {
-          'spot': current.toPlaceholderSpotDetail(),
-          'visit': current,
-        },
+        arguments: {'spot': current.toPlaceholderSpotDetail(), 'visit': current},
       );
     } catch (_) {
       startError = '이미 진행 중인 방문이 있어요.';
@@ -186,6 +185,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
       _safeNotify();
     }
   }
+
 
   /// 다음 리프레시 경계 시각에 맞춰 one-shot 타이머 예약
   void _scheduleRefresh() {
