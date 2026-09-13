@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 // AI GET /quiet-index/map을 1시간 주기로 당겨와 우리 DB에 있는 장소만 반영한다(이슈 #63).
 // 지도 요청마다 AI를 부르지 않고, 이 스케줄러가 당긴 값을 tourist_spot 캐시가 대신 서빙한다.
@@ -52,20 +53,41 @@ public class QuietIndexMapSyncScheduler {
         try {
             items = client.fetchMap(now.getHour(), weekend);
         } catch (RuntimeException e) {
-            log.warn("AI 고요지수 지도 동기화 실패, 마지막 정상값 유지: {}", e.getMessage());
+            log.warn("AI 고요지수 지도 동기화 실패, 마지막 정상값 유지: {}", e.getClass().getSimpleName());
             return;
         }
 
         LocalDateTime calculatedAt = now.toLocalDateTime();
-        int matched = 0;
+        Set<String> seen = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
         for (Item item : items) {
-            if (item.quietIndex() == null || !ours.contains(item.poiId())) {
-                continue;
-            }
-            if (applier.apply(item.poiId(), item.quietIndex(), calculatedAt)) {
-                matched++;
+            if (item != null && StringUtils.hasText(item.poiId()) && !seen.add(item.poiId())) {
+                duplicates.add(item.poiId());
             }
         }
-        log.info("AI 고요지수 지도 동기화 완료: 응답 {}건 중 {}건 반영", items.size(), matched);
+        int matched = 0;
+        int skipped = 0;
+        int failed = 0;
+        for (Item item : items) {
+            if (item == null || !StringUtils.hasText(item.poiId()) || duplicates.contains(item.poiId())
+                    || item.quietIndex() == null || !Double.isFinite(item.quietIndex())
+                    || item.quietIndex() < 0 || item.quietIndex() > 100 || !ours.contains(item.poiId())) {
+                skipped++;
+                continue;
+            }
+            try {
+                // 별도 빈의 트랜잭션이 커밋/롤백된 뒤 다음 항목으로 진행한다.
+                if (applier.apply(item.poiId(), item.quietIndex(), calculatedAt)) {
+                    matched++;
+                } else {
+                    skipped++;
+                }
+            } catch (RuntimeException e) {
+                failed++;
+                log.warn("AI 고요지수 지도 건별 저장 실패: {}", e.getClass().getSimpleName());
+            }
+        }
+        log.info("AI 고요지수 지도 동기화 완료: 응답 {}건, 성공 {}건, 제외 {}건, 실패 {}건",
+                items.size(), matched, skipped, failed);
     }
 }
