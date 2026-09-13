@@ -195,6 +195,9 @@ DELETE /api/users/me
 
 ## [관광지]
 
+감성 라벨: COZY(아늑), NATURAL(자연), URBAN(도시), VINTAGE(빈티지), EXOTIC(이국), VIBRANT(활기), SENSORY(감각), TRANQUIL(고요).
+필드명 mode/modes는 유지한다. 구 라벨은 허용하지 않으며 [전환 절차](./emotion-label-migration.md)를 참고한다.
+
 ### 날짜/시간대별 추천 및 예측 타임라인
 
 날짜별 추천, 별도 예측 타임라인, 예측 배치 수신 계약은
@@ -220,9 +223,9 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
 | `swLat`, `swLng` | Y | 지도 영역 남서쪽 좌표 |
 | `neLat`, `neLng` | Y | 지도 영역 북동쪽 좌표 |
 | `category` | N | 장소유형 enum (예: `CAFE`). 미지정 시 전체 |
-| `mode` | N | 감성모드 enum (예: `WALK`). 미지정 시 전체 |
+| `mode` | N | 감성모드 enum (예: `NATURAL`). 미지정 시 전체 |
 
-`mode`는 **필터 조건일 뿐**이며, 응답의 `modes` 필드에는 해당 장소가 가진 **모든 감성모드**가 담긴다. (예: `mode=WATER_GAZING`으로 조회해도 흰여울문화마을은 `["SCENERY","WALK","WATER_GAZING"]` 전체가 응답됨)
+`mode`는 **필터 조건일 뿐**이며, 응답의 `modes` 필드에는 해당 장소가 가진 **모든 감성모드**가 담긴다. (예시: `mode=EXOTIC`으로 조회한 장소가 `["EXOTIC","SENSORY"]`를 갖고 있으면 둘 다 응답한다)
 
 **Response `200`** — `SpotListResponse`
 ```json
@@ -233,7 +236,7 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
       "name": "string",
       "address": "부산광역시 중구 ...",
       "category": "CAFE",
-      "modes": ["CONTEMPLATION", "SCENERY"],
+      "modes": ["TRANQUIL", "SENSORY"],
       "imageUrl": "https://...",
       "latitude": 35.15,
       "longitude": 129.06,
@@ -263,7 +266,7 @@ GET /api/spots/{spotId}
   "name": "string",
   "address": "string",
   "category": "CAFE",
-  "modes": ["CONTEMPLATION"],
+  "modes": ["TRANQUIL"],
   "description": "string",
   "imageUrl": "string",
   "recommendReason": "조용한 골목 안쪽에 위치해 방문객이 적고, 사유하기 좋은 공간입니다",
@@ -338,7 +341,7 @@ AI 후보 거리 3km 이하와 백엔드 좌표로 재계산한 직선거리 300
       "name": "예시 장소",
       "address": "부산광역시 예시 주소",
       "category": "CAFE",
-      "modes": ["CONTEMPLATION"],
+      "modes": ["TRANQUIL"],
       "imageUrl": null,
       "latitude": 35.16,
       "longitude": 129.05,

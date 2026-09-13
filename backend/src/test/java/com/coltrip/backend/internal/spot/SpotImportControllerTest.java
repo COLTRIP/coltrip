@@ -35,8 +35,8 @@ class SpotImportControllerTest {
     @Test void requiredFieldsAndEnumsAreValidated() throws Exception {
         request(body().replace("\"name\":\"Place\"", "\"name\":\"\""), "test-key", 400);
         request(body().replace("\"PARK\"", "\"UNKNOWN\""), "test-key", 400);
-        request(body().replace("\"modes\":[\"WALK\"]", "\"modes\":null"), "test-key", 400);
-        request(body().replace("\"WALK\"", "\"COZY\""), "test-key", 400);
+        request(body().replace("\"modes\":[\"NATURAL\"]", "\"modes\":null"), "test-key", 400);
+        request(body().replace("\"NATURAL\"", "\"UNKNOWN\""), "test-key", 400);
         request(body().replace("\"123\"", "\"POI001\""), "test-key", 400);
         verifyNoInteractions(spots);
     }
@@ -71,7 +71,7 @@ class SpotImportControllerTest {
         return """
                 {"spots":[{"tourApiContentId":"123","name":"Place","address":"Busan",
                   "latitude":35,"longitude":129,"category":"PARK","description":null,
-                  "imageUrl":null,"recommendReason":null,"modes":["WALK"],
+                  "imageUrl":null,"recommendReason":null,"modes":["NATURAL"],
                   "sourceUpdatedAt":"2026-09-13T11:00:00+09:00"}]}
                 """;
     }

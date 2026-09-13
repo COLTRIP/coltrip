@@ -40,16 +40,16 @@ class ForecastQueryServiceTest {
         var far = forecast(2L, "100", "36.0");
         var tiedFarther = forecast(3L, "80.75", "35.02");
         var tiedNearer = forecast(4L, "80.75", "35.01");
-        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), eq(Category.PARK), eq(Mode.WALK)))
+        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), eq(Category.PARK), eq(Mode.NATURAL)))
                 .thenReturn(List.of(lower, far, tiedFarther, tiedNearer));
         when(likes.findLikedSpotIds(eq(7L), anyCollection())).thenReturn(Set.of(4L));
         var result = service.recommend(7L, now.toLocalDate(), 13, bd("35"), bd("129"),
-                15000, Category.PARK, Mode.WALK, 2);
+                15000, Category.PARK, Mode.NATURAL, 2);
         assertEquals(List.of(4L, 3L), result.spots().stream().map(i -> i.spot().id()).toList());
         assertEquals(bd("80.75"), result.spots().getFirst().forecast().quietIndex());
         assertTrue(result.spots().getFirst().spot().isLiked());
         verify(forecasts).findCandidates(eq(now.withMinute(0).withHour(13)), eq("coltrip-ai"), eq(now),
-                any(), any(), any(), any(), eq(Category.PARK), eq(Mode.WALK));
+                any(), any(), any(), any(), eq(Category.PARK), eq(Mode.NATURAL));
     }
 
     @Test void radiusUsesUnroundedDistance() {
@@ -85,7 +85,7 @@ class ForecastQueryServiceTest {
         when(spot.getLatitude()).thenReturn(bd(latitude));
         when(spot.getLongitude()).thenReturn(bd("129"));
         when(spot.getCategory()).thenReturn(Category.PARK);
-        when(spot.getModes()).thenReturn(List.of(Mode.WALK));
+        when(spot.getModes()).thenReturn(List.of(Mode.NATURAL));
         QuietForecast f = new QuietForecast(spot, now.withMinute(0).withHour(13), now.minusHours(1), "coltrip-ai");
         f.correct(bd(score), now.plusHours(2), now, "test-model");
         return f;

@@ -45,17 +45,17 @@ class QuietForecastRepositoryTest {
 
     @Test void filtersCategoryAndModeWhileFetchingAllModes() {
         var park = spot("123", Category.PARK);
-        em.persist(SpotMode.builder().spot(park).mode(Mode.WALK).build());
-        em.persist(SpotMode.builder().spot(park).mode(Mode.SCENERY).build());
+        em.persist(SpotMode.builder().spot(park).mode(Mode.NATURAL).build());
+        em.persist(SpotMode.builder().spot(park).mode(Mode.SENSORY).build());
         var cafe = spot("456", Category.CAFE);
         save(park, now, now.plusHours(2), "80", "coltrip-ai");
         save(cafe, now, now.plusHours(2), "90", "coltrip-ai");
         em.flush();
         em.clear();
-        var result = candidates(Category.PARK, Mode.WALK);
+        var result = candidates(Category.PARK, Mode.NATURAL);
         assertEquals(1, result.size());
         assertEquals(2, result.getFirst().getSpot().getModes().size());
-        assertTrue(candidates(Category.PARK, Mode.CONTEMPLATION).isEmpty());
+        assertTrue(candidates(Category.PARK, Mode.TRANQUIL).isEmpty());
     }
 
     @Test void timelineUsesSameForecastVersionAndExactTargetSlot() {

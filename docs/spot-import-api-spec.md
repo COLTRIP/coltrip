@@ -28,7 +28,7 @@ TourAPI 수집·정제·카테고리 분류는 AI 담당이다. 이 기능이 AI
     "description": null,
     "imageUrl": null,
     "recommendReason": "산책하기 좋은 장소",
-    "modes": ["WALK", "SCENERY"],
+    "modes": ["NATURAL", "SENSORY"],
     "sourceUpdatedAt": "2026-09-12T12:00:00+09:00"
   }]
 }
@@ -39,7 +39,7 @@ TourAPI 수집·정제·카테고리 분류는 AI 담당이다. 이 기능이 AI
 - name/address: 필수, 각각 최대 200/300자.
 - latitude/longitude: 필수, 각각 -90~90/-180~180, 소수점 최대 7자리.
 - category: CAFE, PARK, LIBRARY, GALLERY, BOOKSTORE, TEMPLE, BEACH, ALLEY.
-- modes: 필수 목록, 최대 20개. WALK, CONTEMPLATION, SCENERY, WATER_GAZING, CULTURE.
+- modes: 필수 목록, 최대 20개. COZY, NATURAL, URBAN, VINTAGE, EXOTIC, VIBRANT, SENSORY, TRANQUIL.
 - description/imageUrl/recommendReason: 선택, 각각 최대 10000/500/500자. 누락/null이면 기존 값을 지운다.
 - imageUrl: HTTP(S) 및 정상 호스트, 사용자 인증정보 없는 주소만 허용. 서버에서 이미지를 다운로드하지 않는다.
 - sourceUpdatedAt: 필수 오프셋 포함 시각. AI 정제 데이터의 갱신 시각이며 재전송 시 임의 변경하지 않는다. 미래 시각 불허.
