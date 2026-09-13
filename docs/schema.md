@@ -184,6 +184,15 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 
 ## ERD 관계 요약
 
+### 예측 데이터 추가
+
+날짜별 예측은 관측용 quiet_index와 분리한 quiet_forecast에 저장한다.
+대상 시각(target_at), 생성 시각(generated_at), 유효기간(valid_until), 수신 시각(received_at)을 구분한다.
+점수는 DECIMAL(5,2)이며 출처와 모델 버전을 함께 보존한다.
+동일 (spot_id, target_at, source, generated_at)은 정정하고 새 생성 시각은 별도 버전으로 저장한다.
+전체 컬럼과 최신 버전 선택 정책은 [예측 추천 명세](./forecast-api-spec.md)를 참고한다.
+실제 AI 전송 및 운영 DB 마이그레이션 검증은 별도 진행이 필요하다.
+
 ```
 User 1───N Visit N───1 TouristSpot
 User 1───N spot_like N───1 TouristSpot

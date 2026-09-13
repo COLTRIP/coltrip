@@ -29,3 +29,6 @@ visit:
   nudge:
     max-score-age: PT5H
     proposal-ttl: PT10M
+
+forecast:
+  source: coltrip-ai
