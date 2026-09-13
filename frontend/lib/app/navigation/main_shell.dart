@@ -16,7 +16,7 @@ class MainShell extends StatelessWidget {
 
   static const List<Widget> pages = [
     MapPage(),
-    RecommendationPage(),
+    PlaceSelectionPage(),
     ProfilePage(),
   ];
 
