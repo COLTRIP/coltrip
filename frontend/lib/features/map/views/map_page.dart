@@ -7,6 +7,7 @@ import '../../../app/routes/app_routes.dart';
 import '../services/map_spot_service.dart';
 import '../widgets/map_search_bar.dart';
 
+
 class MapPage extends StatefulWidget {
   const MapPage({super.key, this.isActive = true});
 
