@@ -1,5 +1,7 @@
 package com.coltrip.backend.review.service;
 
+import com.coltrip.backend.auth.exception.UnauthorizedException;
+import com.coltrip.backend.domain.user.UserRepository;
 import com.coltrip.backend.domain.review.Review;
 import com.coltrip.backend.domain.review.ReviewRepository;
 import com.coltrip.backend.domain.visit.Visit;
@@ -23,8 +25,11 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final VisitRepository visitRepository;
+    private final UserRepository userRepository;
 
     public ReviewResponse create(Long userId, Long visitId, ReviewCreateRequest request) {
+        // 방문 상태 변경과 같은 잠금 순서로, 중복 확인부터 저장까지 보호한다.
+        userRepository.findByIdForUpdate(userId).orElseThrow(UnauthorizedException::new);
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(VisitNotFoundException::new);
 
