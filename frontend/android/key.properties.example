@@ -1,0 +1,4 @@
+storePassword=여기에_키스토어_비밀번호
+keyPassword=여기에_키_비밀번호
+keyAlias=coltrip-release
+storeFile=/absolute/path/to/coltrip-release.jks
