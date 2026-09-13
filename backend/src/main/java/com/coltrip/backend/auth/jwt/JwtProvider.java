@@ -5,8 +5,11 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,11 +22,18 @@ public class JwtProvider {
     private final SecretKey key;
     private final long accessTokenExpireSeconds;
     private final long refreshTokenExpireSeconds;
+    private final Clock clock;
 
+    @Autowired
     public JwtProvider(JwtProperties jwtProperties) {
+        this(jwtProperties, Clock.systemUTC());
+    }
+
+    JwtProvider(JwtProperties jwtProperties, Clock clock) {
         this.key = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpireSeconds = jwtProperties.accessTokenExpireSeconds();
         this.refreshTokenExpireSeconds = jwtProperties.refreshTokenExpireSeconds();
+        this.clock = clock;
     }
 
     public String createAccessToken(Long userId) {
@@ -67,10 +77,11 @@ public class JwtProvider {
     }
 
     private String createToken(Long userId, String type, long expireSeconds) {
-        Date now = new Date();
+        Date now = Date.from(clock.instant());
         Date expiry = new Date(now.getTime() + expireSeconds * 1000);
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(userId))
                 .claim(TYPE_CLAIM, type)
                 .issuedAt(now)

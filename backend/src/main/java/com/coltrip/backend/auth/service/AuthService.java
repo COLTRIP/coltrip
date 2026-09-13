@@ -36,7 +36,7 @@ public class AuthService {
     }
 
     private JwtTokenResponse login(GoogleUserInfo googleUserInfo) {
-        User user = userRepository.findByGoogleSub(googleUserInfo.sub())
+        User user = userRepository.findByGoogleSubForUpdate(googleUserInfo.sub())
                 .orElseThrow(UserNotRegisteredException::new);
         return issueTokens(user, false);
     }
@@ -60,10 +60,11 @@ public class AuthService {
         }
 
         Long userId = jwtProvider.getUserId(refreshToken);
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(InvalidRefreshTokenException::new);
 
-        if (!refreshToken.equals(user.getRefreshToken())) {
+        // 잠금을 기다리는 동안 토큰이 만료되거나 다른 요청에서 교체될 수 있다.
+        if (!jwtProvider.validateToken(refreshToken) || !refreshToken.equals(user.getRefreshToken())) {
             throw new InvalidRefreshTokenException();
         }
 
@@ -71,7 +72,7 @@ public class AuthService {
     }
 
     public void logout(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(UnauthorizedException::new);
         user.updateRefreshToken(null);
     }
