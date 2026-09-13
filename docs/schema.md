@@ -11,7 +11,7 @@
 | 인증 | 구글 로그인 + JWT | 소셜 로그인 ID, 리프레시 토큰을 User에 보관 |
 | QuietIndex 계산 | AI → POST /api/internal/quiet-index 수신 구현 | 실제 공급 주기 별도 확인. 백엔드 자동 지도 동기화는 미구현 |
 | QuietIndex 저장 구조 | **이력 저장** (`quiet_index` 별도 테이블) | 향후 시계열 예측(정적 골든타임 가이드) 대비 |
-| 감성모드(Mode) | 고정 enum, 5종 | 기획서 "주요 추천 유형" 기준 |
+| 감성모드(Mode) | 고정 enum, 8종 | 분위기 기반 감성 라벨 |
 | 장소유형(Category) | 커스텀 enum, **8종 확정** (2026-08-18) | "기타" 카테고리는 두지 않음. TourAPI 수집 중 특정 유형이 많이 확인되면 새 카테고리 추가로 확장 |
 | 대체지(Alternative) | AI POST /alternative 실시간 호출 | 3km, 최대 3개, score(거리 감점 포함 추천 점수). 배치 테이블 미사용 |
 
@@ -93,7 +93,9 @@ AI가 배치로 계산한 고요지수 원본 이력. TouristSpot의 캐시 컬�
 
 ## 4. spot_mode (Spot ↔ 감성모드 매핑)
 
-한 장소가 여러 감성모드에 동시에 해당할 수 있어 N:M 매핑 테이블로 설계 (예: 어떤 공원이 '산책'이면서 '풍경 감상'에도 해당).
+기존 DB가 있다면 [감성 라벨 전환 절차](./emotion-label-migration.md)를 먼저 확인한다. 구 라벨과의 자동 의미 변환은 하지 않는다.
+
+한 장소가 여러 감성모드에 동시에 해당할 수 있어 N:M 매핑 테이블로 설계 (예: 어떤 공원이 '자연'이면서 '고요'에도 해당).
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -101,11 +103,11 @@ AI가 배치로 계산한 고요지수 원본 이력. TouristSpot의 캐시 컬�
 | `spot_id` | BIGINT FK → tourist_spot.id | |
 | `mode` | ENUM (아래) | |
 
-**`mode` enum (팀 확정: 5종, "주요 추천 유형" 기준)**
+**`mode` enum (분위기 기반 8종)**
 
 ```
-WALK(산책), CONTEMPLATION(사유·명상), SCENERY(풍경 감상),
-WATER_GAZING(물멍), CULTURE(조용한 문화·전시)
+COZY(아늑), NATURAL(자연), URBAN(도시), VINTAGE(빈티지),
+EXOTIC(이국), VIBRANT(활기), SENSORY(감각), TRANQUIL(고요)
 ```
 
 유니크 제약: `(spot_id, mode)` 조합 unique.

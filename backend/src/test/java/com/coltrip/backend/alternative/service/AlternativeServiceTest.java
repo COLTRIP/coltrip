@@ -122,7 +122,7 @@ class AlternativeServiceTest {
     }
 
     private Place place(long id, double lat) {
-        return new Place(id, "Place " + id, "Busan", "PARK", List.of("WALK"),
+        return new Place(id, "Place " + id, "Busan", "PARK", List.of("NATURAL"),
                 null, bd(lat), bd(129), false);
     }
 

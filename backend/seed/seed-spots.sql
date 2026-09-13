@@ -3,8 +3,8 @@
 -- ⚠️ 주의
 -- - tour_api_content_id를 'SEED-xxx'로 넣은 이유: 실제 TourAPI contentId를 모르는 상태라
 --   임의값을 넣으면 나중에 AI가 실제 데이터를 적재할 때 충돌/중복이 생길 수 있음.
---   'SEED-' 접두어를 두면 실제 데이터와 구분되고, 나중에 한 줄로 정리 가능:
---   DELETE FROM tourist_spot WHERE tour_api_content_id LIKE 'SEED-%';
+--   'SEED-' 접두어로 실제 데이터와 구분한다. 삭제 전 방문/좋아요/리뷰 등 참조를 확인한다.
+-- - 신규 개발 DB용이다. 기존 DB 감성 전환은 docs/emotion-label-migration.md를 먼저 참고한다.
 -- - 좌표는 대략적인 값. 실제 서비스 데이터는 TourAPI/Geocoding으로 정확한 값이 들어옴.
 -- - quiet_score는 QuietLevel 3구간(0~40 CROWDED / 41~70 NORMAL / 71~100 QUIET)이
 --   프론트에서 다 보이도록 일부러 흩어놓은 값. AI 배치가 돌면 실제 값으로 덮어씀.
@@ -63,32 +63,32 @@ VALUES
      '개성 있는 카페가 모인 거리.', '골목 안쪽으로 들어가면 사람이 적은 조용한 카페를 찾을 수 있습니다.',
      55, NOW(), NOW(), NOW());
 
--- 감성모드 매핑 (한 장소가 여러 모드에 해당 가능)
+-- 개발 시연용 감성 라벨 예시. 실제 AI 분류나 구 라벨의 변환 규칙이 아니다.
 INSERT INTO spot_mode (spot_id, mode)
 SELECT s.id, m.mode FROM tourist_spot s
 JOIN (
-    SELECT 'SEED-001' AS cid, 'CONTEMPLATION' AS mode UNION ALL
-    SELECT 'SEED-001', 'CULTURE' UNION ALL
-    SELECT 'SEED-002', 'WALK' UNION ALL
-    SELECT 'SEED-002', 'SCENERY' UNION ALL
-    SELECT 'SEED-002', 'WATER_GAZING' UNION ALL
-    SELECT 'SEED-003', 'WALK' UNION ALL
-    SELECT 'SEED-003', 'SCENERY' UNION ALL
-    SELECT 'SEED-004', 'WATER_GAZING' UNION ALL
-    SELECT 'SEED-004', 'WALK' UNION ALL
-    SELECT 'SEED-005', 'WATER_GAZING' UNION ALL
-    SELECT 'SEED-005', 'SCENERY' UNION ALL
-    SELECT 'SEED-006', 'WALK' UNION ALL
-    SELECT 'SEED-006', 'CONTEMPLATION' UNION ALL
-    SELECT 'SEED-007', 'SCENERY' UNION ALL
-    SELECT 'SEED-007', 'WALK' UNION ALL
-    SELECT 'SEED-008', 'CONTEMPLATION' UNION ALL
-    SELECT 'SEED-008', 'WALK' UNION ALL
-    SELECT 'SEED-009', 'CONTEMPLATION' UNION ALL
-    SELECT 'SEED-009', 'WATER_GAZING' UNION ALL
-    SELECT 'SEED-010', 'CULTURE' UNION ALL
-    SELECT 'SEED-010', 'CONTEMPLATION' UNION ALL
-    SELECT 'SEED-011', 'CONTEMPLATION' UNION ALL
-    SELECT 'SEED-011', 'CULTURE' UNION ALL
-    SELECT 'SEED-012', 'CONTEMPLATION'
+    SELECT 'SEED-001' AS cid, 'VINTAGE' AS mode UNION ALL
+    SELECT 'SEED-001', 'COZY' UNION ALL
+    SELECT 'SEED-002', 'EXOTIC' UNION ALL
+    SELECT 'SEED-002', 'SENSORY' UNION ALL
+    SELECT 'SEED-003', 'VIBRANT' UNION ALL
+    SELECT 'SEED-003', 'SENSORY' UNION ALL
+    SELECT 'SEED-004', 'NATURAL' UNION ALL
+    SELECT 'SEED-004', 'VIBRANT' UNION ALL
+    SELECT 'SEED-005', 'URBAN' UNION ALL
+    SELECT 'SEED-005', 'SENSORY' UNION ALL
+    SELECT 'SEED-006', 'NATURAL' UNION ALL
+    SELECT 'SEED-006', 'TRANQUIL' UNION ALL
+    SELECT 'SEED-007', 'URBAN' UNION ALL
+    SELECT 'SEED-007', 'NATURAL' UNION ALL
+    SELECT 'SEED-008', 'TRANQUIL' UNION ALL
+    SELECT 'SEED-008', 'NATURAL' UNION ALL
+    SELECT 'SEED-009', 'NATURAL' UNION ALL
+    SELECT 'SEED-009', 'TRANQUIL' UNION ALL
+    SELECT 'SEED-010', 'SENSORY' UNION ALL
+    SELECT 'SEED-010', 'TRANQUIL' UNION ALL
+    SELECT 'SEED-011', 'COZY' UNION ALL
+    SELECT 'SEED-011', 'TRANQUIL' UNION ALL
+    SELECT 'SEED-012', 'COZY' UNION ALL
+    SELECT 'SEED-012', 'VIBRANT'
 ) m ON s.tour_api_content_id = m.cid;
