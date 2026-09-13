@@ -15,6 +15,10 @@ public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> 
 
     Optional<TouristSpot> findByTourApiContentId(String tourApiContentId);
 
+    // AI 지도 API 응답(약 594개) 중 우리 DB에 있는 장소만 걸러내기 위한 존재 목록
+    @Query("SELECT s.tourApiContentId FROM TouristSpot s")
+    List<String> findAllTourApiContentIds();
+
     // 고요지수 push 시 같은 장소에 대한 동시 요청을 직렬화해 캐시 갱신이 최신 값을 잃지 않도록 한다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM TouristSpot s WHERE s.tourApiContentId = :tourApiContentId")

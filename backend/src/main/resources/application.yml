@@ -32,3 +32,8 @@ visit:
 
 forecast:
   source: coltrip-ai
+
+quiet-index:
+  map-sync:
+    # 매시 5분에 실행 (AI GET /quiet-index/map 풀링, 이슈 #63)
+    cron: "0 5 * * * *"
