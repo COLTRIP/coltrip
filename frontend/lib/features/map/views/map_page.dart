@@ -154,14 +154,11 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  // 국민대학교 방문 로직 테스트용 초기 위치.
-  // 부산 중심으로 되돌릴 때: NLatLng(35.1796, 129.0756)
-  static const _initialCenter = NLatLng(37.6109, 126.9971);
+  static const _initialCenter = NLatLng(35.1796, 129.0756);
 
-  // 테스트 중에는 서울과 부산을 모두 이동할 수 있도록 전국 범위를 허용한다.
   static const _mapExtent = NLatLngBounds(
-    southWest: NLatLng(33.0, 124.0),
-    northEast: NLatLng(39.0, 132.0),
+    southWest: NLatLng(34.85, 128.70),
+    northEast: NLatLng(35.45, 129.45),
   );
 
   final _searchController = TextEditingController();
@@ -277,10 +274,10 @@ class _MapPageState extends State<MapPage> {
           options: const NaverMapViewOptions(
             initialCameraPosition: NCameraPosition(
               target: _initialCenter,
-              zoom: 15.5,
+              zoom: 10.5,
             ),
             extent: _mapExtent,
-            minZoom: 6.5,
+            minZoom: 9.5,
             maxZoom: 20,
             locationButtonEnable: true,
             compassEnable: false,
