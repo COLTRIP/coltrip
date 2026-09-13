@@ -14,8 +14,7 @@ class LocationPermissionPage extends StatefulWidget {
   State<LocationPermissionPage> createState() => _LocationPermissionPageState();
 }
 
-class _LocationPermissionPageState extends State<LocationPermissionPage>
-    with WidgetsBindingObserver {
+class _LocationPermissionPageState extends State<LocationPermissionPage> with WidgetsBindingObserver {
   final _viewModel = LocationPermissionViewModel();
 
   @override
@@ -69,11 +68,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                 ),
               ),
               const Spacer(flex: 3),
-              SvgPicture.asset(
-                'assets/icons/location_pin.svg',
-                width: 64,
-                height: 80,
-              ),
+              SvgPicture.asset('assets/icons/location_pin.svg', width: 64, height: 80),
               const SizedBox(height: 30),
               const Text(
                 '방문 확인을 위해 위치가 필요해요',
@@ -91,11 +86,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                 '위치 권한은 처음 한 번만 요청하며,\n방문 중 필요한 순간에만 위치를 확인해요.\n\n'
                 '방문이 완료되거나 취소되면\n더 이상 위치를 확인하지 않아요.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Paperlogy',
-                  fontSize: 15,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontFamily: 'Paperlogy', fontSize: 15, color: Colors.black),
               ),
               const Spacer(flex: 4),
               ListenableBuilder(
@@ -107,21 +98,13 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                         Text(
                           _viewModel.errorMessage!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Paperlogy',
-                            fontSize: 12,
-                            color: Colors.red,
-                          ),
+                          style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 12, color: Colors.red),
                         ),
                         const SizedBox(height: 8),
                       ],
                       PrimaryButton(
-                        label: _viewModel.isPermanentlyDenied
-                            ? '설정으로 이동'
-                            : '위치 엑세스 허용',
-                        onPressed: _viewModel.isPermanentlyDenied
-                            ? _viewModel.openAppSettings
-                            : _requestPermission,
+                        label: _viewModel.isPermanentlyDenied ? '설정으로 이동' : '위치 엑세스 허용',
+                        onPressed: _viewModel.isPermanentlyDenied ? _viewModel.openAppSettings : _requestPermission,
                       ),
                     ],
                   );

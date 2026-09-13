@@ -1,19 +1,17 @@
 abstract final class AppRoutes {
-  static const main = '/main';
-
   static const map = '/map';
-
+  static const main = '/main';
   static const profile = '/profile';
 
   static const login = '/login';
-
   static const nickname = '/nickname';
-  static const changeNickname = '/nickname/change';
 
+  // 추천 진입: 장소유형 선택 → 감성 선택 → 추천 목록
   static const recommendation = '/recommendation';
-  static const moodSelection = '/recommendation/mood-selection';
   static const emotionSelection = '/recommendation/emotion-selection';
   static const recommendationList = '/recommendation/list';
+
+  // 추천 플로우 하위 화면
   static const recommendationDetail = '/recommendation/detail';
   static const visitingSpot = '/recommendation/visiting';
   static const reviewList = '/recommendation/reviews';

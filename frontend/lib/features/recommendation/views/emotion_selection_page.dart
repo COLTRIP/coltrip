@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../widgets/recommendation_selection_app_bar.dart';
 
+
 class EmotionSelectionPage extends StatefulWidget {
   /// 장소선택에서 넘어온 백엔드 category enum 값 (예: 'CAFE'). 없으면 전체.
   final String? category;

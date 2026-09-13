@@ -87,9 +87,11 @@ class GoogleAuthService {
       return authResponse;
     } on GoogleSignInException catch (error, stackTrace) {
       developer.log(
-        'Google 계정 인증 실패'
-        '\ncode=${error.code}'
-        '\ndescription=${error.description}',
+        'Google 계정 인증 원본 오류'
+            '\ncode=${error.code}'
+            '\ndescription=${error.description}'
+            '\ndetails=${error.details}'
+            '\ntoString=$error',
         name: logName,
         error: error,
         stackTrace: stackTrace,
@@ -105,7 +107,10 @@ class GoogleAuthService {
       }
 
       throw AuthException(
-        description.isEmpty ? 'Google 계정 인증에 실패했습니다.' : description,
+        'Google 인증 실패'
+            '\ncode: ${error.code}'
+            '\ndescription: ${error.description}'
+            '\ndetails: ${error.details}',
       );
     } on DioException catch (error, stackTrace) {
       developer.log(
