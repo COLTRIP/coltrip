@@ -4,6 +4,7 @@ import '../../features/auth/views/login_page.dart';
 import '../../features/auth/views/nickname_setup_page.dart';
 import '../../features/map/views/map_page.dart';
 import '../../features/profile/views/profile_page.dart';
+import '../../features/profile/views/change_nickname_page.dart';
 import '../../features/recommendation/models/current_visit.dart';
 import '../../features/recommendation/models/recommendation.dart';
 import '../../features/recommendation/models/review.dart';
@@ -20,25 +21,14 @@ import 'app_routes.dart';
 
 abstract final class AppPages {
   static final pages = <GetPage<dynamic>>[
+    GetPage(name: AppRoutes.main, page: () => MainShell()),
+    GetPage(name: AppRoutes.login, page: () => const LoginPage()),
+    GetPage(name: AppRoutes.nickname, page: () => const NicknameSetupPage()),
+    GetPage(name: AppRoutes.map, page: () => const MapPage()),
+    GetPage(name: AppRoutes.profile, page: () => const ProfilePage()),
     GetPage(
-      name: AppRoutes.main,
-      page: () => MainShell(),
-    ),
-    GetPage(
-      name: AppRoutes.login,
-      page: () => const LoginPage(),
-    ),
-    GetPage(
-      name: AppRoutes.nickname,
-      page: () => const NicknameSetupPage(),
-    ),
-    GetPage(
-      name: AppRoutes.map,
-      page: () => const MapPage(),
-    ),
-    GetPage(
-      name: AppRoutes.profile,
-      page: () => const ProfilePage(),
+      name: AppRoutes.changeNickname,
+      page: () => const ChangeNicknamePage(),
     ),
     GetPage(
       name: AppRoutes.recommendation,
@@ -54,9 +44,8 @@ abstract final class AppPages {
     ),
     GetPage(
       name: AppRoutes.recommendationList,
-      page: () => RecommendationPage(
-        category: Get.arguments as String? ?? '전체',
-      ),
+      page: () =>
+          RecommendationPage(category: Get.arguments as String? ?? '전체'),
     ),
     GetPage(
       name: AppRoutes.recommendationDetail,

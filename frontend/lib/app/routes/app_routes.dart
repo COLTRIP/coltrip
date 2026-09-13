@@ -5,6 +5,7 @@ abstract final class AppRoutes {
 
   static const login = '/login';
   static const nickname = '/nickname';
+  static const changeNickname = '/nickname/change';
 
   // 추천 진입: 장소유형 선택 → 감성 선택 → 추천 목록
   static const recommendation = '/recommendation';

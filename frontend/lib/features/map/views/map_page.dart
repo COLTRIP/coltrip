@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
+import '../services/map_spot_service.dart';
 import '../widgets/map_search_bar.dart';
-
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -12,6 +12,140 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  static const _mapSpotService = MapSpotService();
+
+  bool _isLoadingSpots = false;
+  final Map<String, NOverlayImage> _markerIconCache = {};
+
+  Color _markerColor(String? quietLevel, int? quietScore) {
+    var level = quietLevel;
+
+    if (level == null && quietScore != null) {
+      if (quietScore >= 71) {
+        level = 'QUIET';
+      } else if (quietScore >= 41) {
+        level = 'NORMAL';
+      } else {
+        level = 'CROWDED';
+      }
+    }
+
+    return switch (level) {
+      'QUIET' => const Color(0xFF589C7E),
+      'NORMAL' => const Color(0xFFE4A94B),
+      'CROWDED' => const Color(0xFFC96363),
+      _ => const Color(0xFF8C9691),
+    };
+  }
+
+  Future<NOverlayImage> _markerIcon({
+    required Color color,
+    required int? quietScore,
+  }) async {
+    final label = quietScore?.clamp(0, 100).toString() ?? '?';
+    final cacheKey = 'circle_${color.toARGB32()}_$label';
+    final cachedIcon = _markerIconCache[cacheKey];
+
+    if (cachedIcon != null) return cachedIcon;
+
+    final icon = await NOverlayImage.fromWidget(
+      context: context,
+      size: const Size(44, 44),
+      widget: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Paperlogy',
+            fontSize: label.length >= 3 ? 12 : 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+
+    _markerIconCache[cacheKey] = icon;
+    return icon;
+  }
+
+  Future<void> _loadSpotsInCurrentBounds(NaverMapController controller) async {
+    if (_isLoadingSpots) return;
+
+    _isLoadingSpots = true;
+
+    try {
+      final bounds = await controller.getContentBounds();
+
+      final spots = await _mapSpotService.findInBounds(
+        swLat: bounds.southWest.latitude,
+        swLng: bounds.southWest.longitude,
+        neLat: bounds.northEast.latitude,
+        neLng: bounds.northEast.longitude,
+      );
+
+      final markers = <NAddableOverlay>{};
+
+      for (final spot in spots) {
+        final markerColor = _markerColor(spot.quietLevel, spot.quietScore);
+        final markerIcon = await _markerIcon(
+          color: markerColor,
+          quietScore: spot.quietScore,
+        );
+
+        final marker = NMarker(
+          id: 'spot_${spot.id}',
+          position: NLatLng(spot.latitude, spot.longitude),
+          icon: markerIcon,
+          size: const Size(44, 44),
+          anchor: const NPoint(0.5, 0.5),
+          caption: NOverlayCaption(text: spot.name),
+          captionOffset: 4,
+        );
+
+        marker.setOnTapListener((_) {
+          debugPrint('선택한 장소: id=${spot.id}, name=${spot.name}');
+
+          // TODO: 장소 상세 화면 또는 바텀시트 연결
+        });
+
+        markers.add(marker);
+      }
+
+      await controller.clearOverlays(type: NOverlayType.marker);
+      await controller.addOverlayAll(markers);
+
+      debugPrint('현재 지도 범위 관광지 ${markers.length}개 표시 완료');
+    } catch (error, stackTrace) {
+      debugPrint('지도 관광지 조회 실패: $error\n$stackTrace');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('주변 관광지를 불러오지 못했어요.'),
+          backgroundColor: Color(0xFF589C7E),
+        ),
+      );
+    } finally {
+      _isLoadingSpots = false;
+    }
+  }
+
   static const _busanCenter = NLatLng(35.1796, 129.0756);
 
   static const _busanExtent = NLatLngBounds(
@@ -49,11 +183,9 @@ class _MapPageState extends State<MapPage> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('장소를 검색하지 못했어요.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('장소를 검색하지 못했어요.')));
     } finally {
       if (mounted) {
         setState(() {
@@ -86,12 +218,23 @@ class _MapPageState extends State<MapPage> {
             compassEnable: false,
             scaleBarEnable: false,
           ),
-          onMapReady: (controller) {
-            setState(() {
-              _mapController = controller;
-            });
+          onMapReady: (controller) async {
+            if (mounted) {
+              setState(() {
+                _mapController = controller;
+              });
+            }
 
             debugPrint('네이버 맵 로딩됨!');
+
+            await _loadSpotsInCurrentBounds(controller);
+          },
+          onCameraIdle: () {
+            final controller = _mapController;
+
+            if (controller != null) {
+              _loadSpotsInCurrentBounds(controller);
+            }
           },
         ),
 
@@ -110,6 +253,12 @@ class _MapPageState extends State<MapPage> {
           ),
         ),
 
+        Positioned(
+          top: MediaQuery.paddingOf(context).top + 76,
+          left: 16,
+          child: const _QuietLevelLegend(),
+        ),
+
         // 확대·축소 버튼
         Positioned(
           right: 16,
@@ -118,6 +267,68 @@ class _MapPageState extends State<MapPage> {
             mapController: _mapController,
             size: 44,
             roundness: 8,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuietLevelLegend extends StatelessWidget {
+  const _QuietLevelLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _LegendItem(color: Color(0xFF589C7E), label: '고요'),
+          SizedBox(width: 12),
+          _LegendItem(color: Color(0xFFE4A94B), label: '보통'),
+          SizedBox(width: 12),
+          _LegendItem(color: Color(0xFFC96363), label: '혼잡'),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Paperlogy',
+            fontSize: 12,
+            color: Color(0xFF252B28),
           ),
         ),
       ],
