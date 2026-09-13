@@ -19,6 +19,7 @@
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
 - 마지막 갱신: 2026-09 (백엔드 구현 현황 재정리)
 - 스키마 참고: [schema.md](./schema.md)
+- 관광지 기본정보·감성모드 적재: [spot-import-api-spec.md](./spot-import-api-spec.md) (`POST /api/internal/spots`, AI 전송 계약 협의 필요)
 
 ---
 
