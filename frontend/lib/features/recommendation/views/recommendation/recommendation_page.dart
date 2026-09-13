@@ -116,33 +116,40 @@ class _RecommendationPageState extends State<RecommendationPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.modes.map((mode) {
-                      return Padding(
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          height: 29,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: widget.modes.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final mode = widget.modes[index];
+
+                        return Container(
+                          constraints: const BoxConstraints(minWidth: 88),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: const Color(0xFFFAFAFA),
-                            border: Border.all(color: const Color(0xFFE5E5E5)),
-                            borderRadius: BorderRadius.circular(45),
+                            border: Border.all(
+                              color: const Color(0xFFE1E3E2),
+                              width: 1.2,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                           child: Text(
                             _moodLabel(mode),
                             style: const TextStyle(
                               fontFamily: 'Paperlogy',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
                               color: Color(0xFF474444),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),

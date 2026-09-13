@@ -7,6 +7,7 @@ import '../data/place_mood_data.dart';
 import '../widgets/place_mood_selector.dart';
 import '../widgets/recommendation_selection_app_bar.dart';
 
+
 class MoodSelectionPage extends StatefulWidget {
   const MoodSelectionPage({super.key});
 

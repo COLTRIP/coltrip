@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/recommendation.dart';
+import '../models/quiet_score_point.dart';
 
 // TODO(예외처리 통합): try/catch(DioException) → ApiException 변환 반복.
 //   api_exception.dart 계획대로 에러 인터셉터로 중앙화 예정.
@@ -144,6 +145,26 @@ class RecommendationApiService {
         '/api/spots/$spotId/like',
       );
       return response.data!['liked'] as bool;
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  Future<List<QuietScorePoint>> getTimeline({
+    required int spotId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/spots/$spotId/quiet-index/forecast',
+      );
+
+      final timeline = response.data?['timeline'] as List? ?? const [];
+
+      return timeline
+          .cast<Map<String, dynamic>>()
+          .map(QuietScorePoint.fromTimelineJson)
+          .toList()
+        ..sort((a, b) => a.hour.compareTo(b.hour));
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
