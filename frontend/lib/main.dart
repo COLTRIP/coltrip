@@ -16,7 +16,7 @@ Future<void> main() async {
   );
   await GoogleSignIn.instance.initialize(
     serverClientId:
-    '888142954996-ka5lothh80985ki57tfldiq0if0c9gmq.apps.googleusercontent.com',
+        '888142954996-nr4dvp1qriea7ilnm5qidp9tc6qb9q40.apps.googleusercontent.com',
   );
 
   runApp(const ColtripApp());
