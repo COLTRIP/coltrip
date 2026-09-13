@@ -4,8 +4,9 @@ import '../models/review.dart';
 
 class ReviewRepository {
   final ReviewApiService _api;
-
+  
   ReviewRepository({ReviewApiService? api}) : _api = api ?? ReviewApiService();
+
 
   Future<List<SpotReview>> getReviews({required int spotId}) {
     return _api.getReviews(spotId: spotId);

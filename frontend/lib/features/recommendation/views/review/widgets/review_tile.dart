@@ -48,10 +48,7 @@ class ReviewTile extends StatelessWidget {
                         ),
                         Text(
                           ' ${review.rating}',
-                          style: const TextStyle(
-                            fontFamily: 'Paperlogy',
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 12),
                         ),
                       ],
                     ),

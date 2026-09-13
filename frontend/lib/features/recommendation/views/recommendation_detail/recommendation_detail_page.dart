@@ -12,7 +12,6 @@ import '../review/widgets/review_section.dart';
 import 'widgets/quiet_score_gauge.dart';
 import 'widgets/quiet_score_timeline_chart.dart';
 
-
 class RecommendationDetailPage extends StatefulWidget {
   final int spotId;
 
@@ -49,6 +48,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
       if (!granted || !mounted) return;
     }
 
+
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
     final visitingResult = await Get.toNamed(
       AppRoutes.visitingSpot,
@@ -78,10 +78,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _viewModel.errorMessage!,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    Text(_viewModel.errorMessage!, style: const TextStyle(fontSize: 16)),
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -132,14 +129,14 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                               fit: BoxFit.cover,
                             ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
                     Align(
                       alignment: AlignmentGeometry.center,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 10),
+                          const SizedBox(width: 23), // 하트(15)+간격(8) 만큼 미러 여백
                           Text(
                             spot.name,
                             textAlign: TextAlign.center,
@@ -153,7 +150,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                           const SizedBox(width: 8),
                           _FavoriteButton(
                             isFavorite: spot.isLiked,
-                            size: 30,
+                            size: 20,
                             onPressed: _viewModel.toggleLike,
                           ),
                         ],
@@ -165,7 +162,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         style: const TextStyle(
                           fontFamily: 'Paperlogy',
                           fontSize: 15,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           color: Colors.black,
                         ),
                       ),
@@ -215,9 +212,9 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         child: Text(
                           spot.description,
                           style: const TextStyle(
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w600,
                             fontFamily: 'Paperlogy',
-                            fontSize: 12,
+                            fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -239,9 +236,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        QuietScoreGauge(quietScore: spot.quietScore ?? 0),
-                      ],
+                      children: [QuietScoreGauge(quietScore: spot.quietScore ?? 0)],
                     ),
                     if (spot.quietScoreUpdatedAt != null) ...[
                       const SizedBox(height: 15),
@@ -269,9 +264,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     ),
                     const SizedBox(height: 12),
                     // TODO: 고요지수 타임라인 API 연결 전까지 빈 값
-                    QuietScoreTimelineChart(
-                      points: _viewModel.timelinePoints,
-                    ),
+                    const QuietScoreTimelineChart(points: []),
                     const SizedBox(height: 32),
                     ReviewSection(
                       reviews: _reviewViewModel.reviews,
@@ -305,7 +298,7 @@ class _FavoriteButton extends StatelessWidget {
   const _FavoriteButton({
     required this.isFavorite,
     required this.onPressed,
-    this.size = 30,
+    this.size = 22,
   });
 
   @override

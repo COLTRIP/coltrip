@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-enum RecommendationAppBarAction { next, skip }
+
+enum RecommendationAppBarAction {
+  next,
+  skip,
+}
 
 class RecommendationAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -38,13 +42,13 @@ class RecommendationAppBar extends StatelessWidget
       // 왼쪽 back 버튼
       leading: showBackButton
           ? Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: _ActionButton(
-                icon: Icons.arrow_back,
-                label: 'back',
-                onTap: onBackPressed ?? Get.back,
-              ),
-            )
+        padding: const EdgeInsets.only(left: 16),
+        child: _ActionButton(
+          icon: Icons.arrow_back,
+          label: 'back',
+          onTap: onBackPressed ?? Get.back,
+        ),
+      )
           : null,
 
       // 오른쪽 next 또는 skip 버튼
@@ -79,12 +83,19 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 28, color: Colors.black),
+            Icon(
+              icon,
+              size: 28,
+              color: Colors.black,
+            ),
             Text(
               label,
               style: const TextStyle(
