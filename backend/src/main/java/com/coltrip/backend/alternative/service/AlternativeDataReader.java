@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,11 @@ public class AlternativeDataReader {
     private static final Map<String, String> MOCK_IDS = Map.of(
             "SEED-008", "POI001", "SEED-002", "POI004",
             "SEED-001", "POI005", "SEED-004", "POI008");
+
+    // 실제 AI poiId는 TourAPI contentId 그대로인 순수 숫자 문자열이다(docs/spot-import-api-spec.md).
+    // SEED-/TEST- 등 개발용 접두어를 블랙리스트로 막는 대신, 이 규칙을 화이트리스트로 검증해
+    // 앞으로 어떤 접두어의 더미 데이터가 들어와도 AI로 새어나가지 않게 한다.
+    private static final Pattern REAL_AI_ID = Pattern.compile("^[0-9]+$");
 
     private final TouristSpotRepository spotRepository;
     private final VisitRepository visitRepository;
@@ -81,7 +87,7 @@ public class AlternativeDataReader {
         if ("mock".equals(properties.dataSource())) {
             return MOCK_IDS.get(contentId);
         }
-        return contentId.startsWith("SEED-") ? null : contentId;
+        return REAL_AI_ID.matcher(contentId).matches() ? contentId : null;
     }
 
     private String toBackendId(String aiId) {
@@ -89,7 +95,7 @@ public class AlternativeDataReader {
             return MOCK_IDS.entrySet().stream().filter(entry -> entry.getValue().equals(aiId))
                     .map(Map.Entry::getKey).findFirst().orElse(null);
         }
-        return aiId.startsWith("SEED-") ? null : aiId;
+        return REAL_AI_ID.matcher(aiId).matches() ? aiId : null;
     }
 
     public record Target(Long spotId, String aiPoiId, BigDecimal latitude,
