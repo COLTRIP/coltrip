@@ -75,6 +75,15 @@ class AlternativeDataReaderTest {
     }
 
     @Test
+    void nonNumericContentIdOtherThanSeedPrefixIsAlsoRejectedInRealMode() {
+        // SEED- 접두어만 걸러내던 옛 블랙리스트 로직에서는 TEST- 등 다른 개발용 접두어가
+        // 그대로 AI로 새어나가는 버그가 있었다(2026-09-13 실제 발생). 순수 숫자가 아니면
+        // 전부 거부하는 화이트리스트 규칙으로 고쳤는지 확인한다.
+        spot(1L, "TEST-국민대김현수");
+        assertThrows(AiIntegrationException.class, () -> reader("real").loadTarget(null, 1L));
+    }
+
+    @Test
     void unknownMockCandidatesDoNotQueryDatabase() {
         assertTrue(reader("mock").loadPlaces(null, List.of("POI999")).isEmpty());
         verifyNoInteractions(spots, visits, likes);
