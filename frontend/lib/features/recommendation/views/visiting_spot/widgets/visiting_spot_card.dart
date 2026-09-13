@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/recommendation.dart';
 
-
 class VisitingSpotCard extends StatelessWidget {
   final SpotDetail spot;
 

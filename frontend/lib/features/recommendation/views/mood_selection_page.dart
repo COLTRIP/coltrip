@@ -2,34 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../controllers/recommendation_selection_controller.dart';
+import '../data/place_mood_data.dart';
+import '../widgets/place_mood_selector.dart';
 import '../widgets/recommendation_selection_app_bar.dart';
 
-class EmotionSelectionPage extends StatefulWidget {
-  /// 장소선택에서 넘어온 백엔드 category enum 값 (예: 'CAFE'). 없으면 전체.
-  final String? category;
-
-  const EmotionSelectionPage({super.key, this.category});
+class MoodSelectionPage extends StatefulWidget {
+  const MoodSelectionPage({super.key});
 
   @override
-  State<EmotionSelectionPage> createState() => _EmotionSelectionPageState();
+  State<MoodSelectionPage> createState() => _EmotionSelectionPageState();
 }
 
-class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
+class _EmotionSelectionPageState extends State<MoodSelectionPage> {
+  void _moveToRecommendations(RecommendationSelectionController controller) {
+    final requestData = controller.createRequestData();
+
+    if (requestData == null) {
+      Get.back();
+      return;
+    }
+
+    Get.toNamed(AppRoutes.recommendationList, arguments: requestData);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<RecommendationSelectionController>();
+
     return Scaffold(
       appBar: RecommendationAppBar(
-        action: RecommendationAppBarAction.skip,
+        action: RecommendationAppBarAction.next,
         onPressed: () {
-          Get.toNamed(AppRoutes.recommendationList, arguments: widget.category);
+          _moveToRecommendations(controller);
         },
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           children: [
-            SizedBox(height: 100),
+            const SizedBox(height: 150),
 
-            Text(
+            const Text(
               '원하시는 여행 감성을',
               style: TextStyle(
                 fontFamily: 'Paperlogy',
@@ -37,7 +50,7 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
                 fontSize: 20,
               ),
             ),
-            Text(
+            const Text(
               '선택해주세요 💫',
               style: TextStyle(
                 fontFamily: 'Paperlogy',
@@ -45,7 +58,7 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
                 fontSize: 20,
               ),
             ),
-            Text(
+            const Text(
               '*필수는 아니지만, 사용자님에게 맞는 관광지를',
               style: TextStyle(
                 fontFamily: 'Paperlogy',
@@ -53,7 +66,7 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
                 fontSize: 12,
               ),
             ),
-            Text(
+            const Text(
               '추천드리기 위해 선택해주세요!',
               style: TextStyle(
                 fontFamily: 'Paperlogy',
@@ -62,7 +75,18 @@ class _EmotionSelectionPageState extends State<EmotionSelectionPage> {
               ),
             ),
 
-            // TODO: 감성 카테고리 픽스되는대로 추가
+            const SizedBox(height: 30),
+
+            Obx(
+              () => Padding(
+                padding: const EdgeInsets.all(30),
+                child: PlaceMoodSelector(
+                  items: PlaceMoodData.items,
+                  selectedMoodIds: controller.selectedMoodIds.toSet(),
+                  onChanged: controller.toggleMood,
+                ),
+              ),
+            ),
           ],
         ),
       ),

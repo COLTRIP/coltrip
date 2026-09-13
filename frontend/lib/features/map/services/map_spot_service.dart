@@ -1,6 +1,7 @@
 import '../../../core/network/dio_client.dart';
 import '../models/map_spot.dart';
 
+
 class MapSpotService {
   const MapSpotService();
 

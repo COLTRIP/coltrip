@@ -48,7 +48,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
       if (!granted || !mounted) return;
     }
 
-
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
     final visitingResult = await Get.toNamed(
       AppRoutes.visitingSpot,
@@ -78,7 +77,10 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_viewModel.errorMessage!, style: const TextStyle(fontSize: 16)),
+                    Text(
+                      _viewModel.errorMessage!,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -236,7 +238,9 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [QuietScoreGauge(quietScore: spot.quietScore ?? 0)],
+                      children: [
+                        QuietScoreGauge(quietScore: spot.quietScore ?? 0),
+                      ],
                     ),
                     if (spot.quietScoreUpdatedAt != null) ...[
                       const SizedBox(height: 15),

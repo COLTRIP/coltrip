@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 
 import '../../../core/network/dio_client.dart';
-import '../../../core/network/token_storage.dart';
+import '../../../core/storage/token_storage.dart';
 import '../models/place.dart';
 
 class ProfileService {
@@ -59,6 +59,23 @@ class ProfileService {
     return spots
         .whereType<Map<String, dynamic>>()
         .map(Place.fromSpotJson)
+        .toList();
+  }
+
+  Future<List<Place>> getVisitedPlaces() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/visits/history',
+    );
+
+    final visits = response.data?['visits'];
+
+    if (visits is! List) {
+      return [];
+    }
+
+    return visits
+        .whereType<Map<String, dynamic>>()
+        .map(Place.fromVisitHistoryJson)
         .toList();
   }
 }

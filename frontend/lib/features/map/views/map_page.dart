@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../services/map_spot_service.dart';
 import '../widgets/map_search_bar.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  const MapPage({super.key, this.isActive = true});
+
+  final bool isActive;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -98,6 +103,8 @@ class _MapPageState extends State<MapPage> {
         neLng: bounds.northEast.longitude,
       );
 
+      if (!mounted || !widget.isActive) return;
+
       final markers = <NAddableOverlay>{};
 
       for (final spot in spots) {
@@ -119,12 +126,13 @@ class _MapPageState extends State<MapPage> {
 
         marker.setOnTapListener((_) {
           debugPrint('선택한 장소: id=${spot.id}, name=${spot.name}');
-
-          // TODO: 장소 상세 화면 또는 바텀시트 연결
+          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id);
         });
 
         markers.add(marker);
       }
+
+      if (!mounted || !widget.isActive) return;
 
       await controller.clearOverlays(type: NOverlayType.marker);
       await controller.addOverlayAll(markers);
@@ -146,11 +154,14 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  static const _busanCenter = NLatLng(35.1796, 129.0756);
+  // 국민대학교 방문 로직 테스트용 초기 위치.
+  // 부산 중심으로 되돌릴 때: NLatLng(35.1796, 129.0756)
+  static const _initialCenter = NLatLng(37.6109, 126.9971);
 
-  static const _busanExtent = NLatLngBounds(
-    southWest: NLatLng(34.85, 128.70),
-    northEast: NLatLng(35.45, 129.45),
+  // 테스트 중에는 서울과 부산을 모두 이동할 수 있도록 전국 범위를 허용한다.
+  static const _mapExtent = NLatLngBounds(
+    southWest: NLatLng(33.0, 124.0),
+    northEast: NLatLng(39.0, 132.0),
   );
 
   final _searchController = TextEditingController();
@@ -158,6 +169,63 @@ class _MapPageState extends State<MapPage> {
 
   NaverMapController? _mapController;
   bool _isSearching = false;
+  bool _locationInitialized = false;
+
+  @override
+  void didUpdateWidget(covariant MapPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (!oldWidget.isActive && widget.isActive) {
+      final controller = _mapController;
+
+      if (controller != null) {
+        _loadSpotsInCurrentBounds(controller);
+
+        if (!_locationInitialized) {
+          _initializeCurrentLocation(controller);
+        }
+      }
+    }
+  }
+
+  Future<void> _initializeCurrentLocation(NaverMapController controller) async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      _showLocationMessage('기기의 위치 서비스를 켜주세요.');
+      return;
+    }
+
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showLocationMessage('설정에서 Coltrip의 위치 권한을 허용해주세요.');
+      return;
+    }
+
+    if (permission == LocationPermission.denied) {
+      _showLocationMessage('현위치를 사용하려면 위치 권한이 필요해요.');
+      return;
+    }
+
+    controller.setLocationTrackingMode(NLocationTrackingMode.follow);
+    _locationInitialized = true;
+  }
+
+  void _showLocationMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF589C7E),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -208,11 +276,11 @@ class _MapPageState extends State<MapPage> {
         NaverMap(
           options: const NaverMapViewOptions(
             initialCameraPosition: NCameraPosition(
-              target: _busanCenter,
-              zoom: 10.5,
+              target: _initialCenter,
+              zoom: 15.5,
             ),
-            extent: _busanExtent,
-            minZoom: 9.5,
+            extent: _mapExtent,
+            minZoom: 6.5,
             maxZoom: 20,
             locationButtonEnable: true,
             compassEnable: false,
@@ -227,12 +295,15 @@ class _MapPageState extends State<MapPage> {
 
             debugPrint('네이버 맵 로딩됨!');
 
-            await _loadSpotsInCurrentBounds(controller);
+            if (widget.isActive) {
+              await _loadSpotsInCurrentBounds(controller);
+              await _initializeCurrentLocation(controller);
+            }
           },
           onCameraIdle: () {
             final controller = _mapController;
 
-            if (controller != null) {
+            if (widget.isActive && controller != null) {
               _loadSpotsInCurrentBounds(controller);
             }
           },

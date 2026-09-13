@@ -16,7 +16,9 @@ class ProfileController extends GetxController {
   final visitedPlaceCount = 0.obs;
   final likedPlaceCount = 0.obs;
   final likedPlaces = <Place>[].obs;
+  final visitedPlaces = <Place>[].obs;
   final isLikedPlacesLoading = false.obs;
+  final isVisitedPlacesLoading = false.obs;
 
   final isLoading = false.obs;
   final errorMessage = RxnString();
@@ -91,6 +93,38 @@ class ProfileController extends GetxController {
           : '좋아요 장소를 불러오지 못했습니다.';
     } finally {
       isLikedPlacesLoading.value = false;
+    }
+  }
+
+  Future<void> loadVisitedPlaces() async {
+    if (isVisitedPlacesLoading.value) {
+      return;
+    }
+
+    try {
+      isVisitedPlacesLoading.value = true;
+      errorMessage.value = null;
+
+      final result = await _profileService.getVisitedPlaces();
+      visitedPlaces.assignAll(result);
+
+      developer.log(
+        '방문 장소 조회 완료: ${result.length}개',
+        name: 'ProfileController',
+      );
+    } on DioException catch (error) {
+      developer.log(
+        '방문 장소 조회 실패'
+        '\nstatusCode=${error.response?.statusCode}'
+        '\nresponse=${error.response?.data}',
+        name: 'ProfileController',
+      );
+
+      errorMessage.value = error.response?.data is Map
+          ? error.response?.data['message'] as String?
+          : '방문 장소를 불러오지 못했습니다.';
+    } finally {
+      isVisitedPlacesLoading.value = false;
     }
   }
 }

@@ -8,6 +8,33 @@ class ReviewService {
 
   final Dio _dio;
 
+  Future<PlaceReview?> getReviewBySpot({
+    required int spotId,
+    required int reviewId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/spots/$spotId/reviews',
+      );
+
+      final reviews = response.data?['reviews'];
+      if (reviews is! List) return null;
+
+      for (final item in reviews) {
+        if (item is! Map<String, dynamic>) continue;
+
+        final id = (item['id'] as num?)?.toInt();
+        if (id == reviewId) {
+          return PlaceReview.fromJson(item);
+        }
+      }
+
+      return null;
+    } on DioException {
+      throw const ReviewException('리뷰를 불러오지 못했습니다.');
+    }
+  }
+
   Future<PlaceReview> updateReview({
     required int reviewId,
     required int rating,

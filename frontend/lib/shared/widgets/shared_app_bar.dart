@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
+class SharedAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const SharedAppBar({
     super.key,
     required this.title,
@@ -38,13 +39,13 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       leading: showBackButton
           ? IconButton(
-              onPressed: onBackPressed ?? () => Get.back(),
-              icon: const Icon(
-                Icons.chevron_left,
-                size: 32,
-                color: Color(0xFF252B28),
-              ),
-            )
+        onPressed: onBackPressed ?? () => Get.back(),
+        icon: const Icon(
+          Icons.chevron_left,
+          size: 32,
+          color: Color(0xFF252B28),
+        ),
+      )
           : null,
     );
   }

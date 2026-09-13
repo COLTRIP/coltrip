@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class MapSearchBar extends StatelessWidget {
   const MapSearchBar({
     super.key,
@@ -42,7 +43,9 @@ class MapSearchBar extends StatelessWidget {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+          ),
         ),
       ),
     );
@@ -55,13 +58,18 @@ class MapSearchBar extends StatelessWidget {
         child: SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+          ),
         ),
       );
     }
 
     if (controller.text.isNotEmpty) {
-      return IconButton(onPressed: onClear, icon: const Icon(Icons.close));
+      return IconButton(
+        onPressed: onClear,
+        icon: const Icon(Icons.close),
+      );
     }
 
     return null;

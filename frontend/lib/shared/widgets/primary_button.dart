@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -20,7 +21,9 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foregroundColor = isOutlined ? buttonColor : Colors.white;
+    final foregroundColor = isOutlined
+        ? buttonColor
+        : Colors.white;
 
     return SizedBox(
       width: double.infinity,
@@ -29,7 +32,9 @@ class PrimaryButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: foregroundColor,
-          backgroundColor: isOutlined ? Colors.white : buttonColor,
+          backgroundColor: isOutlined
+              ? Colors.white
+              : buttonColor,
           disabledForegroundColor: isOutlined
               ? buttonColor.withValues(alpha: 0.5)
               : Colors.white,
@@ -37,7 +42,9 @@ class PrimaryButton extends StatelessWidget {
               ? Colors.white
               : buttonColor.withValues(alpha: 0.5),
           side: BorderSide(
-            color: isLoading ? buttonColor.withValues(alpha: 0.5) : buttonColor,
+            color: isLoading
+                ? buttonColor.withValues(alpha: 0.5)
+                : buttonColor,
             width: isOutlined ? 1.5 : 0,
           ),
           shape: RoundedRectangleBorder(
@@ -45,24 +52,27 @@ class PrimaryButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? CircularProgressIndicator(strokeWidth: 2, color: foregroundColor)
+            ? CircularProgressIndicator(
+          strokeWidth: 2,
+          color: foregroundColor,
+        )
             : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 28),
-                    const SizedBox(width: 12),
-                  ],
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontFamily: 'Paperlogy',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 28),
+              const SizedBox(width: 12),
+            ],
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Paperlogy',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
+            ),
+          ],
+        ),
       ),
     );
   }

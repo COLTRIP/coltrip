@@ -1,10 +1,9 @@
-import 'package:coltrip/features/profile/views/liked_places_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../data/dummy_places.dart';
 import '../controllers/profile_controller.dart';
 import '../views/account_management_page.dart';
+import '../views/liked_places_page.dart';
 import '../views/visited_places_page.dart';
 import '../widgets/place_carousel_section.dart';
 import '../widgets/setting_menu_button.dart';
@@ -32,6 +31,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     controller.loadProfile();
     controller.loadLikedPlaces();
+    controller.loadVisitedPlaces();
   }
 
   @override
@@ -61,13 +61,22 @@ class _ProfilePageState extends State<ProfilePage> {
             }),
           ),
 
-          PlaceCarouselSection(
-            title: '방문한 장소',
-            places: visitedPlaces,
-            onMorePressed: () {
-              Get.to(() => const VisitedPlacesPage());
-            },
-            emptyMessage: '아직 방문한 장소가 없어요.',
+          Obx(
+            () =>
+                controller.isVisitedPlacesLoading.value &&
+                    controller.visitedPlaces.isEmpty
+                ? const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : PlaceCarouselSection(
+                    title: '방문한 장소',
+                    places: controller.visitedPlaces.toList(),
+                    onMorePressed: () {
+                      Get.to(() => const VisitedPlacesPage());
+                    },
+                    emptyMessage: '아직 방문한 장소가 없어요.',
+                  ),
           ),
 
           const SizedBox(height: 10),

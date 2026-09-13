@@ -6,16 +6,14 @@ import '../models/review.dart';
 // TODO(예외처리 통합): try/catch(DioException) → ApiException 변환 반복.
 //   api_exception.dart 계획대로 에러 인터셉터로 중앙화 예정 (특히 404/409 code 분기).
 class ReviewApiService {
-
   ReviewApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
   final Dio _dio;
 
-
   Future<List<SpotReview>> getReviews({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        '/api/spots/$spotId/reviews'
+        '/api/spots/$spotId/reviews',
       );
 
       final list = response.data?['reviews'] as List? ?? const [];
@@ -40,7 +38,7 @@ class ReviewApiService {
         data: {
           'rating': rating,
           if (content != null && content.isNotEmpty) 'content': content,
-        }
+        },
       );
       return SpotReview.fromJson(response.data!);
     } on DioException catch (e) {
