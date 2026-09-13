@@ -8,6 +8,7 @@ import com.coltrip.backend.domain.visit.VisitStatus;
 import com.coltrip.backend.review.dto.ReviewCreateRequest;
 import com.coltrip.backend.review.dto.ReviewListResponse;
 import com.coltrip.backend.review.dto.ReviewResponse;
+import com.coltrip.backend.review.dto.ReviewUpdateRequest;
 import com.coltrip.backend.review.exception.ReviewNotAllowedException;
 import com.coltrip.backend.review.exception.ReviewNotFoundException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
@@ -50,6 +51,19 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewListResponse findBySpot(Long spotId) {
         return ReviewListResponse.from(reviewRepository.findBySpotIdWithUser(spotId));
+    }
+
+    public ReviewResponse update(Long userId, Long reviewId, ReviewUpdateRequest request) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(ReviewNotFoundException::new);
+
+        if (!review.isWrittenBy(userId)) {
+            throw new ReviewNotFoundException();
+        }
+
+        review.update(request.rating(), request.content());
+
+        return ReviewResponse.from(review);
     }
 
     public void delete(Long userId, Long reviewId) {

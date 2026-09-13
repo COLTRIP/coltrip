@@ -7,6 +7,7 @@ import com.coltrip.backend.domain.review.ReviewRepository;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
 import com.coltrip.backend.domain.visit.VisitRepository;
+import com.coltrip.backend.user.dto.NotificationSettingsResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,17 @@ public class UserService {
         User user = findUser(userId);
         user.updateNickname(nickname);
         return userStatsReader.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationSettingsResponse getNotificationSettings(Long userId) {
+        return NotificationSettingsResponse.from(findUser(userId));
+    }
+
+    public NotificationSettingsResponse updateNotificationSettings(Long userId, boolean enabled) {
+        User user = findUser(userId);
+        user.updateAlternativeNotificationEnabled(enabled);
+        return NotificationSettingsResponse.from(user);
     }
 
     // 하드 삭제: User row와 연관 데이터를 모두 제거 (2026-08-19 확정)

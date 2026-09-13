@@ -19,6 +19,34 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: coltrip
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/coltrip
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      # CI 전용 값. 실제 배포 비밀값(application-secret.yml)과 무관하므로 그대로 커밋해도 된다.
+      JWT_SECRET: ci-only-secret-key-not-used-in-any-real-environment-32+
+      JWT_ACCESS_TOKEN_EXPIRE_SECONDS: 3600
+      JWT_REFRESH_TOKEN_EXPIRE_SECONDS: 1209600
+      OAUTH_GOOGLE_CLIENT_ID: ci-dummy-client-id
+      OAUTH_GOOGLE_CLIENT_SECRET: ci-dummy-client-secret
+      INTERNAL_API_KEY: ci-dummy-internal-api-key
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,9 +65,9 @@ jobs:
         if: steps.check.outputs.exists == 'true'
         run: chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Build with Gradle (tests run against the mysql service above)
         if: steps.check.outputs.exists == 'true'
-        run: ./gradlew build -x test
+        run: ./gradlew build
 
       - name: Skip (no Gradle project yet)
         if: steps.check.outputs.exists == 'false'

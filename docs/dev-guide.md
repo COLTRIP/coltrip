@@ -2,6 +2,35 @@
 
 로컬에서 서버를 띄우고, 프론트가 API를 테스트할 수 있게 하는 방법.
 
+## 0. 사전 준비
+
+**Java 21**이 필요하다 (`build.gradle`의 toolchain 설정). 확인:
+```bash
+java -version
+```
+21이 아니면 [Temurin 21](https://adoptium.net/temurin/releases/?version=21)이나 SDKMAN(`sdk install java 21-tem`)으로 설치. `./gradlew`는 Gradle wrapper라 Gradle 자체를 따로 설치할 필요는 없다 — JDK 21만 있으면 된다.
+
+**MySQL**은 둘 중 편한 쪽으로 준비한다.
+
+- **A. 로컬 설치** — Mac은 `brew install mysql && brew services start mysql`, Windows는 [MySQL Installer](https://dev.mysql.com/downloads/installer/)로 설치 후 서비스 시작. 설치 후 root 비밀번호를 기억해둘 것(1번 단계에서 씀).
+- **B. Docker** — 로컬에 MySQL을 깔고 싶지 않다면:
+  ```bash
+  docker run -d --name coltrip-mysql \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -e MYSQL_DATABASE=coltrip \
+    -p 3306:3306 \
+    mysql:8.4
+  ```
+  이 방법은 `CREATE DATABASE` 단계(1번 참고)를 건너뛰어도 된다 — `MYSQL_DATABASE` 환경변수가 컨테이너 최초 기동 시 자동으로 만들어준다. `application-secret.yml`의 `password`는 `root`로 채우면 된다.
+
+### Windows 참고사항
+
+- `./gradlew`는 PowerShell·cmd 어디서든 그대로 동작한다(별도로 `gradlew.bat`을 쓸 필요 없음 — Gradle wrapper가 OS를 알아서 판별).
+- 이 문서와 [api.md](./api.md)의 예제는 macOS/Linux 기준 `curl`이다. **PowerShell의 `curl`은 `Invoke-WebRequest`의 별칭이라 옵션 문법이 다르다** — 예제가 안 될 경우:
+  - Git Bash(Windows용 Git 설치 시 기본 포함)에서 실행하면 예제 그대로 동작한다. 가장 간단한 방법.
+  - 또는 PowerShell 문법으로 변환: `curl -X POST url -H "Authorization: Bearer X"` → `Invoke-RestMethod -Method Post -Uri url -Headers @{Authorization="Bearer X"}`
+- MySQL CLI 경로가 PATH에 없으면 winget/설치 시 "Add to PATH" 옵션을 켜거나, MySQL Workbench의 GUI로 1번 단계의 `CREATE DATABASE`를 실행해도 된다.
+
 ## 1. 최초 세팅
 
 ```bash
@@ -24,23 +53,15 @@ cd backend
 
 `Started BackendApplication` 로그가 뜨면 정상. 끄려면 `Ctrl + C`.
 
-기본 포트는 `application.yml`의 **8080**이다. 로그에 `Tomcat started on port ...`로 실제 포트가 찍히니 확인할 것.
+**팀 컨벤션은 8090이다** — `application-secret.example.yml`에 `server.port: 8090`이 이미 들어있어서, 1번 단계에서 그대로 복사했다면 별도 설정 없이 8090으로 뜬다. 이 문서의 모든 curl/Swagger 예제도 8090을 기준으로 쓰여 있다. (`application.yml`의 진짜 기본값은 8080이지만, `application-secret.yml` 쪽이 우선순위가 높아 최종적으로 8090이 적용된다 — `spring.config.import`로 가져온 설정이 이를 가져온 파일보다 우선순위가 높기 때문) 로그에 `Tomcat started on port ...`로 실제 포트가 찍히니 확인할 것.
 
-### 포트를 바꾸고 싶다면
+### 다른 포트를 쓰고 싶다면
 
-다른 프로젝트가 8080을 쓰고 있다면, **`application-secret.yml`에 개인 포트를 넣어두는 방법을 권장한다.** 이 파일은 `.gitignore` 대상이라 팀 설정에 영향을 주지 않고, 한 번 넣어두면 이후로는 옵션 없이 `./gradlew bootRun`만 쳐도 된다.
-
-```yaml
-# backend/src/main/resources/application-secret.yml
-server:
-  port: 8090
-```
-
-> `spring.config.import`로 가져온 설정은 이를 가져온 `application.yml`보다 **우선순위가 높다.** 따라서 `application.yml`에 `server.port: 8080`이 있어도 `application-secret.yml`의 값이 최종 적용된다.
+다른 프로젝트가 8090을 쓰고 있다면 `application-secret.yml`의 `server.port` 값을 원하는 포트로 바꾸면 된다. 이 파일은 `.gitignore` 대상이라 팀 설정에 영향을 주지 않는다. 단, 이 문서의 curl 예제들은 여전히 8090으로 적혀 있으니 본인 포트에 맞게 바꿔 읽을 것.
 
 일회성으로만 바꾸려면 실행 인자를 써도 된다:
 ```bash
-./gradlew bootRun --args='--server.port=8090'
+./gradlew bootRun --args='--server.port=8091'
 ```
 
 ## 3. 시드 데이터 적재

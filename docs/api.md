@@ -1,7 +1,11 @@
 # coltrip API 명세서
 
 - Base URL: `/api` (예: `/api/spots`)
-- 인증: `Authorization: Bearer {accessToken}` (로그인/토큰재발급 제외 전부 필요)
+- 인증: 기본은 `Authorization: Bearer {accessToken}` (JWT). 아래 예외 3가지는 다른 방식이거나 인증이 없다.
+  - 로그인(`POST /api/auth/google`), 토큰 재발급(`POST /api/auth/refresh`) — 인증 헤더 자체가 불필요(재발급은 액세스 토큰이 아니라 리프레시 토큰을 헤더에 넣음)
+  - 관광지 **조회(GET)** — `GET /api/spots`, `GET /api/spots/{id}`, `GET /api/spots/{id}/quiet-index/timeline`, `GET /api/spots/{id}/reviews` — 비로그인 허용(2026-08-31 확정). 토큰이 있으면 `isLiked` 등 개인화 필드에 반영되지만 없어도 200 응답
+  - 내부 연동(`/api/internal/**`) — JWT가 아니라 `X-Internal-Api-Key` 헤더(AI 배치 서버 전용, 프론트는 사용하지 않음)
+  - 그 외 전부(쓰기 작업 포함) 인증 필요
 - 모든 에러 응답은 `{"code": "...", "message": "..."}` 형식
 
 **공통 에러 (모든 엔드포인트)**
@@ -13,8 +17,9 @@
 | `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
 | `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
-- 마지막 갱신: 2026-08-31
+- 마지막 갱신: 2026-09 (백엔드 구현 현황 재정리)
 - 스키마 참고: [schema.md](./schema.md)
+- 관광지 기본정보·감성모드 적재: [spot-import-api-spec.md](./spot-import-api-spec.md) (`POST /api/internal/spots`, AI 전송 계약 협의 필요)
 
 ---
 
@@ -48,7 +53,8 @@ POST /api/auth/google
     "email": "user@gmail.com",
     "nickname": null,
     "visitCount": 0,
-    "likeCount": 0
+    "likeCount": 0,
+    "currentVisitId": null
   }
 }
 ```
@@ -102,13 +108,15 @@ GET /api/users/me
   "email": "user@gmail.com",
   "nickname": "string",
   "visitCount": 3,
-  "likeCount": 7
+  "likeCount": 7,
+  "currentVisitId": 10
 }
 ```
 - `visitCount`: **방문을 완료(`COMPLETED`)한 횟수.** 시작만 하고 완료하지 않은 방문은 제외
 - `likeCount`: 좋아요한 장소 수
+- `currentVisitId`: 현재 진행 중(`STARTED`)인 방문 ID. 없으면 `null` — `GET /api/visits/current`와 같은 기준
 
-이 두 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
+이 세 필드는 `UserResponseDTO`를 쓰는 모든 응답(구글 로그인, 토큰 재발급, 내 정보 조회, 닉네임 수정)에 동일하게 포함된다.
 
 **Exception**: `UnauthorizedException` (401)
 
@@ -134,6 +142,40 @@ PATCH /api/users/me
 
 ---
 
+### 대체 장소 알림 설정 조회
+```
+GET /api/users/me/notification-settings
+```
+고요지수 하락 시 대체 장소를 제안받을지 여부. 기본값 `true`(2026-09 확정, 사용자 단위 저장). 실제 혼잡 감지·제안 로직(대체지 트리거)에서 이 값을 확인하는 것은 별도 구현. 설정 저장만으로 백그라운드 푸시가 동작하는 것은 아님 — 필요 시 기기 토큰 등록은 별도로 정의.
+
+**Response `200`** — `NotificationSettingsResponseDTO`
+```json
+{
+  "alternativeNotificationEnabled": true
+}
+```
+
+**Exception**: `UnauthorizedException` (401)
+
+---
+
+### 대체 장소 알림 설정 변경
+```
+PATCH /api/users/me/notification-settings
+```
+**Request**
+```json
+{
+  "alternativeNotificationEnabled": false
+}
+```
+
+**Response `200`** — `NotificationSettingsResponseDTO` (변경된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ValidationException` (400) — 필드 누락
+
+---
+
 ### 회원 탈퇴
 ```
 DELETE /api/users/me
@@ -149,6 +191,14 @@ DELETE /api/users/me
 ---
 
 ## [관광지]
+
+### 날짜/시간대별 추천 및 예측 타임라인
+
+날짜별 추천, 별도 예측 타임라인, 예측 배치 수신 계약은
+[예측 추천 API 명세](./forecast-api-spec.md)를 참고한다.
+기존 지도·상세의 현재 점수와 최근 24시간 관측 이력은 유지한다.
+예측 데이터가 없으면 현재 점수로 대체하지 않는다.
+예측 수신 계약은 신규 제안이며 AI의 실제 전송 연결은 아직 필요하다.
 
 > 관광지 **조회(GET)** 는 로그인 없이 호출 가능(2026-08-31 확정). 지도 둘러보기까지 로그인 벽을 세우면 이탈이 크고, 관광지 정보 자체는 공개 데이터이기 때문. 좋아요·리뷰 작성 등 쓰기 작업은 인증 필요.
 
@@ -186,12 +236,14 @@ GET /api/spots?swLat={}&swLng={}&neLat={}&neLng={}&category={}&mode={}
       "longitude": 129.06,
       "quietScore": 82,
       "quietLevel": "QUIET",
-      "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+      "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+      "isLiked": false
     }
   ]
 }
 ```
 `quietLevel`은 `quietScore`에서 백엔드가 파생 계산하는 값(0~40 `CROWDED`, 41~70 `NORMAL`, 71~100 `QUIET`). 별도 저장값 아님, `quietScore`가 없으면(NULL) `quietLevel`도 `null`.
+`isLiked`는 요청에 유효한 토큰이 있을 때만 본인의 좋아요 여부를 반영하고, 비로그인 요청은 항상 `false`. `GET /api/users/me/likes` 응답은 정의상 전부 `true`.
 
 **Exception**: `InvalidBoundingBoxException` (400) — 좌표 범위 값 오류
 
@@ -216,7 +268,39 @@ GET /api/spots/{spotId}
   "longitude": 129.06,
   "quietScore": 82,
   "quietLevel": "QUIET",
-  "quietScoreUpdatedAt": "2026-08-17T09:00:00"
+  "quietScoreUpdatedAt": "2026-08-17T09:00:00",
+  "visitRadiusMeters": 100,
+  "isLiked": false
+}
+```
+
+**Exception**: `SpotNotFoundException` (404)
+
+---
+
+### 고요지수 24시간 타임라인 조회
+```
+GET /api/spots/{spotId}/quiet-index/timeline
+```
+장소 상세 화면의 시간대별 그래프용. **최근 24시간 관측 이력**을 1시간 슬롯으로 묶어 반환한다 — 미래 예측값이 아니다(예측은 별도 이슈 #44에서 AI 예측 데이터 구조가 확정되면 진행).
+
+슬롯 하나에 관측값이 여러 건이면 가장 최신 값을 대표값으로 쓰고, 관측값이 없는 슬롯은 `quietScore`/`observedAt`이 `null`이다(0점이나 현재값으로 임의 대체하지 않음). 항상 24개 슬롯을 오래된 순 → 최신 순으로 반환하며, 슬롯 시각은 서버 로컬 시간(Asia/Seoul 가정) 기준 정시로 절삭된다.
+
+**Response `200`** — `QuietIndexTimelineResponseDTO`
+```json
+{
+  "timeline": [
+    {
+      "slotStartAt": "2026-09-09T20:00:00",
+      "quietScore": null,
+      "observedAt": null
+    },
+    {
+      "slotStartAt": "2026-09-10T19:00:00",
+      "quietScore": 70,
+      "observedAt": "2026-09-10T19:52:24.873406"
+    }
+  ]
 }
 ```
 
@@ -226,13 +310,20 @@ GET /api/spots/{spotId}
 
 ## [대체지 추천]
 
+### 방문 중 하락 감지 및 제안
+
+방문 중 평가, 제안 닫기, 대체지 선택 API와 점수 유효시간/중복 방지 정책은
+[방문 중 대체지 제안 명세](./nudge-api-spec.md)를 참고한다.
+완료 응답과 분리된 폴링 방식이며 백그라운드 푸시는 포함하지 않는다.
+점수 유효시간 5시간, 제안 유효시간 10분, 방문당 1회 제안은 팀 확인이 필요한 기본 정책이다.
+
 ### 대체지 목록 조회
 ```
 GET /api/spots/{spotId}/alternatives
 ```
 `spotId`가 혼잡(quietScore 낮음)할 때, 유사한 분위기의 더 한적한 대체지를 조회. AI가 산출한 리스트+추천이유+유사도를 그대로 매핑.
 
-> ⚠️ [schema.md](./schema.md)에 적어둔 대로, 이 데이터가 배치 저장인지 실시간 AI 호출인지는 미확정. 아래는 배치 저장(스키마의 `spot_alternative` 테이블 조회) 기준으로 작성. 실시간으로 바뀌면 컨트롤러 내부 구현만 바뀌고 이 응답 스펙은 동일하게 유지 가능.
+> ⚠️ **아직 미구현** (`SpotAlternative` 엔티티만 존재, 컨트롤러/서비스 없음). 저장 방식(배치 vs 실시간 호출)은 **2026-08-18 실시간 AI 호출로 팀 확정됨** — `schema.md`의 배치 저장 가정(`spot_alternative` 테이블)은 재설계 대상. 아래 응답 스펙은 그대로 유효하나, 반경 캡(3km)·빈 배열일 때 안내 문구 등 세부 파라미터는 여전히 미정(`task.md` 참고).
 
 **Response `200`** — `AlternativeSpotListResponseDTO`
 ```json
@@ -259,6 +350,38 @@ GET /api/spots/{spotId}/alternatives
 ---
 
 ## [방문]
+
+### 현재 방문 조회
+```
+GET /api/visits/current
+```
+로그인한 사용자의 진행 중(`STARTED`)인 방문을 조회한다. 앱 재실행 시 진행 중이던 방문 화면을 복원하는 용도. `GET /api/users/me` 등 `UserResponseDTO`의 `currentVisitId`와 같은 기준(STARTED 여부)으로 판정되므로 두 값은 항상 일치한다.
+
+**Response `200`** — `CurrentVisitResponseDTO`. 진행 중인 방문이 없으면 `visit: null`.
+```json
+{
+  "visit": {
+    "visitId": 10,
+    "spotId": 1,
+    "spotName": "string",
+    "spotAddress": "string",
+    "category": "CAFE",
+    "imageUrl": "string",
+    "latitude": 35.15,
+    "longitude": 129.06,
+    "status": "STARTED",
+    "startedAt": "2026-08-17T10:00:00",
+    "startQuietScore": 40,
+    "currentQuietScore": 32,
+    "currentQuietLevel": "CROWDED"
+  }
+}
+```
+`startQuietScore`는 방문 시작 시점의 스냅샷(고요지수 하락 트리거 비교 기준), `currentQuietScore`/`currentQuietLevel`은 현재 시점 값 — 두 값의 차이로 프론트가 "혼잡해졌어요" 같은 안내를 만들 수 있다.
+
+**Exception**: `UnauthorizedException` (401)
+
+---
 
 ### 방문 시작
 ```
@@ -292,14 +415,13 @@ POST /api/visits/start
 ```
 PATCH /api/visits/{visitId}/complete
 ```
-목적지 반경 진입 + 체류시간 조건 충족 시 프론트가 호출. 체류시간은 카테고리 무관 **10분(600초)** 고정. 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·팀 확정 필요).
+목적지 반경 진입 시 프론트가 호출. 체류시간 조건은 없다(2026-09 제거 — 위변조 여지가 있고 시연 시 대기가 길어 반경 진입만으로 판정하도록 팀 확정). 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·실측 검증 필요 — 장소 상세/현재 방문 조회 응답의 `visitRadiusMeters`로도 안내됨).
 
 **Request**
 ```json
 {
   "arrivedLatitude": 35.1502,
-  "arrivedLongitude": 129.0601,
-  "stayDurationSeconds": 620
+  "arrivedLongitude": 129.0601
 }
 ```
 
@@ -312,7 +434,55 @@ PATCH /api/visits/{visitId}/complete
 }
 ```
 
-**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경/체류시간 조건 미충족
+**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경 조건 미충족
+
+---
+
+### 방문 취소
+```
+PATCH /api/visits/{visitId}/cancel
+```
+진행 중인 방문을 취소한다. 대체지 선택 등 목적지를 바꿀 때도 재사용 — 취소 후 바로 다른 장소로 방문을 다시 시작할 수 있다. 취소된 방문은 현재 방문 조회/`currentVisitId`에서 제외되고, `visitCount`(완료 횟수)에도 포함되지 않으며 리뷰 작성 대상도 아니다.
+
+**Response `200`** — `VisitCancelResponseDTO`
+```json
+{
+  "visitId": 10,
+  "status": "CANCELED"
+}
+```
+
+**Exception**: `VisitNotFoundException` (404) — 존재하지 않거나 타인의 방문, `InvalidVisitStateException` (409) — 이미 완료/취소된 방문(반복 취소 포함)
+
+---
+
+### 방문 완료 이력 조회
+```
+GET /api/visits/history
+```
+본인이 완료(`COMPLETED`)한 방문을 완료순(최신 먼저)으로 조회. 마이페이지 "다녀온 곳" 목록용. `STARTED`/`CANCELED` 방문은 제외되며, 같은 장소를 여러 번 방문했다면 방문 건별로 각각 표시된다(장소 단위로 묶지 않음).
+
+**Response `200`** — `VisitHistoryResponseDTO`
+```json
+{
+  "visits": [
+    {
+      "visitId": 10,
+      "spotId": 1,
+      "spotName": "string",
+      "spotAddress": "string",
+      "category": "CAFE",
+      "imageUrl": "string",
+      "startedAt": "2026-08-17T10:00:00",
+      "completedAt": "2026-08-17T10:15:00",
+      "reviewId": 4
+    }
+  ]
+}
+```
+`reviewId`는 해당 방문에 작성된 리뷰의 id. 아직 리뷰를 작성하지 않았다면 `null` — 프론트는 이 값으로 "리뷰 쓰기"/"리뷰 보기" 버튼을 분기할 수 있다. 방문이 없으면 `visits: []`.
+
+**Exception**: `UnauthorizedException` (401)
 
 ---
 
@@ -387,7 +557,8 @@ POST /api/visits/{visitId}/review
   "nickname": "테스터",
   "rating": 5,
   "content": "평일 오후라 정말 조용했어요",
-  "createdAt": "2026-08-31T16:36:29"
+  "createdAt": "2026-08-31T16:36:29",
+  "updatedAt": "2026-08-31T16:36:29"
 }
 ```
 
@@ -408,6 +579,26 @@ GET /api/spots/{spotId}/reviews
 ```json
 { "reviews": [ /* ReviewResponseDTO 배열 */ ] }
 ```
+
+---
+
+### 리뷰 수정
+```
+PATCH /api/reviews/{reviewId}
+```
+본인이 작성한 리뷰만 수정 가능. **부분 수정이 아니라 매번 `rating`·`content`를 전체 재지정**한다(닉네임 수정 API와 동일한 정책) — `rating`은 필수(1~5), `content`를 생략하거나 명시적으로 `null`을 보내면 한줄평이 삭제된다. `createdAt`은 유지되고 `updatedAt`만 갱신된다.
+
+**Request**
+```json
+{
+  "rating": 4,
+  "content": "다시 가보니 살짝 붐볐어요"
+}
+```
+
+**Response `200`** — `ReviewResponseDTO` (수정된 정보 반환)
+
+**Exception**: `UnauthorizedException` (401), `ReviewNotFoundException` (404) — 없는 리뷰이거나 본인 리뷰가 아닌 경우(삭제 API와 동일하게 통일), `ValidationException` (400) — rating 범위/필수 위반, content 300자 초과
 
 ---
 

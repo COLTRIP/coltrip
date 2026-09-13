@@ -1,0 +1,94 @@
+package com.coltrip.backend.forecast;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import com.coltrip.backend.domain.forecast.*;
+import com.coltrip.backend.domain.spot.*;
+import com.coltrip.backend.domain.like.SpotLikeRepository;
+import com.coltrip.backend.spot.exception.SpotNotFoundException;
+import java.math.BigDecimal;
+import java.time.*;
+import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class ForecastQueryServiceTest {
+    private final LocalDateTime now = LocalDateTime.of(2026, 9, 13, 12, 30);
+    private QuietForecastRepository forecasts;
+    private TouristSpotRepository spots;
+    private SpotLikeRepository likes;
+    private ForecastQueryService service;
+
+    @BeforeEach void setup() {
+        forecasts = mock(QuietForecastRepository.class);
+        spots = mock(TouristSpotRepository.class);
+        likes = mock(SpotLikeRepository.class);
+        service = new ForecastQueryService(forecasts, spots, likes, new ForecastPolicy(), "coltrip-ai",
+                Clock.fixed(now.atZone(ForecastPolicy.ZONE).toInstant(), ForecastPolicy.ZONE));
+    }
+
+    @Test void emptyForecastDoesNotReadCurrentScore() {
+        var response = service.recommend(null, now.toLocalDate(), 13, null, null, 15000, null, null, 20);
+        assertTrue(response.spots().isEmpty());
+        assertFalse(response.message().isBlank());
+        verifyNoInteractions(spots, likes);
+    }
+
+    @Test void sortsByForecastThenDistanceAndLimitsAfterRadius() {
+        var lower = forecast(1L, "70.25", "35.01");
+        var far = forecast(2L, "100", "36.0");
+        var tiedFarther = forecast(3L, "80.75", "35.02");
+        var tiedNearer = forecast(4L, "80.75", "35.01");
+        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), eq(Category.PARK), eq(Mode.WALK)))
+                .thenReturn(List.of(lower, far, tiedFarther, tiedNearer));
+        when(likes.findLikedSpotIds(eq(7L), anyCollection())).thenReturn(Set.of(4L));
+        var result = service.recommend(7L, now.toLocalDate(), 13, bd("35"), bd("129"),
+                15000, Category.PARK, Mode.WALK, 2);
+        assertEquals(List.of(4L, 3L), result.spots().stream().map(i -> i.spot().id()).toList());
+        assertEquals(bd("80.75"), result.spots().getFirst().forecast().quietIndex());
+        assertTrue(result.spots().getFirst().spot().isLiked());
+        verify(forecasts).findCandidates(eq(now.withMinute(0).withHour(13)), eq("coltrip-ai"), eq(now),
+                any(), any(), any(), any(), eq(Category.PARK), eq(Mode.WALK));
+    }
+
+    @Test void radiusUsesUnroundedDistance() {
+        double boundary = 35 + Math.toDegrees(15000.0 / 6371000);
+        var inside = forecast(1L, "80", Double.toString(boundary - .0000001));
+        var outside = forecast(2L, "90", Double.toString(boundary + .0000001));
+        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), isNull(), isNull()))
+                .thenReturn(List.of(inside, outside));
+        var response = service.recommend(null, now.toLocalDate(), 13, bd("35"), bd("129"), 15000, null, null, 20);
+        assertEquals(List.of(1L), response.spots().stream().map(i -> i.spot().id()).toList());
+    }
+
+    @Test void timelineHas24SlotsAndNeverFillsMissingValues() {
+        when(spots.existsById(1L)).thenReturn(true);
+        var value = forecast(1L, "80", "35");
+        when(forecasts.findTimeline(anyLong(), any(), any(), anyString(), any())).thenReturn(List.of(value));
+        var result = service.timeline(1L, now.toLocalDate(), 13);
+        assertEquals(24, result.timeline().size());
+        assertEquals(bd("80"), result.timeline().getFirst().quietIndex());
+        assertNull(result.timeline().get(1).quietIndex());
+        assertNull(result.timeline().get(1).generatedAt());
+        assertEquals("FORECAST", result.timeline().get(1).type());
+    }
+
+    @Test void missingSpotAndHorizonOverflowAreRejected() {
+        assertThrows(SpotNotFoundException.class, () -> service.timeline(999L, now.toLocalDate(), 13));
+        assertThrows(InvalidForecastRequestException.class, () -> service.timeline(1L, now.plusDays(7).toLocalDate(), 12));
+    }
+
+    private QuietForecast forecast(Long id, String score, String latitude) {
+        TouristSpot spot = mock(TouristSpot.class);
+        when(spot.getId()).thenReturn(id);
+        when(spot.getLatitude()).thenReturn(bd(latitude));
+        when(spot.getLongitude()).thenReturn(bd("129"));
+        when(spot.getCategory()).thenReturn(Category.PARK);
+        when(spot.getModes()).thenReturn(List.of(Mode.WALK));
+        QuietForecast f = new QuietForecast(spot, now.withMinute(0).withHour(13), now.minusHours(1), "coltrip-ai");
+        f.correct(bd(score), now.plusHours(2), now, "test-model");
+        return f;
+    }
+    private BigDecimal bd(String value) { return new BigDecimal(value); }
+}

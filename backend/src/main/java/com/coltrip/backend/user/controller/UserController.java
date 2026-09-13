@@ -1,6 +1,8 @@
 package com.coltrip.backend.user.controller;
 
 import com.coltrip.backend.auth.dto.UserResponse;
+import com.coltrip.backend.user.dto.NotificationSettingsResponse;
+import com.coltrip.backend.user.dto.NotificationSettingsUpdateRequest;
 import com.coltrip.backend.user.dto.UpdateNicknameRequest;
 import com.coltrip.backend.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "사용자", description = "내 정보 조회 / 닉네임 설정 / 회원 탈퇴")
+@Tag(name = "사용자", description = "내 정보 조회 / 닉네임 설정 / 알림 설정 / 회원 탈퇴")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -35,6 +37,20 @@ public class UserController {
     public ResponseEntity<UserResponse> updateNickname(@AuthenticationPrincipal Long userId,
                                                          @Valid @RequestBody UpdateNicknameRequest request) {
         return ResponseEntity.ok(userService.updateNickname(userId, request.nickname()));
+    }
+
+    @Operation(summary = "대체 장소 알림 설정 조회", description = "고요지수 하락 시 대체 장소를 제안받을지 여부. 기본값 true.")
+    @GetMapping("/me/notification-settings")
+    public ResponseEntity<NotificationSettingsResponse> getNotificationSettings(@AuthenticationPrincipal Long userId) {
+        return ResponseEntity.ok(userService.getNotificationSettings(userId));
+    }
+
+    @Operation(summary = "대체 장소 알림 설정 변경")
+    @PatchMapping("/me/notification-settings")
+    public ResponseEntity<NotificationSettingsResponse> updateNotificationSettings(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody NotificationSettingsUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateNotificationSettings(userId, request.alternativeNotificationEnabled()));
     }
 
     @Operation(summary = "회원 탈퇴", description = "⚠️ 하드 삭제입니다. 계정과 방문/좋아요/리뷰가 모두 즉시 삭제되며 복구할 수 없습니다.")

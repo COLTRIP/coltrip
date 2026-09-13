@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.coltrip"
+    namespace = "com.coltrip.app"
     compileSdk = 37 // 수정
     ndkVersion = "28.2.13676358" // 수정
 

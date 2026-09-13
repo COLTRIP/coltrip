@@ -25,19 +25,27 @@ public class InternalQuietIndexService {
     public QuietIndexPushResponse push(String apiKey, QuietIndexPushRequest request) {
         validateApiKey(apiKey);
 
-        TouristSpot spot = touristSpotRepository.findByTourApiContentId(request.tourApiContentId())
+        // 같은 장소에 대한 동시 push를 직렬화해, 이력 upsert와 캐시 갱신이 함께 원자적으로 처리되게 한다.
+        TouristSpot spot = touristSpotRepository.findByTourApiContentIdForUpdate(request.tourApiContentId())
                 .orElseThrow(SpotNotFoundException::new);
 
-        quietIndexRepository.save(QuietIndex.builder()
-                .spot(spot)
-                .quietScore(request.quietScore())
-                .rawMetrics(request.rawMetrics())
-                .calculatedAt(request.calculatedAt())
-                .build());
-
-        spot.updateQuietScore(request.quietScore(), request.calculatedAt());
+        upsertHistory(spot, request);
+        spot.updateQuietScoreIfNewer(request.quietScore(), request.calculatedAt());
 
         return new QuietIndexPushResponse(spot.getId(), spot.getCurrentQuietScore(), spot.getQuietLevel().name());
+    }
+
+    // 같은 장소·같은 계산 시각의 재전송은 이력을 새로 쌓지 않고 기존 이력을 정정한다.
+    private void upsertHistory(TouristSpot spot, QuietIndexPushRequest request) {
+        quietIndexRepository.findBySpot_IdAndCalculatedAt(spot.getId(), request.calculatedAt())
+                .ifPresentOrElse(
+                        existing -> existing.correct(request.quietScore(), request.rawMetrics()),
+                        () -> quietIndexRepository.save(QuietIndex.builder()
+                                .spot(spot)
+                                .quietScore(request.quietScore())
+                                .rawMetrics(request.rawMetrics())
+                                .calculatedAt(request.calculatedAt())
+                                .build()));
     }
 
     private void validateApiKey(String apiKey) {

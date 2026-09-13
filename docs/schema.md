@@ -30,6 +30,7 @@
 | `email` | VARCHAR(255) UNIQUE | |
 | `nickname` | VARCHAR(50) NULL | 가입 시 비어있음(구글 프로필 이름 자동 채움 없음). 로그인 직후 필수 설정 화면에서 입력, 이후 마이페이지에서 수정 가능. 중복 허용 |
 | `refresh_token` | VARCHAR(500) NULL | 최신 발급 리프레시 토큰 (재발급 시 갱신, 로그아웃 시 NULL) |
+| `alternative_notification_enabled` | TINYINT(1) NOT NULL DEFAULT 1 | 고요지수 하락 시 대체 장소 제안 수신 여부. 사용자 단위 설정(2026-09 확정) — 방문별 설정이 필요해지면 재검토 |
 | `role` | ENUM('USER') | 확장 대비, 현재는 단일 값 |
 | `created_at` | DATETIME | |
 | `updated_at` | DATETIME | |
@@ -85,6 +86,8 @@ AI가 배치로 계산한 고요지수 원본 이력. TouristSpot의 캐시 컬�
 | `calculated_at` | DATETIME | 배치 계산 시각 |
 
 인덱스: `(spot_id, calculated_at DESC)` — 특정 장소의 최신/이력 조회용.
+
+`GET /api/spots/{spotId}/quiet-index/timeline`(2026-09 추가)이 이 테이블을 최근 24시간 범위로 조회해 1시간 슬롯 그래프용 데이터를 만든다. 미래 예측은 이 테이블에 없음 — 예측 데이터 구조는 #44 확정 시 별도 저장소로 추가될 수 있음.
 
 ---
 
@@ -142,7 +145,7 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 | `start_quiet_score` | INT NULL | 방문 시작 시점 목적지의 quietScore 스냅샷. 고요지수 하락 트리거(상대 기준)의 비교 기준값 |
 | `started_at` | DATETIME | |
 | `arrived_at` | DATETIME NULL | 목적지 반경 진입 확인 시각 |
-| `completed_at` | DATETIME NULL | 체류시간 조건 충족 후 완료 처리 시각 |
+| `completed_at` | DATETIME NULL | 목적지 반경 조건 충족 후 완료 처리 시각 |
 
 ---
 
@@ -180,6 +183,15 @@ AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietI
 ---
 
 ## ERD 관계 요약
+
+### 예측 데이터 추가
+
+날짜별 예측은 관측용 quiet_index와 분리한 quiet_forecast에 저장한다.
+대상 시각(target_at), 생성 시각(generated_at), 유효기간(valid_until), 수신 시각(received_at)을 구분한다.
+점수는 DECIMAL(5,2)이며 출처와 모델 버전을 함께 보존한다.
+동일 (spot_id, target_at, source, generated_at)은 정정하고 새 생성 시각은 별도 버전으로 저장한다.
+전체 컬럼과 최신 버전 선택 정책은 [예측 추천 명세](./forecast-api-spec.md)를 참고한다.
+실제 AI 전송 및 운영 DB 마이그레이션 검증은 별도 진행이 필요하다.
 
 ```
 User 1───N Visit N───1 TouristSpot

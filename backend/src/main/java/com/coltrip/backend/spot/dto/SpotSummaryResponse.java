@@ -17,9 +17,10 @@ public record SpotSummaryResponse(
         BigDecimal longitude,
         Integer quietScore,
         String quietLevel,
-        LocalDateTime quietScoreUpdatedAt
+        LocalDateTime quietScoreUpdatedAt,
+        boolean isLiked
 ) {
-    public static SpotSummaryResponse from(TouristSpot spot) {
+    public static SpotSummaryResponse from(TouristSpot spot, boolean isLiked) {
         QuietLevel quietLevel = spot.getQuietLevel();
         return new SpotSummaryResponse(
                 spot.getId(),
@@ -32,7 +33,8 @@ public record SpotSummaryResponse(
                 spot.getLongitude(),
                 spot.getCurrentQuietScore(),
                 quietLevel == null ? null : quietLevel.name(),
-                spot.getQuietScoreUpdatedAt()
+                spot.getQuietScoreUpdatedAt(),
+                isLiked
         );
     }
 }

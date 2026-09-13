@@ -38,6 +38,10 @@ public class User {
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
+    // 기본값 true. 컬럼 추가(DDL) 시 기존 사용자에게도 DEFAULT로 반영되도록 columnDefinition 사용
+    @Column(name = "alternative_notification_enabled", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private boolean alternativeNotificationEnabled;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
@@ -53,6 +57,7 @@ public class User {
         this.googleSub = googleSub;
         this.email = email;
         this.role = Role.USER;
+        this.alternativeNotificationEnabled = true;
     }
 
     @PrePersist
@@ -72,5 +77,9 @@ public class User {
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void updateAlternativeNotificationEnabled(boolean enabled) {
+        this.alternativeNotificationEnabled = enabled;
     }
 }
