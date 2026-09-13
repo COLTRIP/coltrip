@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/primary_button.dart';
-import '../data/terms_content.dart';
-import 'terms_detail_page.dart';
 
 class NicknameSetupPage extends StatefulWidget {
   const NicknameSetupPage({super.key});
@@ -42,8 +41,11 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
     });
   }
 
-  void _openTerms(String title, String content) {
-    Get.to(() => TermsDetailPage(title: title, content: content));
+  Future<void> _openWebPage(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   void _onItemChecked() {
@@ -155,8 +157,8 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                   _isServiceChecked = val ?? false;
                   _onItemChecked();
                 },
-                onViewDetail: () =>
-                    _openTerms('서비스 이용약관', TermsContent.serviceTerms),
+                url:
+                    'https://github.com/COLTRIP/coltrip/blob/develop/docs/privacy-policy.md',
               ),
 
               _buildTermsRow(
@@ -166,8 +168,8 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                   _isPrivacyChecked = val ?? false;
                   _onItemChecked();
                 },
-                onViewDetail: () =>
-                    _openTerms('개인정보 처리방침', TermsContent.privacyPolicy),
+                url:
+                    'https://github.com/COLTRIP/coltrip/blob/develop/docs/privacy-policy.md',
               ),
 
               _buildTermsRow(
@@ -177,8 +179,8 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                   _isLocationChecked = val ?? false;
                   _onItemChecked();
                 },
-                onViewDetail: () =>
-                    _openTerms('위치기반서비스 이용약관', TermsContent.locationTerms),
+                url:
+                    'https://github.com/COLTRIP/coltrip/blob/develop/docs/privacy-policy.md',
               ),
               const SizedBox(height: 30),
 
@@ -197,7 +199,7 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
     required String title,
     required bool value,
     required ValueChanged<bool?> onChanged,
-    required VoidCallback onViewDetail,
+    required String url,
   }) {
     return Row(
       children: [
@@ -225,7 +227,7 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
             size: 16,
             color: Colors.grey,
           ),
-          onPressed: onViewDetail,
+          onPressed: () => _openWebPage(url),
         ),
       ],
     );
