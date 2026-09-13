@@ -34,7 +34,7 @@ public class AiQuietIndexMapClient {
             Item[] result = restClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/quiet-index/map")
                             .queryParam("hour", hour)
-                            .queryParam("isWeekend", isWeekend)
+                            .queryParam("is_weekend", isWeekend)
                             .build())
                     .header("X-API-Key", properties.apiKey())
                     .accept(MediaType.APPLICATION_JSON)
