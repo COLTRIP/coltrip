@@ -50,3 +50,11 @@ WHERE alternative_suggestion_json IS NOT NULL;
 이 작업에서 실제 DB 조회·변경·삭제는 실행하지 않았다. 기존 DB가 있다면 위 전환을 완료해야 한다.
 seed-spots.sql은 신규 개발 DB용 예시 분류이고 실제 AI 분류가 아니다. 기존 DB에 전체 시드를 재실행하는 방법으로 전환하지 않는다.
 테스트 픽스처의 라벨 교체도 운영 데이터 변환 규칙을 뜻하지 않는다.
+
+## 운영 반영 완료 (2026-09-13)
+
+코드 배포가 위 전환 없이 먼저 나가면서 `/api/spots`, `/api/spots/{id}`가 기존 `spot_mode`의 구 라벨(WALK/CONTEMPLATION/SCENERY/WATER_GAZING/CULTURE)을 읽다가 500이 발생했고, 이 예외가 `/error`로 전달되며 401로 잘못 표시되는 일이 실제로 발생했다(원인 확인 후 조치).
+
+5번 방식으로 전환 완료: 백업 후 `spot_mode` 11개 행(전부 구 라벨, 새 8종 검증 데이터 없었음) 전체 삭제, 현재 모든 장소 `modes=[]`. `tourist_spot`/`visit`/`spot_like`/`review`는 변경 없음. `visit.alternative_suggestion_json`에 걸린 진행 중 제안 없음(7번 해당 없음). 정상화 확인: 목록/상세/모드 필터/추천/대체지 API 200 응답.
+
+남은 것: AI가 594개 관광지를 새 8종 라벨로 분류해 `POST /api/internal/spots`로 재전송하면 그때 `modes`가 채워짐(8번).
