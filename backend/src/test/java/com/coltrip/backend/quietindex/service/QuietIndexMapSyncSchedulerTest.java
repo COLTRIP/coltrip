@@ -20,6 +20,8 @@ import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,22 @@ class QuietIndexMapSyncSchedulerTest {
         scheduler.sync();
 
         verify(client, never()).fetchMap(anyInt(), anyBoolean());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2026-09-11T15:05:00Z, true",
+            "2026-09-13T15:05:00Z, false"
+    })
+    void determinesWeekendAtKoreanMidnight(String instant, boolean expectedWeekend) {
+        Clock boundary = Clock.fixed(Instant.parse(instant), ZoneId.of("Asia/Seoul"));
+        var scheduler = new QuietIndexMapSyncScheduler(client, spots, applier, boundary);
+        when(spots.findAllTourApiContentIds()).thenReturn(List.of("126081"));
+        when(client.fetchMap(0, expectedWeekend)).thenReturn(List.of());
+
+        scheduler.sync();
+
+        verify(client).fetchMap(0, expectedWeekend);
     }
 
     @Test

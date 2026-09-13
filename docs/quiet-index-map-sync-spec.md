@@ -2,20 +2,22 @@
 
 관련 이슈: #63. 기존 [내부/AI 연동] 섹션의 push 방식(`POST /api/internal/quiet-index`, 이슈 #36)과는 **반대 방향**이다 — 여기는 백엔드가 AI를 호출한다.
 
-## AI 서버 계약 (2026-09-12 AI팀 명세서 기준)
+## AI 서버 계약 (2026-09-13 AI 코드 대조, 이슈 #82)
 
 ```
-GET https://ai.coltrip.co.kr/quiet-index/map?hour={0-23}&isWeekend={true|false}
+GET https://ai.coltrip.co.kr/quiet-index/map?hour={0-23}&is_weekend={true|false}
 X-API-Key: {AI_API_KEY}
 ```
 
-응답은 `QuietIndexResponse` 배열 (전체 POI, 약 594개):
+응답은 `QuietIndexMapItem` 배열 (전체 POI):
 
 ```json
-[{"poiId": "126081", "name": "해운대해수욕장", "population": 13014, "quietIndex": 85.4}]
+[{"poiId": "126081", "name": "해운대해수욕장", "lat": 35.1587, "lng": 129.1604, "quietIndex": 85.4}]
 ```
 
-- `hour`/`isWeekend`는 AI 서버 기준 **KST**로 해석된다.
+- 백엔드는 **KST** 기준 `hour`와 주말 여부를 계산해 `is_weekend`로 전송한다.
+- AI GET 함수의 쿼리 이름은 `is_weekend`이다. `isWeekend`로 보내면 주말 인자가 기본값 `false`로 처리될 수 있다. 다른 AI POST API의 JSON `isWeekend` 필드와 구분한다.
+- JSON 응답 필드(`poiId`, `quietIndex`)는 camelCase를 유지한다. 관련 코드: AI `app/api/routes_quiet_index.py`, `app/schemas/schemas.py`.
 - 키 누락 422, 키 불일치 401, 존재하지 않는 poiId 요청 시 500 가능(우리는 이 엔드포인트를 poiId 지정 없이 전체 조회로만 쓰므로 해당 없음).
 - **AI팀 요청사항**: 전체 POI를 순회해 계산하므로 호출 빈도를 제한적으로 유지할 것. SKT 실시간 소스(18곳)는 4시간 캐시 + 09~21시만 호출되고, 그 외 시간엔 자동으로 폴백 값이 내려온다.
 
@@ -35,7 +37,7 @@ X-API-Key: {AI_API_KEY}
 
 ## 반영하지 않는 필드
 
-- `population`(추정 인구수) — AI팀 명세에 "프론트 노출 여부는 백엔드 판단"이라고 되어 있음. 현재는 저장·응답에 반영하지 않음. 필요해지면 `tourist_spot`에 컬럼 추가 검토
+- `lat`/`lng` — 지도 AI 응답의 좌표로 기존 관광지 좌표를 덮어쓰지 않는다. 현재 지도 응답에는 `population`이 없으며, 클라이언트의 nullable 필드는 저장·응답에 사용하지 않는다.
 - `name` — 이미 우리 DB에 있는 이름을 신뢰하고 AI 응답의 name으로 덮어쓰지 않음(관광지 기본정보 갱신은 `POST /api/internal/spots`, 이슈 #45의 책임)
 
 ## 남은 것

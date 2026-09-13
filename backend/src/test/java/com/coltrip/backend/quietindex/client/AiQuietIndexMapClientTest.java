@@ -11,6 +11,8 @@ import com.coltrip.backend.config.AiProperties;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,16 +32,17 @@ class AiQuietIndexMapClientTest {
                 new AiProperties("https://ai.invalid", "test-key", "real", 3000, 30000));
     }
 
-    @Test
-    void fetchesWithAuthHeaderAndCamelCaseQueryParams() {
-        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=14&isWeekend=false"))
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fetchesWithAuthHeaderAndSnakeCaseWeekendQuery(boolean isWeekend) {
+        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=14&is_weekend=" + isWeekend))
                 .andExpect(method(HttpMethod.GET))
                 .andExpect(header("X-API-Key", "test-key"))
                 .andRespond(withSuccess("""
-                        [{"poiId":"126081","name":"해운대해수욕장","population":13014,"quietIndex":85.4}]
+                        [{"poiId":"126081","name":"해운대해수욕장","lat":35.1587,"lng":129.1604,"quietIndex":85.4}]
                         """, MediaType.APPLICATION_JSON));
 
-        List<AiQuietIndexMapClient.Item> items = client.fetchMap(14, false);
+        List<AiQuietIndexMapClient.Item> items = client.fetchMap(14, isWeekend);
 
         assertEquals(1, items.size());
         assertEquals("126081", items.getFirst().poiId());
@@ -49,7 +52,7 @@ class AiQuietIndexMapClientTest {
 
     @Test
     void emptyBodyReturnsEmptyList() {
-        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=0&isWeekend=true"))
+        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=0&is_weekend=true"))
                 .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
 
         assertTrue(client.fetchMap(0, true).isEmpty());
@@ -58,7 +61,7 @@ class AiQuietIndexMapClientTest {
 
     @Test
     void upstreamFailureBecomesBadGateway() {
-        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=9&isWeekend=false"))
+        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=9&is_weekend=false"))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
         var error = assertThrows(AiIntegrationException.class, () -> client.fetchMap(9, false));
