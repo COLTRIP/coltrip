@@ -1,140 +1,76 @@
-# 백엔드 구현 태스크
+# 백엔드 구현 현황
 
-[api.md](./api.md), [schema.md](./schema.md) 기준 구현 체크리스트. 진행하면서 상태 갱신.
+기준: 2026-09-13, 현재 문서 브랜치의 소스 코드.
+체크 완료는 **코드 구현 확인**을 의미하며 배포·운영 DB 적재·실제 AI/프론트 연동 검증 완료를 의미하지 않는다.
+과거 단계 번호와 머지 대기 문구 대신 현재 상태를 관리한다.
 
-## 완료
+## 구현 완료
 
-- [x] GitHub 레포/CI/브랜치 전략 세팅
-- [x] NCP Maps(Dynamic Map/Geocoding/Reverse Geocoding) Application 등록, Client ID/Secret 발급
-- [x] Google OAuth Web 클라이언트 등록 (백엔드 토큰 검증용)
-- [x] DB(MySQL), 인증 방식(구글+JWT) 결정
-- [x] AI팀과 QuietIndex/감성모드/대체지 스키마 1차 협의
-- [x] api.md, schema.md 초안 작성
+### 프로젝트 및 인증
+- [x] Spring Boot 4.1.0, Java 21, Gradle wrapper, MySQL/JPA 구성.
+- [x] GitHub Actions backend CI: MySQL 8.4 서비스, Java 21, Gradle build(테스트 포함) 구성. 최근 실행 성공 여부는 CI에서 별도 확인.
+- [x] Google idToken 검증, LOGIN/SIGNUP intent 분기, JWT 발급·재발급·로그아웃.
+- [x] 내 정보 조회/닉네임 수정/회원 탈퇴, visitCount/likeCount/currentVisitId 공통 응답.
+- [x] 사용자별 대체 장소 알림 허용 설정 저장·조회 및 제안 check/select 반영.
+- [x] 공개 관광지 GET 정책과 인증 필요한 방문/쓰기 API 분리.
 
-## 블로커 — 2026-08-18 회의에서 해소됨 (문서 반영은 Phase 4/5 착수 시 일괄 진행 예정)
+### 관광지 적재·조회
+- [x] 지도 bounding box 및 category/mode 필터, 장소 상세, isLiked.
+- [x] 부산 12곳 개발 시드 및 감성모드 SQL 파일. 실제 DB 적재 여부는 미확인.
+- [x] POST /api/internal/spots: 내부 키 인증, tourApiContentId upsert, 감성모드 교체·중복 제거.
+- [x] 기본정보 sourceUpdatedAt 순서 검증과 과거 스냅샷 무시, 기존 관광지 ID/연결 보존.
+- [x] 기본정보 적재·재적재 테스트와 [수신 명세](./spot-import-api-spec.md).
+- [ ] AI팀의 기본정보 전달 담당/방식 및 신규 sourceUpdatedAt 계약 확정, 실제 전송 검증.
 
-- [x] `category`(장소유형) enum 8종 확정 (기타 제외, 데이터 많으면 추가 확장 가능)
-- [x] 대체지 추천: **실시간 호출**로 확정 (schema.md의 배치 저장 가정은 재설계 필요)
-- [x] `similarityScore` 스케일: **0~1**로 확정
-- [x] QuietIndex 배치 계산 주기: **1시간**으로 확정 (하락 트리거 기능이 무의미해지면 재논의)
-- [x] AI↔백엔드 연동 방식: AI가 **API로 push** (DB 직접 쓰기 아님) — 수신용 엔드포인트 신규 설계 필요
+### 현재 고요지수
+- [x] POST /api/internal/quiet-index: X-Internal-Api-Key 인증, contentId로 기등록 장소 연결.
+- [x] 동일 장소·계산 시각 이력 upsert, 최신 점수 캐시 갱신, 과거 값으로 캐시 덮어쓰기 방지.
+- [x] 지도·상세 quietScore/quietLevel/quietScoreUpdatedAt 응답.
+- [x] 최근 24시간 관측 타임라인. 누락 슬롯 null, 미래 예측과 분리.
+- [x] AI GET /quiet-index/map 호출 클라이언트 및 설정 가능한 주기적 동기화(2026-09-13, PR #69/이슈 #63) — 매시 5분 스케줄러, 우리 DB에 있는 poiId만 반영, 소수점 점수는 반올림. 상세: [고요지수 지도 API 풀링 명세](./quiet-index-map-sync-spec.md)
+- [ ] 실제 운영 반영 후 매칭 건수·응답 시간 확인, AI의 594개 POI 계산이 매시 5분 내에 안정적으로 끝나는지 검증.
+- [ ] 관측/계산 시각·출처 필드는 AI 응답에 없어 스케줄러 실행 시각으로 대체 중 — 계약 필요해지면 AI팀과 재확인.
 
-## Phase 4/5 착수 전 문서 반영 필요 (진행 중 — 일부 완료, 대체지 상세 파라미터는 여전히 미정)
+### 대체지 및 방문 중 제안
+- [x] GET /api/spots/{spotId}/alternatives → AI POST /alternative 실시간 호출.
+- [x] 서버 주소/키 설정, 한국 시간 hour/isWeekend, real/mock ID 매핑.
+- [x] 원래 목적지 기준 3km 제한, 자기 자신·중복·미등록 후보 제외, 더 고요한 후보 최대 3개.
+- [x] score(0~1 추천 점수), 추천 이유, 장소 표시 정보, 빈 배열/message 반환.
+- [x] 정상 추천 없음과 409/502/503/504 오류 구분. spot_alternative 미사용.
+- [x] 방문 중 제안 check/dismiss/select, 40점 미만 또는 15점 이상 하락 조건.
+- [x] null/오래된 점수, 알림 거부, 중복 제안/만료 처리 및 선택 시 방문 전환.
+- [x] AI 호출과 방문 완료 분리, 관련 테스트. 상세는 [제안 명세](./nudge-api-spec.md).
+- [ ] 실제 AI 데이터/인증/장소 매핑 및 프론트 폴링·선택 통합 검증.
+- [ ] 자동 백그라운드 푸시가 필요하면 전달 방식·기기 토큰·중복 정책 별도 확정 및 구현.
 
-- [x] QuietIndex 수신 API 신설 (AI → 백엔드 push) — `POST /api/internal/quiet-index`, `X-Internal-Api-Key` 인증. `api.md` 반영 완료
-- [ ] `GET /api/spots/{spotId}/alternatives` 실시간 호출 구조로 재설계, `spot_alternative` 테이블 용도 재검토 — **실시간 호출 자체는 확정**(위 블로커 목록 참고)이지만 아래 세부 파라미터는 미정
-- [x] 최초 추천 검색 반경 15km — `api.md`에 프론트 가이드로 문서화 완료
-- [ ] 대체지 검색 반경 3km 캡 — 미정. 9b(대체지 실시간 호출 재설계)에서 함께 반영
-- [ ] 대체지 없을 때: 빈 배열 + 안내 멘트 — 미정(현재는 제안일 뿐 팀 확정 아님). 3km 확장은 추후
-- [x] `visit` 테이블 `start_quiet_score` 컬럼 추가 (고요지수 하락 트리거용)
-- [ ] 고요지수 하락 트리거 로직: 절대(40점 미만) OR 상대(15점 이상 하락), 도착 체크포인트에서 평가, 비강제 제안 (9b 이후 진행)
-- [x] 방문완료 반경: 카테고리별(점형/면적형) 적용 완료 (실측 검증은 #48 별도 진행). 체류시간 조건은 2026-09 제거
-- [x] 혼잡/보통/고요 구간 임계값(100점 만점): 0~40 CROWDED, 41~70 NORMAL, 71~100 QUIET — `QuietLevel` enum, `TouristSpot.getQuietLevel()` 반영 완료
+### 방문·좋아요·리뷰
+- [x] 방문 시작/완료/취소, 사용자 행 잠금으로 상태 변경 직렬화.
+- [x] GET /api/visits/current: 본인의 STARTED 방문, 없으면 visit=null.
+- [x] GET /api/visits/history: 완료 이력과 reviewId.
+- [x] 체류시간 조건 제거, 반경 진입으로 완료. 장소 상세/현재 방문 응답 visitRadiusMeters.
+- [x] 점형 100m/면적형 250m 카테고리 반경 코드. 실제 적정성 검증은 별도.
+- [x] 좋아요 등록/취소 및 내 좋아요 목록.
+- [x] 완료 방문당 리뷰 1개, 별점 1~5, 작성/조회/수정/삭제, 본인 확인.
+- [ ] 기존 DB의 review.quiet_feedback 잔존 여부 점검 및 승인된 스키마 정리.
+- [ ] 방문 반경 실측 검증(#48).
 
----
+### 예측 추천
+- [x] quiet_forecast 저장 구조 및 내부 예측 배치 수신.
+- [x] 날짜/시간 추천, 위치 기본값·반경·category/mode 필터, 정렬/개수 제한.
+- [x] 24시간 예측 타임라인 및 관측 이력 분리. 없거나 만료된 예측은 현재값으로 대체하지 않음.
+- [x] 예측 입력·필터·저장/조회 테스트 및 [예측 명세](./forecast-api-spec.md).
+- [ ] AI 실제 날짜별 예측 가능 기간과 generatedAt/targetAt/validUntil/source/modelVersion 계약 확정.
+- [ ] AI 전송 및 실제 MySQL/프론트 통합 검증.
 
-## Phase 1 — 프로젝트 스캐폴딩 — 완료
+## 남은 작업 순서
+1. 기본정보 실제 데이터와 식별자/전송 계약 확정, 재적재 검증.
+2. 지도 주기적 동기화 운영 반영 후 매칭률·응답 시간 확인.
+3. 대체지·방문 제안의 실제 AI/프론트 통합 검증.
+4. 날짜별 예측 계약 확정과 전송 연결.
+5. 고정 도메인·HTTPS 배포 상태 확인 및 필요한 배포 작업.
+6. 시드·레거시 컬럼 점검, 반경 실측 및 운영 검증.
 
-- [x] `backend/`에 Spring Boot 프로젝트 생성 (Gradle, Java 21 — 최초 계획은 17이었으나 진행하며 21로 상향)
-- [x] 패키지 구조 설계 (도메인별 패키지: `auth`, `user`, `spot`, `visit`, `like`, `review`, `internal`, `domain.*`, `config`, `common`)
-- [x] MySQL 연동 설정 (application.yml + application-secret.yml — 후자는 `.gitignore` 처리됨)
-- [x] JPA/Hibernate 설정, 엔티티 작성 — `User`, `TouristSpot`, `QuietIndex`, `SpotMode`, `SpotAlternative`, `Visit`, `SpotLike`, `Review` (좋아요/리뷰는 최초 계획엔 없었으나 Phase 7에서 추가)
-- [x] 로컬 빌드/구동 확인, GitHub Actions CI 정상 통과 확인 — `build -x test`로 테스트가 스킵되고 있던 문제 수정(2026-09). CI에 MySQL 서비스 컨테이너 + 환경변수 설정 추가해 실제 테스트 실행하도록 변경
+시드를 자동 삭제하지 않는다. visit/spot_like/review/quiet_index/quiet_forecast/spot_mode,
+spot_alternative의 양쪽 FK와 방문 제안 JSON에 저장된 장소 ID까지 확인한 뒤 이전 정책을 정한다.
+실제 DB 상태, 최근 CI 실행, 도메인·HTTPS 배포 상태는 이 문서 작업에서 확인하지 않았다.
 
-## Phase 2 — 인증 ([api.md](./api.md) [인증]/[사용자] 섹션) — 완료
-
-- [x] Spring Security 설정 (JWT 필터, stateless, 커스텀 401 EntryPoint로 일관된 에러 응답)
-- [x] `POST /api/auth/google` — 구글 idToken 검증 → intent(LOGIN/SIGNUP)에 따라 기존 유저 로그인/신규 가입 분기 → JWT 발급
-- [x] `POST /api/auth/refresh` — 리프레시 토큰 검증/재발급
-- [x] `POST /api/auth/logout` — 리프레시 토큰 무효화
-- [x] JWT 인증 필터 (Authorization 헤더 검증, SecurityContext 등록, access/refresh 타입 구분)
-- [x] 예외 처리: `InvalidGoogleTokenException`, `InvalidRefreshTokenException`, `UnauthorizedException`, `UserNotRegisteredException`, `AlreadyRegisteredUserException`
-- [x] `GET /api/users/me`, `PATCH /api/users/me` — 닉네임 조회/설정(로그인 직후 필수 온보딩 + 마이페이지 수정 공용), 중복 허용
-- [x] `DELETE /api/users/me` — 회원 탈퇴(하드 삭제), 연관 Visit 이력 함께 삭제. end-to-end 테스트 완료
-- [x] 로컬 MySQL 대상 부트업 테스트 완료
-
-## Phase 3 — 관광지 데이터 적재 + 조회 ([api.md](./api.md) [관광지] 섹션)
-
-**범위 변경 (2026-08-18 회의)**: TourAPI 수집 + 카테고리 매핑(30종 세분류 → 8종 확정 enum)은 **AI가 소유**. 백엔드는 결과를 받아 저장/조회하는 쪽만 담당.
-
-- [ ] ⚠️ **AI → 백엔드 데이터 전달 방식 확인 필요** — QuietIndex처럼 `POST /api/internal/spots` 같은 push API로 받을지, AI가 직접 DB에 upsert하는지, 파일(CSV/JSON) 넘겨받아 백엔드가 적재하는지 미확정. 확인되는 대로 아래 항목 구체화
-- [ ] (전달 방식 확인 후) `TouristSpot` 데이터 적재 로직 — AI가 이미 8종으로 분류한 카테고리 값 그대로 저장
-- [ ] Naver Geocoding 연동: 필요 여부 재확인 (TourAPI 좌표를 AI 파이프라인에서 이미 정제해서 넘겨줄 수도 있음)
-- [x] `GET /api/spots` — bounding box + category + mode 필터, 목록 조회 **(AI 적재와 무관하게 선구현 완료)**
-- [x] `GET /api/spots/{spotId}` — 상세 조회
-- [x] 예외 처리: `InvalidBoundingBoxException`, `SpotNotFoundException`
-- [x] 개발용 시드 데이터 (`backend/seed/seed-spots.sql`) — 부산 관광지 12곳, `SEED-` 접두어로 실제 데이터와 구분
-
-> **조회 API는 적재 방식과 독립적**이라 먼저 구현함. AI 적재 방식이 확정되어 실제 데이터가 들어와도 조회 API는 그대로 동작함. 시드 데이터는 `DELETE FROM tourist_spot WHERE tour_api_content_id LIKE 'SEED-%';`로 정리 가능.
-
-## Phase 4 — QuietIndex 연동
-
-- [ ] AI가 배치로 써주는 `quiet_index` 테이블 스키마 확정 (AI팀과 테이블/컬럼 형식 맞추기 — 같은 DB 공유인지, AI가 API로 백엔드에 밀어주는지 확인)
-- [ ] `TouristSpot.current_quiet_score` / `quiet_score_updated_at` 캐시 갱신 로직 (신규 `quiet_index` insert 시 트리거 or 별도 배치)
-- [ ] `/api/spots`, `/api/spots/{id}` 응답에 quietScore 필드 반영 확인
-- [x] `GET /api/spots/{spotId}/quiet-index/timeline` — 최근 24시간 관측 이력을 1시간 슬롯으로 반환(관측값만, 예측 아님). 데이터 없는 슬롯은 null
-- [x] **(신규, 이슈 #63, 2026-09-13)** AI `GET /quiet-index/map` 풀링 연동 — 매시 5분 스케줄러가 우리 DB 장소만 골라 캐시 갱신, AI 실패 시 마지막 정상값 유지. 상세: [고요지수 지도 API 풀링 명세](./quiet-index-map-sync-spec.md)
-
-## Phase 5 — 대체지 추천 ([api.md](./api.md) [대체지 추천] 섹션)
-
-- [ ] (블로커 해소 후) 배치 저장이면: AI가 쓴 `spot_alternative` 읽는 조회 로직만 구현
-- [ ] (블로커 해소 후) 실시간 호출이면: AI 서버 API 클라이언트 구현, 타임아웃/장애 처리
-- [ ] `GET /api/spots/{spotId}/alternatives` 구현
-- [ ] 예외 처리: `SpotNotFoundException`, 대체지 없음 케이스 처리 방식 확정 후 반영
-
-## Phase 6 — 방문 플로우 ([api.md](./api.md) [방문] 섹션) — 완료 (트리거/대체지 제안 제외)
-
-- [x] `POST /api/visits/start` — 방문 세션 생성, 중복 방문 체크(`AlreadyOngoingVisitException`), `start_quiet_score` 스냅샷 저장
-- [x] `PATCH /api/visits/{visitId}/complete` — 반경 조건 검증 로직
-  - [x] 목적지 반경 계산 (Haversine, `GeoUtils`), 카테고리별 반경(`Category.getVisitRadiusMeters()`) — 점형 100m/면적형 250m 잠정값
-  - [x] ~~체류시간 10분(600초) 검증~~ → **2026-09 제거, 반경 진입만으로 판정 (팀 확정)**. 프론트 표시용으로 `visitRadiusMeters`를 장소 상세/현재 방문 조회 응답에 추가
-- [x] 예외 처리: `VisitNotFoundException`, `InvalidVisitStateException`, `VisitConditionNotMetException`
-- [x] 로컬 MySQL 대상 end-to-end 테스트 완료 (방문 시작→완료, 조건 미충족 케이스 포함)
-- [x] `PATCH /api/visits/{visitId}/cancel` — 진행 중 방문 취소. 대체지 선택 등 목적지 전환 시 재사용, 취소 후 재시작/현재 방문 제외/방문 횟수 미포함 확인 완료
-- [x] `GET /api/visits/history` — 완료 이력 목록(최신 완료순), 리뷰 작성 여부(reviewId) 포함. 같은 장소 재방문은 건별로 표시(묶지 않음)
-- [ ] 고요지수 하락 트리거 + 대체지 제안(비강제)은 별도 항목(2, 5번) — 9b 완료 후 진행
-
-## Phase 7 — 좋아요 / 리뷰 (2026-08-31 추가) — 완료
-
-- [x] `/api/spots` GET 인증 해제 (지도 둘러보기는 비로그인 허용, 쓰기는 인증 유지)
-- [x] `GET /api/spots` 응답에 `address`, `imageUrl` 추가 (목록 카드 UI용)
-- [x] 좋아요: `POST`/`DELETE /api/spots/{id}/like`, `GET /api/users/me/likes` — 멱등 처리
-- [x] 리뷰: `POST /api/visits/{visitId}/review`, `GET /api/spots/{spotId}/reviews`, `PATCH /api/reviews/{reviewId}`, `DELETE /api/reviews/{reviewId}`
-  - [x] ~~별점 대신 고요함 피드백(`QuietFeedback` 3단계)~~ → **별점(1~5) + 한줄평으로 변경 (2026-09-01)**
-  - [x] 방문 완료자만 작성 가능, 방문 1건당 리뷰 1건(visit_id unique)
-  - [x] 리뷰 수정(2026-09 추가) — 팀에서 편집 허용으로 확정. 전체 재지정 방식(닉네임 수정과 동일 정책), 본인 확인은 삭제 API와 동일하게 404로 통일. 응답에 `updatedAt` 추가
-- [x] 회원 탈퇴 시 review/spot_like까지 연쇄 삭제 (FK 순서 주의)
-- [x] 로컬 MySQL end-to-end 테스트 완료
-
-## Phase 8 — 사용자 통계 / 리뷰 방식 변경 (2026-09-01) — 완료
-
-- [x] `UserResponseDTO`에 `visitCount`(완료한 방문 수), `likeCount` 추가
-  - 로그인·재발급·내 정보 조회·닉네임 수정 응답 전부 동일한 모양 유지
-  - `UserStatsReader`로 집계 기준을 한 곳에 모아 로그인과 조회가 어긋나지 않게 함
-- [x] 리뷰를 고요함 피드백 3단계 → **별점(1~5) + 한줄평**으로 변경
-  - `QuietFeedback` enum 삭제, `Review.rating` 추가
-  - 기존 `quiet_feedback` 컬럼은 `ddl-auto: update`가 삭제하지 않으므로 수동 DROP 필요
-    (`ALTER TABLE review DROP COLUMN quiet_feedback;`)
-- [x] 로컬 MySQL end-to-end 테스트 완료
-
----
-
-## 우선순위 제안
-
-### 날짜/시간대별 예측 추천 진행
-
-- [x] 관측과 분리한 예측 테이블 및 날짜/시간대 추천·24시간 예측 타임라인 코드
-- [x] 카테고리/감성모드/반경 필터 및 예측 점수·거리·ID 순 정렬 코드
-- [x] 예측 데이터 없음/만료 시 현재 점수로 대체하지 않는 처리
-- [x] 별도 예측 배치 수신 계약 및 내부 키 인증 코드
-- [ ] AI팀과 생성·대상·만료 시각, 예측 가능 기간, 출처 및 전송 계약 확정
-- [ ] AI 실제 전송 연결 및 MySQL/프론트 통합 검증
-
-상세: [예측 추천 API 명세](./forecast-api-spec.md). 코드 반영과 실제 AI 연동 완료를 구분한다.
-
-1. Phase 1 (스캐폴딩) — 다른 모든 작업의 전제
-2. Phase 2 (인증) + Phase 3 (관광지 조회) — AI 의존 없음, 병행 가능
-3. 블로커 해소 (AI 협의) — Phase 4, 5 착수 전 필수
-4. Phase 4 (QuietIndex 연동)
-5. Phase 5 (대체지)
-6. Phase 6 (방문 플로우) — 다른 Phase와 독립적이라 언제든 병행 가능

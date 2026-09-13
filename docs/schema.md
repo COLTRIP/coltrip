@@ -1,7 +1,7 @@
 # coltrip ERD / 스키마 설계
 
 - DB: MySQL
-- 마지막 갱신: 2026-08-18
+- 마지막 갱신: 2026-09-13 (대체지 실시간 경로 및 추가 스키마 참조 반영)
 - 이 문서는 [api.md](./api.md)의 Request/Response DTO와 1:1로 대응됩니다.
 
 ## 설계 전제 (팀 확정 사항)
@@ -9,11 +9,11 @@
 | 항목 | 결정 | 비고 |
 |---|---|---|
 | 인증 | 구글 로그인 + JWT | 소셜 로그인 ID, 리프레시 토큰을 User에 보관 |
-| QuietIndex 계산 | AI가 배치(**1시간 주기**)로 계산 → `POST /api/internal/quiet-index`로 push | 하락 트리거 무의미해지면 주기 재논의 (2026-08-18 확정) |
+| QuietIndex 계산 | AI → POST /api/internal/quiet-index 수신 구현 | 실제 공급 주기 별도 확인. 백엔드 자동 지도 동기화는 미구현 |
 | QuietIndex 저장 구조 | **이력 저장** (`quiet_index` 별도 테이블) | 향후 시계열 예측(정적 골든타임 가이드) 대비 |
 | 감성모드(Mode) | 고정 enum, 5종 | 기획서 "주요 추천 유형" 기준 |
 | 장소유형(Category) | 커스텀 enum, **8종 확정** (2026-08-18) | "기타" 카테고리는 두지 않음. TourAPI 수집 중 특정 유형이 많이 확인되면 새 카테고리 추가로 확장 |
-| 대체지(Alternative) | AI가 리스트+추천이유+유사도 포함해서 전달 | QuietIndex와 동일하게 배치 저장으로 가정 (아래 "확인 필요" 참고) |
+| 대체지(Alternative) | AI POST /alternative 실시간 호출 | 3km, 최대 3개, score(거리 감점 포함 추천 점수). 배치 테이블 미사용 |
 
 ---
 
@@ -112,18 +112,19 @@ WATER_GAZING(물멍), CULTURE(조용한 문화·전시)
 
 ---
 
-## 5. spot_alternative (대체지 추천, 배치 저장)
+## 5. spot_alternative (레거시 엔티티, 현재 추천 경로 미사용)
 
-AI가 계산한 "이 장소가 혼잡할 때 추천할 대체지" 목록. QuietIndex와 동일하게 배치 계산 후 저장하는 것으로 가정함.
-
-> ⚠️ **확인 필요**: 지금까지 나온 결정은 "AI가 리스트+추천이유+유사도를 준다"는 응답 형태에 대한 것이지, 이걸 QuietIndex처럼 **배치로 미리 계산해서 저장**해두는 건지, 아니면 사용자가 조회하는 시점에 AI 서버를 **실시간 호출**해서 받아오는 건지는 명시적으로 정해진 바가 없음. 이 스키마는 배치 저장을 전제로 설계했음 — 만약 실시간 호출이 맞다면 이 테이블은 필요 없고 API 레이어에서 AI 서버 응답을 그대로 패스스루하면 됨. **다음 AI 협의에서 확정 필요.**
+기존 배치 설계의 엔티티가 남아 있지만 현재 AlternativeService는 이 테이블을 읽거나 쓰지 않는다.
+실시간 AI 결과를 백엔드 장소 데이터와 연결하고 거리·중복·미등록 후보를 검증한다. 단순 패스스루가 아니다.
+방문 중 제안은 visit.alternative_suggestion_json에 스냅샷을 저장한다.
+아래 컬럼은 레거시 구조 설명이며 현재 API 계약이 아니다. 운영 데이터/참조 확인 전 테이블을 삭제하지 않는다.
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | `id` | BIGINT PK | |
 | `origin_spot_id` | BIGINT FK → tourist_spot.id | 혼잡한 원래 목적지 |
 | `alternative_spot_id` | BIGINT FK → tourist_spot.id | 추천 대체지 |
-| `similarity_score` | DECIMAL(5,2) | AI가 산출한 유사도 (0~100 또는 0~1, AI팀과 스케일 통일 필요) |
+| `similarity_score` | DECIMAL(5,2) | 레거시 유사도 컬럼. 현재 API score와 혼동하지 않음 |
 | `recommend_reason` | VARCHAR(500) | AI가 준 추천 이유 텍스트 |
 | `calculated_at` | DATETIME | |
 
@@ -204,10 +205,11 @@ TouristSpot 1───N spot_alternative (origin_spot_id)
 TouristSpot 1───N spot_alternative (alternative_spot_id)
 ```
 
-## 미확정 / 팀 확인 필요 목록 (2026-08-18 기준)
+## 추가 구현 및 확인 사항
 
-- [x] `category`(장소유형) enum 최종 값 — 8종 확정
-- [x] `similarity_score` 스케일 — 0~1 확정
-- [x] QuietIndex 배치 계산 주기 — 1시간 확정, `POST /api/internal/quiet-index`로 push 받는 구조 구현 완료
-- [ ] `spot_alternative`를 배치 저장할지, 실시간 AI 호출로 할지 — **실시간 호출로 결정됨(회의 확정), 아직 이 문서/코드에 미반영** — 재설계 예정(9b)
-- [ ] TourAPI 관광지 기본정보 자체를 AI가 어떤 방식으로 백엔드에 전달할지 (push API/직접 DB/파일) — `task.md` Phase 3 참고
+- 관광지 기본정보 source_updated_at 및 재적재: [적재 명세](./spot-import-api-spec.md).
+- visit의 시작 점수 관측 시각/제안 JSON/닫기/선택 방문 ID: [방문 중 제안 명세](./nudge-api-spec.md).
+- quiet_forecast 컬럼·유니크 키·시각 정책: [예측 명세](./forecast-api-spec.md).
+- 위 문서의 신규 컬럼/테이블은 구현된 엔티티 기준이다. 실제 DB 마이그레이션 상태는 별도 확인한다.
+- 체류시간 조건은 제거됐고 visitRadiusMeters는 Category에서 계산하는 응답 필드이며 별도 DB 컬럼이 아니다.
+- AI 기본정보/예측 전송 계약, 실제 관측 공급 주기와 배포 검증은 [task.md](./task.md)에 남긴다.
