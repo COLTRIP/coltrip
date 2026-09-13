@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../../../core/network/api_exception.dart';
 import '../models/recommendation.dart';
 import '../repositories/recommendation_repository.dart';
+import '../models/quiet_score_point.dart';
+
 
 class RecommendationDetailViewModel extends ChangeNotifier {
   final int spotId;
@@ -14,11 +16,15 @@ class RecommendationDetailViewModel extends ChangeNotifier {
 
   bool _disposed = false;
 
+  List<QuietScorePoint> timelinePoints = [];
+  bool isTimelineLoading = false;
+
   RecommendationDetailViewModel({
     required this.spotId,
     RecommendationRepository? repository,
   }) : _repository = repository ?? RecommendationRepository() {
     loadDetail();
+    loadTimeline();
   }
 
   /// dispose 이후 비동기 콜백이 늦게 도착해도 죽지 않도록
@@ -66,6 +72,22 @@ class RecommendationDetailViewModel extends ChangeNotifier {
     if (_disposed || spot == null) return;
     spot = spot!.copyWith(isLiked: liked);
     _safeNotify();
+  }
+
+  Future<void> loadTimeline() async {
+    isTimelineLoading = true;
+    _safeNotify();
+
+    try {
+      timelinePoints = await _repository.getTimeline(
+        spotId: spotId,
+      );
+    } catch (_) {
+      timelinePoints = [];
+    } finally {
+      isTimelineLoading = false;
+      _safeNotify();
+    }
   }
 
   @override

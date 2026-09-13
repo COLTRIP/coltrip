@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../../app/routes/app_routes.dart';
 import '../../../models/recommendation.dart';
 
+
 class RecommendationCard extends StatelessWidget {
   final Spot spot;
 

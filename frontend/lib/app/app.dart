@@ -1,4 +1,3 @@
-import 'package:coltrip/app/navigation/main_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,16 +11,16 @@ class ColtripApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      home: MainShell(),
-      getPages: AppPages.pages,
-
       title: 'COLTRIP',
       debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.profile,
-      // getPages: AppPages.pages,
+      initialRoute: AppRoutes.login,
+      getPages: AppPages.pages,
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF7F9F8),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF589C7E),
+        ),
       ),
     );
   }

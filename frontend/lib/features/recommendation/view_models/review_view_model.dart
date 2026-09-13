@@ -5,7 +5,8 @@ import '../../../core/network/api_exception.dart';
 import '../models/review.dart';
 
 class ReviewViewModel extends ChangeNotifier {
-  ReviewViewModel({required this.spotId, ReviewRepository? repository}) : _repository = repository ?? ReviewRepository() {
+  ReviewViewModel({required this.spotId, ReviewRepository? repository})
+    : _repository = repository ?? ReviewRepository() {
     loadReviews();
   }
 

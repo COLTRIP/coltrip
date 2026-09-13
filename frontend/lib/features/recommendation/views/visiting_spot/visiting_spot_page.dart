@@ -32,7 +32,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           currentQuietScore: widget.resumeVisit!.currentQuietScore,
         );
 
-
   @override
   void dispose() {
     _viewModel.dispose();
@@ -216,7 +215,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(
-                      child: CircularProgressIndicator(color: Color(0xFF589C7E)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF589C7E),
+                      ),
                     ),
                   )
                 else if (_viewModel.alternativesError != null)
@@ -260,10 +261,8 @@ class _AlternativeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final spot = alternative.spot;
     return InkWell(
-      onTap: () => Get.toNamed(
-        AppRoutes.recommendationDetail,
-        arguments: spot.id,
-      ),
+      onTap: () =>
+          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.all(14),
