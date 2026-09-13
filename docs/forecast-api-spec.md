@@ -37,7 +37,7 @@
 예시:
 
 ```text
-GET /api/spots/recommendations?date=2026-09-14&hour=15&category=PARK&mode=WALK&limit=20
+GET /api/spots/recommendations?date=2026-09-14&hour=15&category=PARK&mode=NATURAL&limit=20
 ```
 
 예시 날짜는 실행 시점의 허용 범위에 맞춰 바꿔 사용한다.
@@ -60,7 +60,7 @@ GET /api/spots/recommendations?date=2026-09-14&hour=15&category=PARK&mode=WALK&l
 
 Category: CAFE, PARK, LIBRARY, GALLERY, BOOKSTORE, TEMPLE, BEACH, ALLEY.
 
-Mode: WALK, CONTEMPLATION, SCENERY, WATER_GAZING, CULTURE. mode는 필터일 뿐 응답 modes에는 장소의 전체 감성모드가 담긴다.
+Mode: COZY, NATURAL, URBAN, VINTAGE, EXOTIC, VIBRANT, SENSORY, TRANQUIL. mode는 필터일 뿐 응답 modes에는 장소의 전체 감성모드가 담긴다.
 
 ### 응답 예시
 
@@ -82,7 +82,7 @@ Mode: WALK, CONTEMPLATION, SCENERY, WATER_GAZING, CULTURE. mode는 필터일 뿐
         "name": "예시 공원",
         "address": "부산광역시",
         "category": "PARK",
-        "modes": ["WALK", "SCENERY"],
+        "modes": ["NATURAL", "SENSORY"],
         "imageUrl": null,
         "latitude": 35.18,
         "longitude": 129.08,

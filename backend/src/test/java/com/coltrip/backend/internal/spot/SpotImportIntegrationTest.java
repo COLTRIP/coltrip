@@ -44,8 +44,18 @@ class SpotImportIntegrationTest {
         @Bean InternalApiProperties internalApiProperties() { return new InternalApiProperties("test-key"); }
     }
 
+    @Test void allEightEmotionsSurvivePersistenceAndResponseMapping() {
+        Long id = imports.receive("test-key", request("All emotions", List.of(Mode.values()), source, null))
+                .spots().getFirst().spotId();
+        clear();
+        assertEquals(java.util.Set.of(Mode.values()), modes.findBySpot_Id(id).stream()
+                .map(SpotMode::getMode).collect(java.util.stream.Collectors.toSet()));
+        assertEquals(java.util.Arrays.stream(Mode.values()).map(Enum::name).collect(java.util.stream.Collectors.toSet()),
+                new java.util.HashSet<>(reads.findById(null, id).modes()));
+    }
+
     @Test void createsSpotAndDeduplicatesModes() {
-        var result = imports.receive("test-key", request("First", List.of(Mode.WALK, Mode.WALK, Mode.SCENERY), source, "https://example.com/a.jpg"));
+        var result = imports.receive("test-key", request("First", List.of(Mode.NATURAL, Mode.NATURAL, Mode.SENSORY), source, "https://example.com/a.jpg"));
         clear();
         assertEquals(1, result.applied());
         assertEquals(1, spots.count());
@@ -56,11 +66,11 @@ class SpotImportIntegrationTest {
     }
 
     @Test void replayKeepsSpotAndMappingIds() {
-        var first = imports.receive("test-key", request("First", List.of(Mode.WALK), source, null));
+        var first = imports.receive("test-key", request("First", List.of(Mode.NATURAL), source, null));
         clear();
         Long id = first.spots().getFirst().spotId();
         Long mappingId = modes.findBySpot_Id(id).getFirst().getId();
-        imports.receive("test-key", request("First", List.of(Mode.WALK), source, null));
+        imports.receive("test-key", request("First", List.of(Mode.NATURAL), source, null));
         clear();
         assertEquals(1, spots.count());
         assertEquals(id, spots.findByTourApiContentId("123").orElseThrow().getId());
@@ -68,40 +78,40 @@ class SpotImportIntegrationTest {
     }
 
     @Test void reimportReplacesModesAndClearsOptionalValues() {
-        Long id = imports.receive("test-key", request("First", List.of(Mode.WALK, Mode.SCENERY), source, "https://example.com/a.jpg"))
+        Long id = imports.receive("test-key", request("First", List.of(Mode.NATURAL, Mode.SENSORY), source, "https://example.com/a.jpg"))
                 .spots().getFirst().spotId();
         clear();
-        imports.receive("test-key", request("Updated", List.of(Mode.SCENERY, Mode.CULTURE), source.plusHours(1), null));
+        imports.receive("test-key", request("Updated", List.of(Mode.SENSORY, Mode.VINTAGE), source.plusHours(1), null));
         clear();
         var detail = reads.findById(null, id);
         assertEquals("Updated", detail.name());
         assertNull(detail.imageUrl());
         assertEquals(2, detail.modes().size());
-        assertFalse(detail.modes().contains("WALK"));
-        assertTrue(detail.modes().contains("CULTURE"));
+        assertFalse(detail.modes().contains("NATURAL"));
+        assertTrue(detail.modes().contains("VINTAGE"));
         imports.receive("test-key", request("Updated", List.of(), source.plusHours(2), null));
         clear();
         assertTrue(modes.findBySpot_Id(id).isEmpty());
     }
 
     @Test void staleSnapshotDoesNotOverwriteBasicInfoOrModes() {
-        imports.receive("test-key", request("Latest", List.of(Mode.WALK), source.plusHours(1), null));
+        imports.receive("test-key", request("Latest", List.of(Mode.NATURAL), source.plusHours(1), null));
         clear();
-        var result = imports.receive("test-key", request("Old", List.of(Mode.CULTURE), source, null));
+        var result = imports.receive("test-key", request("Old", List.of(Mode.VINTAGE), source, null));
         clear();
         assertEquals(1, result.ignoredStale());
         var spot = spots.findByTourApiContentId("123").orElseThrow();
         assertEquals("Latest", spot.getName());
-        assertEquals(List.of(Mode.WALK), modes.findBySpot_Id(spot.getId()).stream().map(SpotMode::getMode).toList());
+        assertEquals(List.of(Mode.NATURAL), modes.findBySpot_Id(spot.getId()).stream().map(SpotMode::getMode).toList());
     }
 
     @Test void basicImportConnectsToQuietPushAndPreservesScoreOnReimport() {
-        Long id = imports.receive("test-key", request("First", List.of(Mode.WALK), source, null)).spots().getFirst().spotId();
+        Long id = imports.receive("test-key", request("First", List.of(Mode.NATURAL), source, null)).spots().getFirst().spotId();
         clear();
         var observedAt = source.plusMinutes(30).toLocalDateTime();
         quiet.push("test-key", new QuietIndexPushRequest("123", 83, observedAt, null));
         clear();
-        imports.receive("test-key", request("Updated", List.of(Mode.SCENERY), source.plusHours(1), null));
+        imports.receive("test-key", request("Updated", List.of(Mode.SENSORY), source.plusHours(1), null));
         clear();
         assertEquals(83, reads.findById(null, id).quietScore());
         assertEquals(observedAt, spots.findById(id).orElseThrow().getQuietScoreUpdatedAt());
@@ -125,7 +135,7 @@ class SpotImportIntegrationTest {
         Long likeId = like.getId();
         Long reviewId = review.getId();
         clear();
-        imports.receive("test-key", request("Updated", List.of(Mode.WALK), source.plusHours(1), null));
+        imports.receive("test-key", request("Updated", List.of(Mode.NATURAL), source.plusHours(1), null));
         clear();
         assertEquals(id, em.find(Visit.class, visitId).getSpot().getId());
         assertEquals(id, em.find(SpotLike.class, likeId).getSpot().getId());

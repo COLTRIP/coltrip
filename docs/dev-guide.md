@@ -1,160 +1,192 @@
-# 개발 환경 가이드 (백엔드)
+# 백엔드 개발 환경 가이드
 
-로컬에서 서버를 띄우고, 프론트가 API를 테스트할 수 있게 하는 방법.
+기준: 저장소의 Java 21 toolchain, application.yml, application-secret.example.yml.
+아래 PowerShell 명령은 별도 표시가 없으면 **backend 폴더**에서 실행한다.
+운영 DB가 아닌 개인 로컬 DB를 사용한다.
 
-## 0. 사전 준비
+## 1. Java와 작업 폴더
+저장소 루트에서:
+```powershell
+Set-Location backend
+java -version
+.\gradlew.bat --version
+```
 
-**Java 21**이 필요하다 (`build.gradle`의 toolchain 설정). 확인:
-```bash
+JDK 21이 필요하다. Gradle은 wrapper로 실행하므로 별도 설치하지 않는다.
+PowerShell/cmd는 gradlew.bat, macOS/Linux/Git Bash는 ./gradlew를 사용한다.
+Java가 다르면 설치된 JDK 21 경로로 JAVA_HOME과 PATH를 설정한다.
+
+```powershell
+$env:JAVA_HOME = 'C:\path\to\jdk-21'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
 java -version
 ```
-21이 아니면 [Temurin 21](https://adoptium.net/temurin/releases/?version=21)이나 SDKMAN(`sdk install java 21-tem`)으로 설치. `./gradlew`는 Gradle wrapper라 Gradle 자체를 따로 설치할 필요는 없다 — JDK 21만 있으면 된다.
 
-**MySQL**은 둘 중 편한 쪽으로 준비한다.
+경로에 공백이 있으면 따옴표로 감싼다. 첫 Gradle 실행은 의존성 다운로드를 위한 인터넷이 필요하다.
 
-- **A. 로컬 설치** — Mac은 `brew install mysql && brew services start mysql`, Windows는 [MySQL Installer](https://dev.mysql.com/downloads/installer/)로 설치 후 서비스 시작. 설치 후 root 비밀번호를 기억해둘 것(1번 단계에서 씀).
-- **B. Docker** — 로컬에 MySQL을 깔고 싶지 않다면:
-  ```bash
-  docker run -d --name coltrip-mysql \
-    -e MYSQL_ROOT_PASSWORD=root \
-    -e MYSQL_DATABASE=coltrip \
-    -p 3306:3306 \
-    mysql:8.4
-  ```
-  이 방법은 `CREATE DATABASE` 단계(1번 참고)를 건너뛰어도 된다 — `MYSQL_DATABASE` 환경변수가 컨테이너 최초 기동 시 자동으로 만들어준다. `application-secret.yml`의 `password`는 `root`로 채우면 된다.
+## 2. MySQL 준비
 
-### Windows 참고사항
+### Docker 사용
+Docker Desktop을 실행하고 Linux 컨테이너 엔진이 준비될 때까지 기다린다.
 
-- `./gradlew`는 PowerShell·cmd 어디서든 그대로 동작한다(별도로 `gradlew.bat`을 쓸 필요 없음 — Gradle wrapper가 OS를 알아서 판별).
-- 이 문서와 [api.md](./api.md)의 예제는 macOS/Linux 기준 `curl`이다. **PowerShell의 `curl`은 `Invoke-WebRequest`의 별칭이라 옵션 문법이 다르다** — 예제가 안 될 경우:
-  - Git Bash(Windows용 Git 설치 시 기본 포함)에서 실행하면 예제 그대로 동작한다. 가장 간단한 방법.
-  - 또는 PowerShell 문법으로 변환: `curl -X POST url -H "Authorization: Bearer X"` → `Invoke-RestMethod -Method Post -Uri url -Headers @{Authorization="Bearer X"}`
-- MySQL CLI 경로가 PATH에 없으면 winget/설치 시 "Add to PATH" 옵션을 켜거나, MySQL Workbench의 GUI로 1번 단계의 `CREATE DATABASE`를 실행해도 된다.
-
-## 1. 최초 세팅
-
-```bash
-# 1) MySQL에 DB 생성
-CREATE DATABASE coltrip CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# 2) 시크릿 설정 파일 준비
-cp backend/src/main/resources/application-secret.example.yml \
-   backend/src/main/resources/application-secret.yml
-# → DB 계정, jwt.secret, oauth/naver 키, internal.api-key 채우기
-# (이 파일은 .gitignore 대상이라 커밋되지 않음)
+```powershell
+docker info
+docker ps -a
 ```
 
-## 2. 서버 실행
+dockerDesktopLinuxEngine 파이프를 찾지 못하면 Docker 엔진이 실행되지 않은 것이다. 이 상태에서는 DB 생성 명령을 반복하지 않는다.
+coltrip-mysql 컨테이너가 없을 때만 최초 생성한다. 아래 암호는 로컬 예시이며 공유/운영 환경에서 재사용하지 않는다.
 
-```bash
-cd backend
-./gradlew bootRun
+```powershell
+docker run --name coltrip-mysql -e MYSQL_ROOT_PASSWORD=local-dev-only -e MYSQL_DATABASE=coltrip -p 127.0.0.1:3306:3306 -v coltrip-mysql-data:/var/lib/mysql -d mysql:8.4
+docker logs coltrip-mysql
 ```
 
-`Started BackendApplication` 로그가 뜨면 정상. 끄려면 `Ctrl + C`.
+ready for connections 이후 접속한다. MYSQL_DATABASE는 빈 데이터 볼륨 최초 초기화에만 적용된다.
+기존 컨테이너가 중지 상태라면 재생성하지 않고 다음을 사용한다.
 
-**팀 컨벤션은 8090이다** — `application-secret.example.yml`에 `server.port: 8090`이 이미 들어있어서, 1번 단계에서 그대로 복사했다면 별도 설정 없이 8090으로 뜬다. 이 문서의 모든 curl/Swagger 예제도 8090을 기준으로 쓰여 있다. (`application.yml`의 진짜 기본값은 8080이지만, `application-secret.yml` 쪽이 우선순위가 높아 최종적으로 8090이 적용된다 — `spring.config.import`로 가져온 설정이 이를 가져온 파일보다 우선순위가 높기 때문) 로그에 `Tomcat started on port ...`로 실제 포트가 찍히니 확인할 것.
-
-### 다른 포트를 쓰고 싶다면
-
-다른 프로젝트가 8090을 쓰고 있다면 `application-secret.yml`의 `server.port` 값을 원하는 포트로 바꾸면 된다. 이 파일은 `.gitignore` 대상이라 팀 설정에 영향을 주지 않는다. 단, 이 문서의 curl 예제들은 여전히 8090으로 적혀 있으니 본인 포트에 맞게 바꿔 읽을 것.
-
-일회성으로만 바꾸려면 실행 인자를 써도 된다:
-```bash
-./gradlew bootRun --args='--server.port=8091'
+```powershell
+docker start coltrip-mysql
 ```
 
-## 3. 시드 데이터 적재
+3306 포트가 이미 사용 중이면 기존 로컬 MySQL을 사용할지 결정한다.
+새 컨테이너를 3307로 노출하려면 -p 127.0.0.1:3307:3306으로 생성하고 JDBC URL도 3307로 맞춘다.
+기존 볼륨의 비밀번호는 docker run 환경변수 변경만으로 바뀌지 않는다.
 
-관광지 데이터를 AI 파이프라인으로 받기 전까지, 프론트 지도 화면 개발용 임시 데이터.
+### 로컬 MySQL 사용
+MySQL 서버 서비스를 시작한 뒤 MySQL Workbench SQL 편집기 또는 mysql 클라이언트에서 접속한다.
+CREATE DATABASE는 PowerShell 명령이 아니라 **접속 후 MySQL에서 실행할 SQL**이다.
 
-```bash
-mysql -h 127.0.0.1 -u root -p coltrip < backend/seed/seed-spots.sql
+```powershell
+mysql -h 127.0.0.1 -u root -p
 ```
 
-부산 관광지 12곳 + 감성모드 매핑이 들어간다. `tour_api_content_id`가 `SEED-`로 시작하므로 나중에 한 번에 정리 가능:
+Docker DB의 SQL 콘솔을 열 때:
+```powershell
+docker exec -it coltrip-mysql mysql -u root -p
+```
 
+SQL 콘솔에서:
 ```sql
-DELETE FROM tourist_spot WHERE tour_api_content_id LIKE 'SEED-%';
+CREATE DATABASE IF NOT EXISTS coltrip CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SHOW DATABASES;
 ```
 
-## 4. 테스트 계정 / 토큰 발급
+## 3. 비밀 설정
+backend 폴더에서 아래 명령은 기존 비밀 설정을 덮어쓰지 않는다.
 
-Google OAuth Android·iOS 클라이언트 등록(이슈 #9)이 끝나기 전에는 실제 구글 로그인을 할 수 없다. 그동안 인증이 필요한 API를 테스트하려면 아래 스크립트로 테스트 계정과 리프레시 토큰을 만든다.
-
-```bash
-./backend/seed/create-test-user.sh
+```powershell
+if (-not (Test-Path 'src/main/resources/application-secret.yml')) {
+    Copy-Item 'src/main/resources/application-secret.example.yml' 'src/main/resources/application-secret.yml'
+}
 ```
 
-출력된 리프레시 토큰으로 액세스 토큰을 받는다:
+application-secret.yml을 열어 datasource URL/계정/암호, 충분히 긴 랜덤 jwt.secret,
+Google OAuth 값, internal.api-key를 채운다. 예시 값을 운영 비밀키로 사용하지 않는다.
+이 파일은 Git 제외 대상이다. 토큰·비밀키를 문서/PR/로그에 올리지 않는다.
 
-```bash
-curl -X POST http://localhost:8090/api/auth/refresh \
-  -H "Authorization: Bearer <리프레시 토큰>"
+- application.yml은 optional:application-secret.yml을 import한다.
+- DB 설정이 없으면 DataSource url/driver 오류가 난다. develop 코드가 최신이어도 제외된 비밀 설정은 git pull로 오지 않는다.
+- DB 연결 거부는 서버/포트, Access denied는 계정/암호, Unknown database는 DB 생성을 확인한다.
+- 기본 server.port는 **8080**. 예시 secret 파일의 server.port는 **8090**이며 import 후 적용된다.
+- 실제 포트는 기동 로그를 확인한다. 아래 URL 예시는 예시 secret 파일을 적용한 8090 기준이다.
+- AI 실시간 추천은 AI_BASE_URL, AI_API_KEY, AI_DATA_SOURCE(real 기본값, mock 선택) 설정이 별도로 필요하다.
+- AI_API_KEY는 백엔드→AI X-API-Key용, internal.api-key는 AI→백엔드 X-Internal-Api-Key용이다.
+- 서버 JVM 시간대도 Asia/Seoul로 맞춘다. 기존 LocalDateTime 기반 관측/방문 응답에는 오프셋이 없다.
+
+## 4. 서버 실행·종료
+```powershell
+.\gradlew.bat bootRun
 ```
 
-응답의 `accessToken`을 이후 요청 헤더에 사용:
+Started BackendApplication 로그와 실제 포트를 확인한다. Gradle 진행률만으로 기동 성공이라고 판단하지 않는다.
+8090 충돌 시 일회성으로 다른 포트를 지정할 수 있다.
 
-```bash
-curl http://localhost:8090/api/users/me \
-  -H "Authorization: Bearer <accessToken>"
+```powershell
+.\gradlew.bat bootRun --args="--server.port=8091"
 ```
 
-### ⚠️ 리프레시 토큰은 1회용이다
-
-`/api/auth/refresh`를 호출하면 **새 리프레시 토큰이 함께 발급되고 이전 토큰은 즉시 무효화**된다(rotation). 응답의 `refreshToken`을 반드시 저장해서 다음 재발급에 써야 한다. 꼬이면 스크립트를 다시 실행하면 된다.
-
-### ⚠️ 토큰은 커밋하지 않는다
-
-이 레포는 public이다. 발급된 토큰은 자격 증명이므로 코드·문서·PR 어디에도 넣지 말 것.
-
-## 5. Swagger UI (API 문서 · 테스트)
-
-서버를 띄운 뒤 브라우저에서 접속:
-
-```
-http://localhost:8090/swagger-ui/index.html
+서버 종료는 서버 터미널에서 Ctrl+C. Docker DB도 중지하려면:
+```powershell
+docker stop coltrip-mysql
 ```
 
-터널로 공개했다면 `https://<터널주소>/swagger-ui/index.html`로도 접근 가능하다.
+데이터 볼륨 삭제나 docker system prune은 일반 종료 절차가 아니다.
 
-### 인증이 필요한 API 테스트하는 법
+## 5. 개발 시드
+서버가 정상 기동해 테이블이 생성된 후, 실제 데이터가 아닌 로컬 시연 데이터가 필요할 때만 적재한다.
+seed/seed-spots.sql에 부산 12곳과 감성모드가 정의되어 있다. 실제 DB에 이미 들어 있는지는 별도로 조회한다.
 
-1. **인증 → 액세스 토큰 재발급** 을 펼친다.
-2. 우측 상단 **Authorize** 버튼에 **리프레시 토큰**을 넣고 Authorize.
-   (`Bearer ` 접두어 없이 토큰 값만 입력)
-3. `POST /api/auth/refresh`를 **Try it out → Execute** 한다.
-4. 응답의 `accessToken`을 복사한다.
-5. 다시 **Authorize** 버튼을 눌러 이번엔 **accessToken**으로 교체한다.
-6. 이제 자물쇠 표시가 있는 API를 호출할 수 있다.
+로컬 mysql 콘솔에서 절대 경로로:
+```sql
+USE coltrip;
+SOURCE C:/path/to/coltrip/backend/seed/seed-spots.sql;
+```
 
-> ⚠️ 3번에서 받은 응답의 `refreshToken`도 새 값으로 갱신되었으므로(rotation), 다음 재발급 때는 그 값을 써야 한다.
+Docker DB이면 먼저 파일을 복사하고 SQL 콘솔을 연다.
+```powershell
+docker cp ./seed/seed-spots.sql coltrip-mysql:/tmp/seed-spots.sql
+docker exec -it coltrip-mysql mysql -u root -p coltrip
+```
 
-관광지 조회(GET)는 Authorize 없이 바로 호출된다.
+그 SQL 콘솔에서:
+```sql
+SOURCE /tmp/seed-spots.sql;
+```
 
-## 6. 인증 없이 호출 가능한 API
+시드의 SEED- ID를 실 TourAPI contentId로 간주하지 않는다. 실데이터는 [적재 API](./spot-import-api-spec.md)를 참고한다.
+시드 삭제 전 방문/좋아요/리뷰/관측/예측/모드/대체지 FK와 제안 JSON 참조를 확인하고 백업·이전 정책을 정한다.
+실데이터 적재가 시드 참조를 자동 이전하지 않으며 FK 검사를 끄거나 일괄 DELETE하지 않는다.
 
-프론트가 로그인 없이도 지도 화면을 개발할 수 있도록 조회 API는 열려 있다.
+## 6. 인증 테스트
+실제 Google 로그인은 플랫폼 SDK 및 OAuth 설정이 준비되어 있어야 한다. 현재 팀 등록 상태는 별도 확인한다.
+로컬 테스트 계정 스크립트 seed/create-test-user.sh는 Bash, mysql 클라이언트, python3/venv/pip와 로컬 secret 설정이 필요하다.
+Git Bash에서 저장소 루트 기준으로 실행하며 PowerShell 스크립트가 아니다. Docker CLI만 설치된 환경에서는 mysql 클라이언트가 추가로 필요하다.
+출력된 토큰은 비밀 정보이며 공유 저장소에 커밋하지 않는다.
 
-| 인증 불필요 | 인증 필요 |
-|---|---|
-| `GET /api/spots` | 좋아요 등록/취소, 내 좋아요 목록 |
-| `GET /api/spots/{id}` | 방문 시작/완료 |
-| `GET /api/spots/{id}/reviews` | 리뷰 작성/삭제 |
-| `POST /api/auth/google`, `/api/auth/refresh` | 내 정보 조회/수정, 탈퇴 |
+PowerShell에서 토큰 재발급:
+```powershell
+$baseUrl = 'http://localhost:8090'
+$refreshToken = Read-Host '로컬 테스트 리프레시 토큰'
+$tokens = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/refresh" -Headers @{Authorization="Bearer $refreshToken"}
+$refreshToken = $tokens.refreshToken
+Invoke-RestMethod -Uri "$baseUrl/api/users/me" -Headers @{Authorization="Bearer $($tokens.accessToken)"}
+```
 
-전체 스펙은 [api.md](./api.md) 참고.
+재발급하면 이전 refreshToken은 무효화된다. 다음에는 새 refreshToken을 사용한다.
+Windows PowerShell의 curl 별칭 문제를 피하려면 Invoke-RestMethod 또는 curl.exe를 명시한다.
 
-## 7. 외부에 서버 공개하기 (프론트가 원격일 때)
+## 7. Swagger 및 공개 API
+브라우저에서 http://localhost:8090/swagger-ui/index.html 에 접속한다.
+OpenAPI JSON은 /v3/api-docs 이다. 서버가 8080/8091이면 URL도 같은 포트로 바꾼다.
 
-로컬 서버를 인터넷에서 접근 가능하게 하려면 Cloudflare Tunnel을 쓴다.
+- 모든 GET /api/spots/**는 비로그인 허용(추천/대체지/관측·예측 타임라인 포함).
+- /api/auth/google은 idToken 본문, /api/auth/refresh는 refreshToken 헤더가 필요하다.
+- 방문/내 정보/쓰기 API는 액세스 토큰이 필요하다.
+- Swagger Authorize에는 Bearer 접두어 없이 토큰만 넣는다. refresh 호출 시 리프레시 토큰을 넣고, 이후 액세스 토큰으로 교체한다.
+- 내부 API는 사용자 토큰이 아니라 X-Internal-Api-Key 요청 헤더를 사용한다.
+- Swagger의 보안 표시와 실행 시 보안 처리는 다를 수 있으므로 [API 인증 정책](./api.md)을 기준으로 확인한다.
 
-```bash
+## 8. 원격 터널
+서버가 로컬에서 정상 응답하는지 확인한 후 **새 터미널**에서:
+```powershell
 cloudflared tunnel --url http://localhost:8090
 ```
 
-출력된 `https://....trycloudflare.com` 주소를 프론트에 전달한다. API는 그 뒤에 `/api/...`를 붙여 호출.
+--url은 ASCII 하이픈 두 개다. 문서에서 복사한 긴 대시(—)를 사용하지 않는다.
+출력된 HTTPS 주소 뒤에 /swagger-ui/index.html 또는 /api/...를 붙인다.
+서버와 터널 터미널을 모두 유지해야 하며 quick tunnel 재시작 시 주소가 달라질 수 있다.
+터널 종료는 해당 터미널에서 Ctrl+C. 이는 고정 도메인 배포를 대신하지 않는다.
+터널은 로컬 서버를 외부에 공개하므로 테스트용 데이터만 사용하고 필요할 때만 켠다.
 
-- 서버 터미널과 터널 터미널을 **둘 다 켜둬야** 접속이 유지된다.
-- 무료 quick tunnel은 재시작할 때마다 URL이 바뀐다.
-- 서버만 재시작할 때는 터널을 끄지 않아도 된다(포트만 바라보므로 URL 유지).
+## 9. 테스트와 배포 전 확인
+```powershell
+.\gradlew.bat test
+.\gradlew.bat build
+```
+
+기존 전체 테스트에는 SpringBootTest 및 DB 쓰기 테스트가 있다. 운영 DB를 연결한 상태로 실행하지 않는다.
+CI는 별도 MySQL 서비스와 테스트용 환경변수로 실행한다. H2 통과가 실제 MySQL 동시성 검증을 대신하지 않는다.
+docs만 변경한 PR은 현재 CI paths 필터상 backend CI가 실행되지 않을 수 있다.
+
+관광지 적재 계약, 관측값 공급 주기, 날짜별 예측 계약 및 AI 실데이터 연결은 [task.md](./task.md)에서 별도 관리한다.
