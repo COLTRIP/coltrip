@@ -80,6 +80,8 @@ POST /api/auth/refresh
 
 **Response `200`** — `JwtTokenResponse` (accessToken, refreshToken 재발급)
 
+리프레시 토큰은 원자적으로 교체한다. 동일 토큰의 동시 재발급은 하나만 성공하며 이전 토큰 재사용은 401이다. 신규 JWT에는 고유 `jti`가 포함된다. 로그아웃과의 처리 순서 및 기존 토큰 호환성은 [토큰 회전 정책](./refresh-token-rotation.md)을 참고한다.
+
 **Exception**: `InvalidRefreshTokenException` (401) — 만료/위조/DB에 저장된 값과 불일치
 
 ---

@@ -59,7 +59,7 @@ class AuthServiceTest {
                 .build();
 
         when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(googleUserInfo);
-        when(userRepository.findByGoogleSub(GOOGLE_SUB)).thenReturn(Optional.of(user));
+        when(userRepository.findByGoogleSubForUpdate(GOOGLE_SUB)).thenReturn(Optional.of(user));
         stubTokenIssue();
 
         JwtTokenResponse response = authService.googleLogin(ID_TOKEN, AuthIntent.LOGIN);
@@ -77,7 +77,7 @@ class AuthServiceTest {
         GoogleUserInfo googleUserInfo = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
 
         when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(googleUserInfo);
-        when(userRepository.findByGoogleSub(GOOGLE_SUB)).thenReturn(Optional.empty());
+        when(userRepository.findByGoogleSubForUpdate(GOOGLE_SUB)).thenReturn(Optional.empty());
 
         assertThrows(UserNotRegisteredException.class,
                 () -> authService.googleLogin(ID_TOKEN, AuthIntent.LOGIN));
