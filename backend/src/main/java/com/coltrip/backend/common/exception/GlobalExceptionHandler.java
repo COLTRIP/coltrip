@@ -14,6 +14,8 @@ import com.coltrip.backend.visit.exception.AlreadyOngoingVisitException;
 import com.coltrip.backend.visit.exception.InvalidVisitStateException;
 import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +27,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler({InvalidGoogleTokenException.class, InvalidRefreshTokenException.class,
             UnauthorizedException.class, InvalidInternalApiKeyException.class})
@@ -81,5 +85,15 @@ public class GlobalExceptionHandler {
                 .orElse("요청 값이 올바르지 않습니다.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("ValidationException", message));
+    }
+
+    // 위에서 처리되지 않은 예외를 그대로 두면 Spring이 /error로 내부 포워딩하는데,
+    // 그 시점엔 SecurityContext가 비어 있어 실제로는 500인 오류가 401로 잘못 응답된다(2026-09-13 실사고).
+    // 진짜 원인을 알 수 있도록 서버 로그에 스택트레이스를 남기고 500으로 명확히 응답한다.
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception e) {
+        log.error("처리되지 않은 예외가 발생했습니다.", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("InternalServerError", "서버 내부 오류가 발생했습니다."));
     }
 }
