@@ -59,6 +59,9 @@ public class TouristSpot {
     @Column(name = "recommend_reason", length = 500)
     private String recommendReason;
 
+    @Column(name = "source_updated_at")
+    private LocalDateTime sourceUpdatedAt;
+
     @Column(name = "current_quiet_score")
     private Integer currentQuietScore;
 
@@ -116,5 +119,19 @@ public class TouristSpot {
 
     public List<Mode> getModes() {
         return spotModes.stream().map(SpotMode::getMode).toList();
+    }
+
+    public void updateBasicInfo(String name, String address, BigDecimal latitude, BigDecimal longitude,
+                                Category category, String description, String imageUrl,
+                                String recommendReason, LocalDateTime sourceUpdatedAt) {
+        this.name = name;
+        this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.category = category;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.recommendReason = recommendReason;
+        this.sourceUpdatedAt = sourceUpdatedAt;
     }
 }

@@ -2,10 +2,12 @@ package com.coltrip.backend.domain.spot;
 
 import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -49,4 +51,21 @@ public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> 
             WHERE s.tourApiContentId IN :contentIds
             """)
     List<TouristSpot> findByTourApiContentIdsWithModes(@Param("contentIds") List<String> contentIds);
+
+    // 존재하지 않는 장소의 동시 최초 요청도 유니크 키로 직렬화한다. 기존 행은 여기서 변경하지 않는다.
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            INSERT INTO tourist_spot
+                (tour_api_content_id, name, address, latitude, longitude, category,
+                 description, image_url, recommend_reason, created_at, updated_at)
+            VALUES (:contentId, :name, :address, :latitude, :longitude, :category,
+                    :description, :imageUrl, :recommendReason, :now, :now)
+            ON DUPLICATE KEY UPDATE id = id
+            """, nativeQuery = true)
+    int ensureImportRow(@Param("contentId") String contentId,
+                        @Param("name") String name, @Param("address") String address,
+                        @Param("latitude") BigDecimal latitude, @Param("longitude") BigDecimal longitude,
+                        @Param("category") String category, @Param("description") String description,
+                        @Param("imageUrl") String imageUrl, @Param("recommendReason") String recommendReason,
+                        @Param("now") LocalDateTime now);
 }
