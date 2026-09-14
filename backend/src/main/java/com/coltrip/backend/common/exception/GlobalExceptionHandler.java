@@ -18,6 +18,7 @@ import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +26,11 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -87,6 +93,23 @@ public class GlobalExceptionHandler {
                 .orElse("요청 값이 올바르지 않습니다.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("ValidationException", message));
+    }
+
+    @ExceptionHandler({HttpRequestMethodNotSupportedException.class,
+            HttpMediaTypeNotSupportedException.class, HttpMediaTypeNotAcceptableException.class,
+            NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ErrorResponse> handleProtocolError(Exception exception) {
+        var error = (org.springframework.web.ErrorResponse) exception;
+        String message = switch (error.getStatusCode().value()) {
+            case 405 -> "지원하지 않는 HTTP 메서드입니다.";
+            case 415 -> "지원하지 않는 요청 Content-Type입니다.";
+            case 406 -> "요청한 Accept 형식으로 응답할 수 없습니다.";
+            default -> "요청한 경로를 찾을 수 없습니다.";
+        };
+        // Allow/Accept 등 Spring이 제공한 헤더를 보존한다. 오류 본문은 Accept와 무관하게 JSON이다.
+        return ResponseEntity.status(error.getStatusCode()).headers(error.getHeaders())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(exception.getClass().getSimpleName(), message));
     }
 
     // 위에서 처리되지 않은 예외를 그대로 두면 Spring이 /error로 내부 포워딩하는데,
