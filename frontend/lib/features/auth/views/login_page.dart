@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../models/auth_intent.dart';
@@ -73,6 +74,18 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         Get.offAllNamed(AppRoutes.main);
       }
+    } on GoogleSignInException catch (error, stackTrace) {
+      debugPrint('GoogleSignInException code: ${error.code}');
+      debugPrint(
+        'GoogleSignInException description: ${error.description}',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        return;
+      }
+
+      _showError('Google 인증에 실패했어요.');
     } on AuthException catch (error, stackTrace) {
       debugPrint('AuthException: ${error.message}');
       debugPrintStack(stackTrace: stackTrace);
