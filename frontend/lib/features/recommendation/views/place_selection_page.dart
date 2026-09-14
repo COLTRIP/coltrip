@@ -1,51 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/recommendation_selection_controller.dart';
-import '../widgets/recommendation_selection_app_bar.dart';
+import '../../../features/recommendation/widgets/recommendation_selection_app_bar.dart';
 import '../../../app/routes/app_routes.dart';
 import '../data/place_type_data.dart';
-import '../widgets/place_type_grid.dart';
+import '../../../features/recommendation/widgets/place_type_grid.dart';
+import '../models/place_type_item.dart';
+import '../repositories/visiting_spot_repository.dart';
 
-class PlaceSelectionPage extends StatelessWidget {
+
+class PlaceSelectionPage extends StatefulWidget {
   const PlaceSelectionPage({super.key});
 
-  void _moveToMoodSelection(RecommendationSelectionController controller) {
-    final selectedPlaceTypeId = controller.selectedPlaceTypeId.value;
+  @override
+  State<PlaceSelectionPage> createState() => _PlaceSelectionPageState();
+}
 
-    if (selectedPlaceTypeId == null) {
-      // 버튼을 여러 번 눌렀을 때 스낵바가 겹치는 것 방지
-      if (Get.isSnackbarOpen) {
-        Get.closeCurrentSnackbar();
-      }
+class _PlaceSelectionPageState extends State<PlaceSelectionPage> {
+  String? selectedPlaceId;
+  String? selectedCategory;
 
-      Get.snackbar(
-        '장소 유형을 선택해주세요!',
-        '추천받고 싶은 장소 유형을 하나 선택해야 해요.',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-        backgroundColor: const Color(0xFF589C7E),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
+  @override
+  void initState() {
+    super.initState();
+    _checkOngoingVisit();
+  }
+
+  Future<void> _checkOngoingVisit() async {
+    try {
+      final current = await VisitingSpotRepository().getCurrentVisit();
+      if (current == null || current.status != 'STARTED' || !mounted) return;
+
+      Get.toNamed(
+        AppRoutes.visitingSpot,
+        arguments: {
+          'spot': current.toPlaceholderSpotDetail(),
+          'visit': current,
+        },
       );
+    } catch (_) {
+      return;
+    }
+  }
 
+  void selectPlace(PlaceTypeItem item) {
+    setState(() {
+      selectedPlaceId = item.id;
+      selectedCategory = item.category;
+    });
+  }
+
+  void moveToEmotionSelection() {
+    if (selectedCategory == null) {
       return;
     }
 
-    Get.toNamed(AppRoutes.moodSelection);
+    Get.toNamed(
+      AppRoutes.emotionSelection,
+      arguments: {
+        'category': selectedCategory,
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<RecommendationSelectionController>();
-
     return Scaffold(
       appBar: RecommendationAppBar(
         showBackButton: false,
-        onPressed: () {
-          _moveToMoodSelection(controller);
-        },
+        onPressed: () => moveToEmotionSelection(),
       ),
       body: Column(
         children: [
@@ -71,12 +94,10 @@ class PlaceSelectionPage extends StatelessWidget {
           const SizedBox(height: 20),
 
           Expanded(
-            child: Obx(
-              () => PlaceTypeGrid(
+            child: PlaceTypeGrid(
                 items: PlaceTypeData.items,
-                selectedId: controller.selectedPlaceTypeId.value,
-                onSelected: controller.selectPlaceType,
-              ),
+                selectedId: selectedPlaceId,
+                onSelected: selectPlace,
             ),
           ),
         ],

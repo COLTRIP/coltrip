@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,6 +44,27 @@ class QuietIndexMapApplierTest {
         assertTrue(applied);
         assertEquals(86, spot.getCurrentQuietScore());
         verify(quietIndexRepository).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void acceptsInclusiveScoreBounds() {
+        var applier = new QuietIndexMapApplier(spots, quietIndexRepository);
+        TouristSpot spot = newSpot();
+        when(spots.findByTourApiContentIdForUpdate("126081")).thenReturn(Optional.of(spot));
+        LocalDateTime now = LocalDateTime.now();
+        assertTrue(applier.apply("126081", 0, now));
+        assertEquals(0, spot.getCurrentQuietScore());
+        assertTrue(applier.apply("126081", 100, now.plusSeconds(1)));
+        assertEquals(100, spot.getCurrentQuietScore());
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = {-0.01, 100.01, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void invalidScoreNeverTouchesDatabase(double score) {
+        var applier = new QuietIndexMapApplier(spots, quietIndexRepository);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> applier.apply("126081", score, LocalDateTime.now()));
+        org.mockito.Mockito.verifyNoInteractions(spots, quietIndexRepository);
     }
 
     @Test

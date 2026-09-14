@@ -44,6 +44,7 @@ class LocationPermissionViewModel extends ChangeNotifier {
       return;
     }
 
+
     granted = true;
     notifyListeners();
   }
@@ -53,8 +54,7 @@ class LocationPermissionViewModel extends ChangeNotifier {
     if (!_requested || granted) return;
 
     final permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.whileInUse ||
-        permission == LocationPermission.always) {
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
       granted = true;
       notifyListeners();
     }

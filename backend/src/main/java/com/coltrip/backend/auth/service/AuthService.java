@@ -15,6 +15,8 @@ import com.coltrip.backend.user.service.UserStatsReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
+import java.sql.SQLException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class AuthService {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final JwtProvider jwtProvider;
     private final UserStatsReader userStatsReader;
+    private final SignupTransaction signupTransaction;
 
     public JwtTokenResponse googleLogin(String idToken, AuthIntent intent) {
         GoogleUserInfo googleUserInfo = googleTokenVerifier.verify(idToken);
@@ -36,22 +39,32 @@ public class AuthService {
     }
 
     private JwtTokenResponse login(GoogleUserInfo googleUserInfo) {
-        User user = userRepository.findByGoogleSub(googleUserInfo.sub())
+        User user = userRepository.findByGoogleSubForUpdate(googleUserInfo.sub())
                 .orElseThrow(UserNotRegisteredException::new);
         return issueTokens(user, false);
     }
 
     private JwtTokenResponse signup(GoogleUserInfo googleUserInfo) {
-        if (userRepository.existsByGoogleSub(googleUserInfo.sub())) {
-            throw new AlreadyRegisteredUserException();
+        try {
+            return signupTransaction.register(googleUserInfo);
+        } catch (DataIntegrityViolationException exception) {
+            // 실패한 가입 트랜잭션의 롤백 후 새 스냅샷으로 확인한다.
+            if (isDuplicateKey(exception) && signupTransaction.isRegistered(googleUserInfo.sub())) {
+                throw new AlreadyRegisteredUserException();
+            }
+            throw exception;
         }
+    }
 
-        User user = userRepository.save(User.builder()
-                .googleSub(googleUserInfo.sub())
-                .email(googleUserInfo.email())
-                .build());
-
-        return issueTokens(user, true);
+    private boolean isDuplicateKey(Throwable exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql
+                    && ((sql.getErrorCode() == 1062 && "23000".equals(sql.getSQLState()))
+                        || "23505".equals(sql.getSQLState()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public JwtTokenResponse refresh(String refreshToken) {
@@ -60,10 +73,11 @@ public class AuthService {
         }
 
         Long userId = jwtProvider.getUserId(refreshToken);
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(InvalidRefreshTokenException::new);
 
-        if (!refreshToken.equals(user.getRefreshToken())) {
+        // 잠금을 기다리는 동안 토큰이 만료되거나 다른 요청에서 교체될 수 있다.
+        if (!jwtProvider.validateToken(refreshToken) || !refreshToken.equals(user.getRefreshToken())) {
             throw new InvalidRefreshTokenException();
         }
 
@@ -71,7 +85,7 @@ public class AuthService {
     }
 
     public void logout(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(UnauthorizedException::new);
         user.updateRefreshToken(null);
     }

@@ -24,14 +24,7 @@ class QuietScoreTimelineChart extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Center(
-          child: Text(
-            '타임라인 데이터가 없어요.',
-            style: TextStyle(
-              fontFamily: 'Paperlogy',
-              fontSize: 12,
-              color: Color(0xFF7C7C7C),
-            ),
-          ),
+          child: Text('타임라인 데이터가 없어요.', style: TextStyle(fontFamily: 'Paperlogy', fontSize: 12, color: Color(0xFF7C7C7C))),
         ),
       );
     }
@@ -60,9 +53,7 @@ class QuietScoreTimelineChart extends StatelessWidget {
                       height: 120 * (point.score.clamp(0, 100) / 100),
                       decoration: BoxDecoration(
                         color: _barColor(point.score),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
                     ),
                   );
@@ -79,11 +70,7 @@ class QuietScoreTimelineChart extends StatelessWidget {
                     child: Text(
                       point.hour.toString().padLeft(2, '0'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Paperlogy',
-                        fontSize: 10,
-                        color: Colors.black,
-                      ),
+                      style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 10, color: Colors.black),
                     ),
                   ),
                 );

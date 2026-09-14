@@ -20,7 +20,16 @@
 | `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
 | `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
-- 마지막 갱신: 2026-09-13 (현재 브랜치의 컨트롤러·DTO·보안 설정 기준)
+| `HttpRequestMethodNotSupportedException` | 405 | 경로는 있으나 HTTP 메서드 미지원. `Allow` 헤더로 지원 메서드 제공 |
+| `HttpMediaTypeNotSupportedException` | 415 | 요청 Content-Type 미지원. Spring이 제공하는 지원 미디어 타입 헤더 유지 |
+| `HttpMediaTypeNotAcceptableException` | 406 | 요청 Accept에 맞는 응답 형식 미지원 |
+| `NoResourceFoundException` / `NoHandlerFoundException` | 404 | 요청을 처리할 경로/리소스 없음 |
+| `InternalServerError` | 500 | 위 분류에 해당하지 않는 서버 내부 오류. 상세 원인은 서버 로그에만 기록 |
+
+프로토콜 오류(404/405/406/415)는 공통 JSON 본문을 반환한다. 지원하지 않는 Accept로 발생한 406도 오류 본문은 `application/json`이다. MVC 예외의 `Allow` 등 표준 헤더를 보존한다.
+인증 필터가 MVC 라우팅보다 먼저 실행된다. 공개 경로의 잘못된 요청 또는 인증된 요청은 위 4xx를 반환하지만, 보호 경로의 비인증 요청은 경로/메서드 오류보다 401이 우선한다. 이 처리를 위해 공개 접근 범위를 넓히지 않는다.
+
+- 마지막 갱신: 2026-09-14 (요청 메서드·미디어 타입·없는 경로 오류 정책 #99 반영)
 - 스키마 참고: [schema.md](./schema.md)
 - 관광지 기본정보·감성모드 적재: [spot-import-api-spec.md](./spot-import-api-spec.md) (`POST /api/internal/spots`, AI 전송 계약 협의 필요)
 
@@ -67,6 +76,7 @@ POST /api/auth/google
 - `InvalidGoogleTokenException` (401) — idToken 검증 실패
 - `UserNotRegisteredException` (404) — `intent=LOGIN`인데 가입된 사용자가 없음
 - `AlreadyRegisteredUserException` (409) — `intent=SIGNUP`인데 이미 가입된 사용자임
+- 동일 Google 계정의 동시 가입도 중복 저장 요청은 409로 반환한다. 성공한 가입의 토큰은 변경하지 않으며, 충돌 응답에는 토큰을 포함하지 않는다. 회원 생성과 토큰 저장은 함께 커밋/롤백한다. 관련 없는 DB 오류는 가입 중복으로 숨기지 않는다. 상세: `docs/signup-concurrency.md`.
 - `InvalidRequestBodyException` (400) — `intent` enum 값 오류 등 요청 바디 해석 실패
 - `ValidationException` (400) — `idToken` 누락/빈 값, `intent` 누락
 
@@ -78,7 +88,11 @@ POST /api/auth/refresh
 ```
 **Request** — Header `Authorization: Bearer {refreshToken}`
 
+헤더 누락·빈 값·Bearer 토큰 누락·잘못된 형식·유효하지 않은 토큰은 모두 `401`과 `{"code":"InvalidRefreshTokenException","message":"..."}` 형식으로 반환한다. 헤더는 API 계약상 필수이며, 서버 바인딩만 선택적으로 받아 기존 인증 검증으로 처리한다(#87).
+
 **Response `200`** — `JwtTokenResponse` (accessToken, refreshToken 재발급)
+
+리프레시 토큰은 원자적으로 교체한다. 동일 토큰의 동시 재발급은 하나만 성공하며 이전 토큰 재사용은 401이다. 신규 JWT에는 고유 `jti`가 포함된다. 로그아웃과의 처리 순서 및 기존 토큰 호환성은 [토큰 회전 정책](./refresh-token-rotation.md)을 참고한다.
 
 **Exception**: `InvalidRefreshTokenException` (401) — 만료/위조/DB에 저장된 값과 불일치
 
@@ -550,6 +564,8 @@ POST /api/spots/{spotId}/like
 ```
 **멱등** — 이미 좋아요한 상태에서 다시 호출해도 200. 프론트에서 따닥 눌러도 에러가 안 남.
 
+동시 등록도 사용자 행 잠금으로 직렬화해 모두 200을 반환하고 DB에는 한 건만 저장한다. 취소도 동일한 잠금을 사용한다. 리뷰 동시 작성은 한 건만 성공하고 나머지는 409를 반환한다. 검증 방법은 [동시 요청 처리](./like-review-concurrency.md)를 참고한다.
+
 **Response `200`**
 ```json
 { "spotId": 1, "liked": true }
@@ -690,7 +706,11 @@ AI가 계산한 quietScore를 백엔드에 전달한다. 수신 코드는 구현
 }
 ```
 `tourApiContentId`로 스팟을 식별(내부 `spotId` 아님 — AI는 TourAPI 원본 ID 기준으로 관리). `rawMetrics`는 선택, JSON 문자열. quietScore는 0~100 정수, calculatedAt은 필수 로컬 시각이며 공급자와 한국 시간 기준을 맞춘다.
+
+정상 형식의 요청에서 `X-Internal-Api-Key` 누락·빈 값·불일치는 모두 `401`과 `{"code":"InvalidInternalApiKeyException","message":"..."}`을 반환한다. 서버 내부 키 설정이 비어 있어도 인증되지 않는다. 키를 자동 trim하거나 잘못된 값을 보정하지 않는다. 본문 파싱/필드 검증은 컨트롤러 호출 전 수행되므로 본문까지 잘못된 요청은 기존 400을 반환할 수 있다(#87).
 동일 장소·calculatedAt 재전송은 이력을 정정한다. 과거 이력은 저장하되 현재 캐시를 과거 값으로 되돌리지 않는다.
+
+`calculatedAt`은 서버 검증 시각(KST) 이하여야 한다. 허용 미래 오차는 0이며 초과하면 `400 InvalidObservationTimeException`으로 거부하고 이력/현재 점수를 변경하지 않는다. [시각 검증 및 기존 데이터 복구 절차](./observation-time-validation.md)를 참고한다.
 응답 quietScore/quietLevel은 요청값이 아니라 갱신 후 유지된 최신 캐시 값이다.
 
 **Response `200`**

@@ -5,6 +5,7 @@ import com.coltrip.backend.config.AiProperties;
 import java.net.SocketTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.util.List;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,13 +35,18 @@ public class AiQuietIndexMapClient {
             Item[] result = restClient.get()
                     .uri(uriBuilder -> uriBuilder.path("/quiet-index/map")
                             .queryParam("hour", hour)
-                            .queryParam("isWeekend", isWeekend)
+                            .queryParam("is_weekend", isWeekend)
                             .build())
                     .header("X-API-Key", properties.apiKey())
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .body(Item[].class);
-            return result == null ? List.of() : List.of(result);
+            if (result == null) {
+                throw new AiIntegrationException(HttpStatus.BAD_GATEWAY,
+                        "AiInvalidResponse", "AI 고요지수 지도 응답 본문이 없습니다.");
+            }
+            // null 항목도 건별 검증에서 집계할 수 있도록 보존한다.
+            return Arrays.asList(result);
         } catch (ResourceAccessException e) {
             for (Throwable cause = e; cause != null; cause = cause.getCause()) {
                 if (cause instanceof SocketTimeoutException || cause instanceof HttpTimeoutException) {

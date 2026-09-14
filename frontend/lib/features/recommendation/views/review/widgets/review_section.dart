@@ -36,11 +36,7 @@ class ReviewSection extends StatelessWidget {
               onTap: onSeeAllPressed,
               child: const Text(
                 '전체보기',
-                style: TextStyle(
-                  fontFamily: 'Paperlogy',
-                  fontSize: 10,
-                  color: Color(0xFF7C7C7C),
-                ),
+                style: TextStyle(fontFamily: 'Paperlogy', fontSize: 10, color: Color(0xFF7C7C7C)),
               ),
             ),
           ],

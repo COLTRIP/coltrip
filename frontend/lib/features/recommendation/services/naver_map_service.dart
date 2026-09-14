@@ -32,16 +32,11 @@ Future<void> _openStoreFallback() async {
   if (Platform.isIOS) {
     storeUri = Uri.parse('https://apps.apple.com/kr/app/id311867728');
   } else if (Platform.isAndroid) {
-    storeUri = Uri.parse(
-      'https://play.google.com/store/apps/details?id=com.nhn.android.nmap',
-    );
+    storeUri = Uri.parse('https://play.google.com/store/apps/details?id=com.nhn.android.nmap');
   } else {
     throw Exception('지원하지 않는 플랫폼입니다.');
   }
 
-  final launched = await launchUrl(
-    storeUri,
-    mode: LaunchMode.externalApplication,
-  );
+  final launched = await launchUrl(storeUri, mode: LaunchMode.externalApplication);
   if (!launched) throw Exception('네이버지도 앱/스토어를 열 수 없습니다');
 }
