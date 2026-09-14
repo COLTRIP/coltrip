@@ -25,7 +25,7 @@ X-API-Key: {AI_API_KEY}
 
 - `AiQuietIndexMapClient.fetchMap(hour, isWeekend)` — `ai.base-url`/`ai.api-key`(대체지 추천과 설정 공유)로 GET 호출, 인증/설정 누락·타임아웃·5xx를 구분해 예외 처리
 - `QuietIndexMapSyncScheduler` — 매시 5분(`quiet-index.map-sync.cron`, 기본 `0 5 * * * *`)에 KST 기준 hour/주말 여부를 계산해 1회 호출. **지도 요청마다 호출하지 않고 이 스케줄러만 AI를 부른다**
-- 우리 DB에 있는 `tourApiContentId`만 응답에서 골라 반영(594개 중 대부분은 우리에게 없는 장소이므로 무시)
+- 우리 DB에 있는 `tourApiContentId`만 응답에서 골라 반영. 전체 응답 수와 등록 장소 수는 운영 데이터에 따라 달라지며 미등록 장소는 무시한다.
 - `QuietIndexMapApplier`가 매칭된 장소 1건씩 잠금 후 `QuietIndexCacheWriter`(push 경로와 공유)로 이력 upsert + `current_quiet_score` 캐시 갱신
 - AI 호출 자체가 실패(타임아웃/5xx/미설정)하면 이번 주기는 건너뛰고 **마지막 정상값을 그대로 유지**(현재 점수를 지우거나 0으로 채우지 않음)
 - 우리 DB에 등록된 장소가 하나도 없으면(seed 미적재 등) AI를 호출하지 않는다
@@ -49,10 +49,12 @@ X-API-Key: {AI_API_KEY}
 
 ## 반영하지 않는 필드
 
+- 응답에 관측/계산 시각과 출처가 없어 동기화 시작 시각(KST)을 `calculatedAt`으로 저장하고 rawMetrics는 null로 둔다. 이는 원천 데이터의 실제 관측 시각이 아니다. 동일한 원천 데이터를 다시 가져와도 새 동기화 시각의 이력이 생길 수 있다. 원천 데이터 신선도를 정확히 판단하려면 AI 시각/출처 계약이 추가로 필요하다.
+
 - `lat`/`lng` — 지도 AI 응답의 좌표로 기존 관광지 좌표를 덮어쓰지 않는다. 현재 지도 응답에는 `population`이 없으며, 클라이언트의 nullable 필드는 저장·응답에 사용하지 않는다.
 - `name` — 이미 우리 DB에 있는 이름을 신뢰하고 AI 응답의 name으로 덮어쓰지 않음(관광지 기본정보 갱신은 `POST /api/internal/spots`, 이슈 #45의 책임)
 
 ## 남은 것
 
 - 운영 반영 후 첫 주기의 성공/제외/실패 로그로 매칭률 확인
-- AI가 594개 POI를 다 계산하는 데 걸리는 시간이 매시 5분 내에 안정적으로 끝나는지 운영 중 확인 필요(초과하면 cron 오프셋 조정)
+- 실제 전체 POI의 응답 소요 시간과 AI 데이터 준비 시점을 확인하고, 타임아웃 및 cron 주기를 조정한다. 매시 5분 실행은 원천 데이터가 그 시각에 새로 갱신됨을 보장하지 않는다.
