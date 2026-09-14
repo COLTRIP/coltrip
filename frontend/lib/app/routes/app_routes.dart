@@ -10,7 +10,6 @@ abstract final class AppRoutes {
   static const nickname = '/nickname';
   static const changeNickname = '/nickname/change';
 
-  static const recommendation = '/recommendation';
   static const moodSelection = '/recommendation/mood-selection';
   static const emotionSelection = '/recommendation/emotion-selection';
   static const recommendationList = '/recommendation/list';

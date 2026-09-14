@@ -18,6 +18,7 @@ class ColtripApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF7F9F8),
+        fontFamily: 'Paperlogy',
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF589C7E),
         ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../view_models/location_permission_view_model.dart';
 
 // 방문 시작 전 위치 권한을 요청하는 화면.

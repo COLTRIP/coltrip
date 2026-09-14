@@ -20,6 +20,7 @@ import '../bindings/main_shell_binding.dart';
 import '../navigation/main_shell.dart';
 import 'app_routes.dart';
 
+
 abstract final class AppPages {
   static final pages = <GetPage<dynamic>>[
     GetPage(

@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../models/recommendation.dart';
 import '../../view_models/location_permission_view_model.dart';
 import '../../view_models/recommendation_detail_view_model.dart';

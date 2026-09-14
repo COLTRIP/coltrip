@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../models/alternative_spot.dart';
 import '../../models/current_visit.dart';
 import '../../models/recommendation.dart';

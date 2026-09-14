@@ -6,7 +6,7 @@ import '../../view_models/recommendation_filter_view_model.dart';
 import '../../view_models/recommendation_view_model.dart';
 import 'widgets/recommendation_card.dart';
 import 'widgets/recommendation_filter_sheet.dart';
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/primary_button.dart';
 
 class RecommendationPage extends StatefulWidget {
   // 이전 화면에서 이미 고른 카테고리를 전달받음
