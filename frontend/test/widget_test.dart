@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:coltrip/app/routes/app_pages.dart';
 import 'package:coltrip/app/routes/app_routes.dart';
 
+
 void main() {
   test('AppPages: 라우트 이름 중복 없음', () {
     final names = AppPages.pages.map((p) => p.name).toList();
@@ -14,7 +15,8 @@ void main() {
     expect(
       names,
       containsAll(<String>[
-        AppRoutes.recommendation,
+        AppRoutes.moodSelection,
+        AppRoutes.recommendationList,
         AppRoutes.recommendationDetail,
         AppRoutes.visitingSpot,
         AppRoutes.reviewList,

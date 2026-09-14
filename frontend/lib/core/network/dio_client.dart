@@ -1,32 +1,51 @@
-import 'package:coltrip/core/network/token_storage.dart';
 import 'package:dio/dio.dart';
 
-import 'auth_interceptor.dart';
+import '../storage/token_storage.dart';
 
 class DioClient {
   DioClient._();
 
-  static const baseUrl = 'https://api.coltrip.co.kr';
+  static const TokenStorage _tokenStorage = TokenStorage();
 
-  static BaseOptions _baseOptions() => BaseOptions(
-        baseUrl: baseUrl,
+  static final Dio instance = _createDio();
+
+  static final Dio plain = Dio(
+    BaseOptions(
+      baseUrl: 'https://api.coltrip.co.kr',
+      connectTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      contentType: Headers.jsonContentType,
+      responseType: ResponseType.json,
+    ),
+  );
+
+  static Dio _createDio() {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: 'https://api.coltrip.co.kr',
         connectTimeout: const Duration(seconds: 10),
         sendTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         contentType: Headers.jsonContentType,
         responseType: ResponseType.json,
-      );
+      ),
+    );
 
-  /// 인증 인터셉터가 붙은 기본 클라이언트
-  static final Dio instance = _create();
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final accessToken = await _tokenStorage.readAccessToken();
 
-  /// 인터셉터 없는 클라이언트. 토큰 재발급 / 401 후 원요청 재시도 전용
-  /// (AuthInterceptor 가 자기 자신을 다시 타면서 무한 루프 도는 것 방지)
-  static final Dio plain = Dio(_baseOptions());
+          if (accessToken != null && accessToken.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $accessToken';
+          }
 
-  static Dio _create() {
-    final dio = Dio(_baseOptions());
-    dio.interceptors.add(AuthInterceptor(const TokenStorage()));
+          handler.next(options);
+        },
+      ),
+    );
+
     return dio;
   }
 }

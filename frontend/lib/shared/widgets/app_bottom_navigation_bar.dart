@@ -47,12 +47,12 @@ class AppBottomNavigationBar extends GetView<MainNavigationController> {
             label: '추천',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
+            icon: Icon(Icons.person_outline),
             activeIcon: Icon(
-              Icons.settings,
+              Icons.person,
               color: Color(0xFF589C7E),
             ),
-            label: '내정보',
+            label: '프로필',
           ),
         ],
       ),

@@ -24,7 +24,6 @@ class VisitingStatusCard extends StatelessWidget {
   }
 }
 
-
 class _VisitingBox extends StatelessWidget {
   const _VisitingBox();
 

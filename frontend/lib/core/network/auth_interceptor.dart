@@ -1,9 +1,10 @@
 import 'package:coltrip/core/network/dio_client.dart';
-import 'package:coltrip/core/network/token_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
+import '../storage/token_storage.dart';
+
 
 class AuthInterceptor extends Interceptor {
   AuthInterceptor(this._tokens);

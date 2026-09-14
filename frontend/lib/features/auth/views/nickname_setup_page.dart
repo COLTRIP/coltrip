@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/dio_client.dart';
-import '../../../core/widgets/primary_button.dart';
+import '../../../shared/widgets/primary_button.dart';
 
 
 class NicknameSetupPage extends StatefulWidget {

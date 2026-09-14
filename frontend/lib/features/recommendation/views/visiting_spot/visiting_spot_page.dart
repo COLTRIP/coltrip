@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../models/alternative_spot.dart';
 import '../../models/current_visit.dart';
 import '../../models/recommendation.dart';
@@ -31,7 +31,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           startQuietScore: widget.resumeVisit!.startQuietScore,
           currentQuietScore: widget.resumeVisit!.currentQuietScore,
         );
-
 
   @override
   void dispose() {
@@ -216,7 +215,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(
-                      child: CircularProgressIndicator(color: Color(0xFF589C7E)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF589C7E),
+                      ),
                     ),
                   )
                 else if (_viewModel.alternativesError != null)
@@ -260,10 +261,8 @@ class _AlternativeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final spot = alternative.spot;
     return InkWell(
-      onTap: () => Get.toNamed(
-        AppRoutes.recommendationDetail,
-        arguments: spot.id,
-      ),
+      onTap: () =>
+          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.all(14),

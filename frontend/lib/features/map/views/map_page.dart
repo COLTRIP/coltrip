@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,7 +8,6 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../services/map_spot_service.dart';
 import '../widgets/map_search_bar.dart';
-
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key, this.isActive = true});
@@ -21,6 +22,8 @@ class _MapPageState extends State<MapPage> {
   static const _mapSpotService = MapSpotService();
 
   bool _isLoadingSpots = false;
+  bool _hasLoadedSpots = false;
+  Timer? _cameraIdleDebounce;
   final Map<String, NOverlayImage> _markerIconCache = {};
 
   Color _markerColor(String? quietLevel, int? quietScore) {
@@ -137,14 +140,19 @@ class _MapPageState extends State<MapPage> {
 
       await controller.clearOverlays(type: NOverlayType.marker);
       await controller.addOverlayAll(markers);
+      _hasLoadedSpots = true;
 
       debugPrint('현재 지도 범위 관광지 ${markers.length}개 표시 완료');
     } catch (error, stackTrace) {
       debugPrint('지도 관광지 조회 실패: $error\n$stackTrace');
 
-      if (!mounted) return;
+      // 이미 마커가 정상 표시된 뒤 발생한 일시적인 후속 요청 실패는
+      // 기존 마커를 유지하고 사용자에게 반복 노출하지 않는다.
+      if (!mounted || !widget.isActive || _hasLoadedSpots) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('주변 관광지를 불러오지 못했어요.'),
           backgroundColor: Color(0xFF589C7E),
@@ -227,6 +235,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   void dispose() {
+    _cameraIdleDebounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -302,7 +311,11 @@ class _MapPageState extends State<MapPage> {
             final controller = _mapController;
 
             if (widget.isActive && controller != null) {
-              _loadSpotsInCurrentBounds(controller);
+              _cameraIdleDebounce?.cancel();
+              _cameraIdleDebounce = Timer(
+                const Duration(milliseconds: 500),
+                () => _loadSpotsInCurrentBounds(controller),
+              );
             }
           },
         ),

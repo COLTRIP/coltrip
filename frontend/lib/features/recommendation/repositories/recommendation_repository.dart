@@ -1,5 +1,7 @@
 import '../models/recommendation.dart';
 import '../services/recommendation_api_service.dart';
+import '../models/quiet_score_point.dart';
+
 
 class RecommendationRepository {
   RecommendationRepository({RecommendationApiService? api})
@@ -12,6 +14,18 @@ class RecommendationRepository {
     return _api.getSpots(category: category, mode: mode);
   }
 
+  Future<RecommendationResult> getRecommendations({
+    required DateTime dateTime,
+    String? category,
+    List<String> modes = const [],
+  }) {
+    return _api.getRecommendations(
+      dateTime: dateTime,
+      category: category,
+      modes: modes,
+    );
+  }
+
   Future<SpotDetail> getSpotDetail({required int spotId}) {
     return _api.getSpotDetail(spotId: spotId);
   }
@@ -22,5 +36,11 @@ class RecommendationRepository {
 
   Future<bool> unlikeSpot({required int spotId}) {
     return _api.unlikeSpot(spotId: spotId);
+  }
+
+  Future<List<QuietScorePoint>> getTimeline({
+    required int spotId,
+  }) {
+    return _api.getTimeline(spotId: spotId);
   }
 }

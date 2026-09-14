@@ -1,0 +1,6 @@
+class PlaceMoodItem {
+  const PlaceMoodItem({required this.id, required this.label});
+
+  final String id;
+  final String label;
+}

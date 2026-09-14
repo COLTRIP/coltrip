@@ -13,7 +13,6 @@ class VisitingSpotApiService {
 
   final Dio _dio;
 
-
   Future<int> startVisit({
     required int spotId,
     required double startLatitude,
@@ -58,9 +57,7 @@ class VisitingSpotApiService {
 
   /// GET /api/spots/{spotId}/alternatives — 혼잡 시 유사 분위기의 더 한적한 대체지 목록.
   /// 대체지가 없으면 빈 배열(200).
-  Future<List<AlternativeSpot>> getAlternatives({
-    required int spotId,
-  }) async {
+  Future<List<AlternativeSpot>> getAlternatives({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId/alternatives',
@@ -76,13 +73,9 @@ class VisitingSpotApiService {
     }
   }
 
-  Future<void> cancelVisit({
-    required int visitId,
-  }) async {
+  Future<void> cancelVisit({required int visitId}) async {
     try {
-      await _dio.patch<Map<String, dynamic>>(
-        '/api/visits/$visitId/cancel',
-      );
+      await _dio.patch<Map<String, dynamic>>('/api/visits/$visitId/cancel');
     } on DioException catch (e) {
       // 404 VisitNotFoundException, 409 InvalidVisitStateException
       throw ApiException.fromDioException(e);
@@ -102,12 +95,8 @@ class VisitingSpotApiService {
     }
   }
 
-
-
   /// 현재 고요지수 재조회. 아직 계산 안 된 스팟이면 null.
-  Future<int?> viewQuietValue({
-    required int spotId,
-  }) async {
+  Future<int?> viewQuietValue({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId',
@@ -117,5 +106,4 @@ class VisitingSpotApiService {
       throw ApiException.fromDioException(e);
     }
   }
-
 }
