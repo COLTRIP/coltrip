@@ -12,11 +12,17 @@ import '../review/widgets/review_section.dart';
 import 'widgets/quiet_score_gauge.dart';
 import 'widgets/quiet_score_timeline_chart.dart';
 
-
 class RecommendationDetailPage extends StatefulWidget {
   final int spotId;
+  final int? predictedQuietScore;
+  final DateTime? predictionTargetAt;
 
-  const RecommendationDetailPage({super.key, required this.spotId});
+  const RecommendationDetailPage({
+    super.key,
+    required this.spotId,
+    this.predictedQuietScore,
+    this.predictionTargetAt,
+  });
 
   @override
   State<RecommendationDetailPage> createState() =>
@@ -24,7 +30,10 @@ class RecommendationDetailPage extends StatefulWidget {
 }
 
 class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
-  late final _viewModel = RecommendationDetailViewModel(spotId: widget.spotId);
+  late final _viewModel = RecommendationDetailViewModel(
+    spotId: widget.spotId,
+    timelineDateTime: widget.predictionTargetAt,
+  );
   late final _reviewViewModel = ReviewViewModel(spotId: widget.spotId);
 
   @override
@@ -101,6 +110,12 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
 
         final spot = _viewModel.spot;
         if (spot == null) return const Scaffold(body: SizedBox.shrink());
+        final isForecast = widget.predictionTargetAt != null;
+        final displayedQuietScore =
+            widget.predictedQuietScore ?? spot.quietScore ?? 0;
+        final displayedAt = isForecast
+            ? widget.predictionTargetAt
+            : spot.quietScoreUpdatedAt;
 
         return Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -227,9 +242,9 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 12),
                     const Divider(height: 24, color: Color(0x33252B28)),
                     const SizedBox(height: 12),
-                    const Text(
-                      '고요 지수',
-                      style: TextStyle(
+                    Text(
+                      isForecast ? '예상 고요 지수' : '현재 고요 지수',
+                      style: const TextStyle(
                         fontFamily: 'Paperlogy',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -240,15 +255,19 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        QuietScoreGauge(quietScore: spot.quietScore ?? 0),
+                        QuietScoreGauge(quietScore: displayedQuietScore),
                       ],
                     ),
-                    if (spot.quietScoreUpdatedAt != null) ...[
+                    if (displayedAt != null) ...[
                       const SizedBox(height: 15),
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '${spot.quietScoreUpdatedAt!.hour.toString().padLeft(2, '0')}:${spot.quietScoreUpdatedAt!.minute.toString().padLeft(2, '0')} 기준',
+                          isForecast
+                              ? '${displayedAt.month}/${displayedAt.day} '
+                                    '${displayedAt.hour.toString().padLeft(2, '0')}:00 예상'
+                              : '${displayedAt.hour.toString().padLeft(2, '0')}:'
+                                    '${displayedAt.minute.toString().padLeft(2, '0')} 기준',
                           style: const TextStyle(
                             fontFamily: 'Paperlogy',
                             fontSize: 10,
@@ -269,9 +288,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     ),
                     const SizedBox(height: 12),
                     // TODO: 고요지수 타임라인 API 연결 전까지 빈 값
-                    QuietScoreTimelineChart(
-                      points: _viewModel.timelinePoints,
-                    ),
+                    QuietScoreTimelineChart(points: _viewModel.timelinePoints),
                     const SizedBox(height: 32),
                     ReviewSection(
                       reviews: _reviewViewModel.reviews,

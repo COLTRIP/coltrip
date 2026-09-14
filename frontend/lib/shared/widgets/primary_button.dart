@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-
+/// 앱의 주요 동작에 사용하는 공통 전체 너비 버튼입니다.
+///
+/// 채움·외곽선 스타일, 아이콘, 로딩 상태 및 사용자 지정 색상을 지원합니다.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -21,9 +23,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foregroundColor = isOutlined
-        ? buttonColor
-        : Colors.white;
+    final foregroundColor = isOutlined ? buttonColor : Colors.white;
 
     return SizedBox(
       width: double.infinity,
@@ -32,9 +32,7 @@ class PrimaryButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: foregroundColor,
-          backgroundColor: isOutlined
-              ? Colors.white
-              : buttonColor,
+          backgroundColor: isOutlined ? Colors.white : buttonColor,
           disabledForegroundColor: isOutlined
               ? buttonColor.withValues(alpha: 0.5)
               : Colors.white,
@@ -53,26 +51,25 @@ class PrimaryButton extends StatelessWidget {
         ),
         child: isLoading
             ? CircularProgressIndicator(
-          strokeWidth: 2,
-          color: foregroundColor,
-        )
+                strokeWidth: 2,
+                color: foregroundColor,
+              )
             : Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 28),
-              const SizedBox(width: 12),
-            ],
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Paperlogy',
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 28),
+                    const SizedBox(width: 12),
+                  ],
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

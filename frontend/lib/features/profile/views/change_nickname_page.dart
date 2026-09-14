@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/shared_app_bar.dart';
 import '../services/profile_service.dart';
@@ -69,25 +69,14 @@ class _ChangeNicknamePageState extends State<ChangeNicknamePage> {
         '닉네임이 변경되었습니다.',
         snackPosition: SnackPosition.BOTTOM,
       );
-    } on DioException catch (error) {
-      final data = error.response?.data;
-      var message = '닉네임 변경에 실패했어요.';
-
-      if (data is Map) {
-        final serverMessage = data['message'];
-
-        if (serverMessage is String && serverMessage.isNotEmpty) {
-          message = serverMessage;
-        }
-      }
-
+    } on ApiException catch (error) {
       if (!mounted) {
         return;
       }
 
       setState(() {
         _isLoading = false;
-        _errorMessage = message;
+        _errorMessage = error.message;
       });
     }
   }

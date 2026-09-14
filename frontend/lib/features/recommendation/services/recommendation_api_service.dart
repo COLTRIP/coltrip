@@ -158,16 +158,23 @@ class RecommendationApiService {
     }
   }
 
-  Future<List<QuietScorePoint>> getTimeline({required int spotId}) async {
+  Future<List<QuietScorePoint>> getTimeline({
+    required int spotId,
+    required DateTime dateTime,
+  }) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId/quiet-index/forecast',
+        queryParameters: {'date': _formatDate(dateTime), 'hour': dateTime.hour},
       );
 
       final timeline = response.data?['timeline'] as List? ?? const [];
 
       return timeline
           .cast<Map<String, dynamic>>()
+          .where(
+            (item) => item['targetAt'] != null && item['quietIndex'] != null,
+          )
           .map(QuietScorePoint.fromTimelineJson)
           .toList()
         ..sort((a, b) => a.hour.compareTo(b.hour));

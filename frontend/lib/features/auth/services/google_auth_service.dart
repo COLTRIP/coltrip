@@ -9,19 +9,24 @@ import '../../../core/storage/token_storage.dart';
 import '../models/auth_response.dart';
 import '../models/auth_intent.dart';
 
-
 class GoogleAuthService {
-  GoogleAuthService({Dio? dio, GoogleSignIn? googleSignIn})
-      : _dio = dio ?? DioClient.instance,
-        _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              scopes: const ['email'],
-              serverClientId:
-                  '888142954996-ka5lothh80985ki57tfldiq0if0c9gmq.apps.googleusercontent.com',
-            );
+  GoogleAuthService({
+    Dio? dio,
+    GoogleSignIn? googleSignIn,
+    TokenStorage? tokenStorage,
+  }) : _dio = dio ?? DioClient.instance,
+       _tokenStorage = tokenStorage ?? const TokenStorage(),
+       _googleSignIn =
+           googleSignIn ??
+           GoogleSignIn(
+             scopes: const ['email'],
+             serverClientId:
+                 '888142954996-ka5lothh80985ki57tfldiq0if0c9gmq.apps.googleusercontent.com',
+           );
 
   final Dio _dio;
   final GoogleSignIn _googleSignIn;
+  final TokenStorage _tokenStorage;
 
   Future<AuthResponse> authenticate({required AuthIntent intent}) async {
     const logName = 'GoogleAuthService';
@@ -29,18 +34,16 @@ class GoogleAuthService {
     developer.log('STEP 1: Google 계정 인증 시작', name: logName);
 
     try {
+      // google_sign_in 6.x가 직전에 선택한 계정을 재사용하지 않도록
+      // Google SDK 세션만 해제한 뒤 계정 선택 창을 연다.
+      await _googleSignIn.signOut();
       final account = await _googleSignIn.signIn();
 
       if (account == null) {
         throw const AuthException('Google 로그인이 취소되었습니다.');
       }
 
-      developer.log(
-        'STEP 2: Google 계정 인증 성공'
-        '\nemail=${account.email}'
-        '\naccountId=${account.id}',
-        name: logName,
-      );
+      developer.log('STEP 2: Google 계정 인증 성공', name: logName);
 
       final authentication = await account.authentication;
       final idToken = authentication.idToken;
@@ -83,9 +86,7 @@ class GoogleAuthService {
 
       final authResponse = AuthResponse.fromJson(data);
 
-      const tokenStorage = TokenStorage();
-
-      await tokenStorage.saveTokens(
+      await _tokenStorage.saveTokens(
         accessToken: authResponse.accessToken,
         refreshToken: authResponse.refreshToken,
       );
@@ -103,21 +104,16 @@ class GoogleAuthService {
     } on PlatformException catch (error, stackTrace) {
       developer.log(
         'Google 계정 인증 원본 오류'
-            '\ncode=${error.code}'
-            '\nmessage=${error.message}'
-            '\ndetails=${error.details}'
-            '\ntoString=$error',
+        '\ncode=${error.code}'
+        '\nmessage=${error.message}'
+        '\ndetails=${error.details}'
+        '\ntoString=$error',
         name: logName,
         error: error,
         stackTrace: stackTrace,
       );
 
-      throw AuthException(
-        'Google 인증 실패'
-            '\ncode: ${error.code}'
-            '\nmessage: ${error.message}'
-            '\ndetails: ${error.details}',
-      );
+      throw const AuthException('Google 계정 인증에 실패했어요. 다시 시도해주세요.');
     } on DioException catch (error, stackTrace) {
       developer.log(
         '서버 통신 실패'
@@ -125,7 +121,6 @@ class GoogleAuthService {
         '\nmethod=${error.requestOptions.method}'
         '\nuri=${error.requestOptions.uri}'
         '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}'
         '\nmessage=${error.message}',
         name: logName,
         error: error,
@@ -162,56 +157,40 @@ class GoogleAuthService {
 
   Future<void> logout() async {
     const logName = 'GoogleAuthService';
-    const tokenStorage = TokenStorage();
 
     developer.log('로그아웃 시작', name: logName);
 
     try {
-      final accessToken = await tokenStorage.readAccessToken();
+      final accessToken = await _tokenStorage.readAccessToken();
 
       developer.log(
         'Access Token 존재 여부=${accessToken != null && accessToken.isNotEmpty}',
         name: logName,
       );
 
-      if (accessToken == null || accessToken.isEmpty) {
-        throw const AuthException('로그인 정보가 없습니다. 다시 로그인해주세요.');
+      if (accessToken != null && accessToken.isNotEmpty) {
+        final response = await _dio.post<void>(
+          '/api/auth/logout',
+          options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+        );
+
+        developer.log(
+          '서버 로그아웃 완료'
+          '\nstatusCode=${response.statusCode}',
+          name: logName,
+        );
       }
-
-      final response = await _dio.post<void>(
-        '/api/auth/logout',
-        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
-      );
-
-      developer.log(
-        '서버 로그아웃 완료'
-        '\nstatusCode=${response.statusCode}',
-        name: logName,
-      );
     } on DioException catch (error, stackTrace) {
       developer.log(
-        '서버 로그아웃 실패'
+        '서버 로그아웃 실패, 로컬 로그아웃 계속 진행'
         '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}',
+        '\ntype=${error.type}',
         name: logName,
         error: error,
         stackTrace: stackTrace,
       );
-
-      throw AuthException(_extractLogoutErrorMessage(error));
-    } on AuthException {
-      rethrow;
-    } catch (error, stackTrace) {
-      developer.log(
-        '로그아웃 처리 실패',
-        name: logName,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      throw const AuthException('로그아웃 중 오류가 발생했어요.');
     } finally {
-      await tokenStorage.clearTokens();
+      await _tokenStorage.clearTokens();
 
       try {
         await _googleSignIn.signOut();
@@ -229,12 +208,11 @@ class GoogleAuthService {
 
   Future<void> deleteAccount() async {
     const logName = 'GoogleAuthService';
-    const tokenStorage = TokenStorage();
 
     developer.log('회원 탈퇴 시작', name: logName);
 
     try {
-      final accessToken = await tokenStorage.readAccessToken();
+      final accessToken = await _tokenStorage.readAccessToken();
 
       if (accessToken == null || accessToken.isEmpty) {
         throw const AuthException('로그인 정보가 없습니다. 다시 로그인해주세요.');
@@ -252,15 +230,14 @@ class GoogleAuthService {
       );
 
       // 서버에서 회원 탈퇴가 성공한 뒤에만 로컬 정보 삭제
-      await tokenStorage.clearTokens();
+      await _tokenStorage.clearTokens();
       await _googleSignIn.signOut();
 
       developer.log('회원 탈퇴 및 로컬 정보 삭제 완료', name: logName);
     } on DioException catch (error, stackTrace) {
       developer.log(
         '회원 탈퇴 API 실패'
-        '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}',
+        '\nstatusCode=${error.response?.statusCode}',
         name: logName,
         error: error,
         stackTrace: stackTrace,
@@ -292,56 +269,11 @@ class AuthException implements Exception {
 }
 
 String _extractErrorMessage(DioException error) {
-  final data = error.response?.data;
-
-  if (data is Map) {
-    final message = data['message'];
-
-    if (message is String && message.isNotEmpty) {
-      return message;
-    }
-  }
-
-  return switch (error.type) {
-    DioExceptionType.connectionTimeout => '서버 연결 시간이 초과됐어요.',
-    DioExceptionType.sendTimeout => '요청 전송 시간이 초과됐어요.',
-    DioExceptionType.receiveTimeout => '서버 응답 시간이 초과됐어요.',
-    DioExceptionType.connectionError => '서버에 연결할 수 없어요.',
-    DioExceptionType.badResponse => '로그인 요청에 실패했어요.',
-    DioExceptionType.cancel => '요청이 취소됐어요.',
-    _ => '로그인 중 오류가 발생했어요.',
-  };
-}
-
-String _extractLogoutErrorMessage(DioException error) {
-  final data = error.response?.data;
-
-  if (error.response?.statusCode == 401) {
-    return '로그인 세션이 만료되었습니다.';
-  }
-
-  if (data is Map) {
-    final message = data['message'];
-
-    if (message is String && message.isNotEmpty) {
-      return message;
-    }
-  }
-
-  return switch (error.type) {
-    DioExceptionType.connectionTimeout => '서버 연결 시간이 초과됐어요.',
-    DioExceptionType.sendTimeout => '요청 전송 시간이 초과됐어요.',
-    DioExceptionType.receiveTimeout => '서버 응답 시간이 초과됐어요.',
-    DioExceptionType.connectionError => '서버에 연결할 수 없어요.',
-    DioExceptionType.cancel => '로그아웃 요청이 취소됐어요.',
-    _ => '로그아웃 요청에 실패했어요.',
-  };
+  return _extractNetworkErrorMessage(error, fallback: '로그인 요청에 실패했어요.');
 }
 
 String _extractDeleteAccountErrorMessage(DioException error) {
   final statusCode = error.response?.statusCode;
-  final data = error.response?.data;
-
   if (statusCode == 401) {
     return '로그인 세션이 만료되었습니다. 다시 로그인해주세요.';
   }
@@ -354,12 +286,18 @@ String _extractDeleteAccountErrorMessage(DioException error) {
     return '서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
   }
 
-  if (data is Map) {
-    final message = data['message'];
+  return _extractNetworkErrorMessage(error, fallback: '회원 탈퇴 요청에 실패했어요.');
+}
 
-    if (message is String && message.isNotEmpty) {
-      return message;
-    }
+String _extractNetworkErrorMessage(
+  DioException error, {
+  required String fallback,
+}) {
+  final data = error.response?.data;
+  final serverMessage = data is Map ? data['message']?.toString() : null;
+
+  if (serverMessage != null && serverMessage.isNotEmpty) {
+    return serverMessage;
   }
 
   return switch (error.type) {
@@ -367,7 +305,7 @@ String _extractDeleteAccountErrorMessage(DioException error) {
     DioExceptionType.sendTimeout => '요청 전송 시간이 초과됐어요.',
     DioExceptionType.receiveTimeout => '서버 응답 시간이 초과됐어요.',
     DioExceptionType.connectionError => '서버에 연결할 수 없어요.',
-    DioExceptionType.cancel => '회원 탈퇴 요청이 취소됐어요.',
-    _ => '회원 탈퇴 요청에 실패했어요.',
+    DioExceptionType.cancel => '요청이 취소됐어요.',
+    _ => fallback,
   };
 }

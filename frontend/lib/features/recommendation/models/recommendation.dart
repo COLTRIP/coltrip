@@ -72,7 +72,7 @@ class Spot {
       quietLevel: null,
       quietScoreUpdatedAt: targetAt == null
           ? DateTime.now()
-          : DateTime.parse(targetAt),
+          : DateTime.parse(targetAt).toLocal(),
     );
   }
 }

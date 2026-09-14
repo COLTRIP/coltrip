@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../data/place_type_data.dart';
 import '../models/place_mood_item.dart';
 import '../models/place_type_item.dart';
+import '../models/recommendation_page_arguments.dart';
 
 class RecommendationSelectionController extends GetxController {
   final selectedPlaceTypeId = RxnString();
@@ -22,7 +23,7 @@ class RecommendationSelectionController extends GetxController {
     }
   }
 
-  Map<String, dynamic>? createRequestData() {
+  RecommendationPageArguments? createRequestData() {
     final placeTypeId = selectedPlaceTypeId.value;
 
     // 장소 유형은 필수
@@ -30,13 +31,13 @@ class RecommendationSelectionController extends GetxController {
       return null;
     }
 
-    return {
-      'category': _toApiCategory(placeTypeId),
-      'categoryLabel': PlaceTypeData.items
+    return RecommendationPageArguments(
+      category: _toApiCategory(placeTypeId),
+      categoryLabel: PlaceTypeData.items
           .firstWhere((item) => item.id == placeTypeId)
           .label,
-      'modes': selectedMoodIds.toList(),
-    };
+      modes: selectedMoodIds.toList(growable: false),
+    );
   }
 
   // 현재 추천 API enum과 화면의 장소 유형 id가 다른 항목을 변환한다.

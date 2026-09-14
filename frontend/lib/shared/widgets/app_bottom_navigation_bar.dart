@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 
 import '../../app/navigation/main_navigation_controller.dart';
 
-
+/// 메인 화면의 지도, 추천, 프로필 탭을 전환하는 공통 하단 탐색 바입니다.
+///
+/// 현재 탭 상태와 탭 전환은 [MainNavigationController]에서 관리합니다.
 class AppBottomNavigationBar extends GetView<MainNavigationController> {
   const AppBottomNavigationBar({super.key});
 
@@ -19,12 +21,10 @@ class AppBottomNavigationBar extends GetView<MainNavigationController> {
         unselectedItemColor: const Color(0xFF252B28),
 
         selectedLabelStyle: const TextStyle(
-          fontFamily: 'Paperlogy',
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Paperlogy',
           fontSize: 12,
           fontWeight: FontWeight.w300,
         ),

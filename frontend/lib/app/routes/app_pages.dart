@@ -2,13 +2,12 @@ import 'package:get/get.dart';
 
 import '../../features/auth/views/nickname_setup_page.dart';
 import '../../features/auth/views/login_page.dart';
-import '../../features/map/views/map_page.dart';
 import '../../features/profile/views/change_nickname_page.dart';
-import '../../features/profile/views/profile_page.dart';
 import '../../features/recommendation/models/current_visit.dart';
 import '../../features/recommendation/models/recommendation.dart';
+import '../../features/recommendation/models/recommendation_detail_arguments.dart';
+import '../../features/recommendation/models/recommendation_page_arguments.dart';
 import '../../features/recommendation/models/review.dart';
-import '../../features/recommendation/views/emotion_selection_page.dart';
 import '../../features/recommendation/views/location_permission/location_permission_page.dart';
 import '../../features/recommendation/views/mood_selection_page.dart';
 import '../../features/recommendation/views/recommendation/recommendation_page.dart';
@@ -20,53 +19,59 @@ import '../bindings/main_shell_binding.dart';
 import '../navigation/main_shell.dart';
 import 'app_routes.dart';
 
-
+/// 라우트 경로와 실제 화면을 연결하는 GetX 라우트 목록입니다.
+///
+/// 화면 생성 방식, 의존성 바인딩 및 화면 이동 argument 변환을 관리합니다.
 abstract final class AppPages {
   static final pages = <GetPage<dynamic>>[
     GetPage(
       name: AppRoutes.main,
-      page: () => MainShell(),
+      page: () => const MainShell(),
       binding: MainShellBinding(),
     ),
     GetPage(name: AppRoutes.login, page: () => const LoginPage()),
     GetPage(name: AppRoutes.nickname, page: () => const NicknameSetupPage()),
-    GetPage(name: AppRoutes.map, page: () => const MapPage()),
     GetPage(
       name: AppRoutes.moodSelection,
       page: () => const MoodSelectionPage(),
     ),
-    GetPage(name: AppRoutes.profile, page: () => const ProfilePage()),
     GetPage(
       name: AppRoutes.changeNickname,
-      page: () => const ChangeNicknamePage(),
-    ),
-    GetPage(
-      name: AppRoutes.emotionSelection,
       page: () {
         final args = Get.arguments;
-        final category = args is Map ? args['category'] as String? : null;
-        return EmotionSelectionPage(category: category);
+        return ChangeNicknamePage(
+          currentNickname: args is String ? args : null,
+        );
       },
     ),
     GetPage(
       name: AppRoutes.recommendationList,
       page: () {
-        final args = Get.arguments;
+        // 이전 선택 화면에서 전달한 장소 유형과 감성 조건
+        final args = Get.arguments as RecommendationPageArguments;
 
-        if (args is Map) {
-          return RecommendationPage(
-            category: args['category'] as String?,
-            categoryLabel: args['categoryLabel'] as String?,
-            modes: (args['modes'] as List?)?.cast<String>() ?? const [],
-          );
-        }
-
-        return RecommendationPage(category: args as String?);
+        return RecommendationPage(
+          category: args.category,
+          categoryLabel: args.categoryLabel,
+          modes: args.modes,
+        );
       },
     ),
     GetPage(
       name: AppRoutes.recommendationDetail,
-      page: () => RecommendationDetailPage(spotId: Get.arguments as int),
+      page: () {
+        final args = Get.arguments;
+
+        if (args is RecommendationDetailArguments) {
+          return RecommendationDetailPage(
+            spotId: args.spotId,
+            predictedQuietScore: args.predictedQuietScore,
+            predictionTargetAt: args.predictionTargetAt,
+          );
+        }
+
+        return RecommendationDetailPage(spotId: args as int);
+      },
     ),
     GetPage(
       name: AppRoutes.visitingSpot,

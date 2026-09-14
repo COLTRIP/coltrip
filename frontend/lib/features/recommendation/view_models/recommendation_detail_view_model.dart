@@ -5,10 +5,10 @@ import '../models/recommendation.dart';
 import '../repositories/recommendation_repository.dart';
 import '../models/quiet_score_point.dart';
 
-
 class RecommendationDetailViewModel extends ChangeNotifier {
   final int spotId;
   final RecommendationRepository _repository;
+  final DateTime timelineDateTime;
 
   SpotDetail? spot;
   bool isLoading = false;
@@ -21,8 +21,10 @@ class RecommendationDetailViewModel extends ChangeNotifier {
 
   RecommendationDetailViewModel({
     required this.spotId,
+    DateTime? timelineDateTime,
     RecommendationRepository? repository,
-  }) : _repository = repository ?? RecommendationRepository() {
+  }) : timelineDateTime = timelineDateTime ?? DateTime.now(),
+       _repository = repository ?? RecommendationRepository() {
     loadDetail();
     loadTimeline();
   }
@@ -81,6 +83,7 @@ class RecommendationDetailViewModel extends ChangeNotifier {
     try {
       timelinePoints = await _repository.getTimeline(
         spotId: spotId,
+        dateTime: timelineDateTime,
       );
     } catch (_) {
       timelinePoints = [];

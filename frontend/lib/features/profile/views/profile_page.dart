@@ -23,15 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
 
-    if (Get.isRegistered<ProfileController>()) {
-      controller = Get.find<ProfileController>();
-    } else {
-      controller = Get.put(ProfileController());
-    }
-
-    controller.loadProfile();
-    controller.loadLikedPlaces();
-    controller.loadVisitedPlaces();
+    controller = Get.find<ProfileController>();
   }
 
   @override

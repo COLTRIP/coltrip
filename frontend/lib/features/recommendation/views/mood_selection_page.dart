@@ -7,15 +7,14 @@ import '../data/place_mood_data.dart';
 import '../widgets/place_mood_selector.dart';
 import '../widgets/recommendation_selection_app_bar.dart';
 
-
 class MoodSelectionPage extends StatefulWidget {
   const MoodSelectionPage({super.key});
 
   @override
-  State<MoodSelectionPage> createState() => _EmotionSelectionPageState();
+  State<MoodSelectionPage> createState() => _MoodSelectionPageState();
 }
 
-class _EmotionSelectionPageState extends State<MoodSelectionPage> {
+class _MoodSelectionPageState extends State<MoodSelectionPage> {
   void _moveToRecommendations(RecommendationSelectionController controller) {
     final requestData = controller.createRequestData();
 

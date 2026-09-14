@@ -47,7 +47,6 @@ class UserInfoCard extends StatelessWidget {
   }
 }
 
-// TODO: API 연결 후 삭제 예정
 class _PlaceCount extends StatelessWidget {
   const _PlaceCount({required this.label, required this.count});
 
