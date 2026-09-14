@@ -78,6 +78,8 @@ POST /api/auth/refresh
 ```
 **Request** — Header `Authorization: Bearer {refreshToken}`
 
+헤더 누락·빈 값·Bearer 토큰 누락·잘못된 형식·유효하지 않은 토큰은 모두 `401`과 `{"code":"InvalidRefreshTokenException","message":"..."}` 형식으로 반환한다. 헤더는 API 계약상 필수이며, 서버 바인딩만 선택적으로 받아 기존 인증 검증으로 처리한다(#87).
+
 **Response `200`** — `JwtTokenResponse` (accessToken, refreshToken 재발급)
 
 리프레시 토큰은 원자적으로 교체한다. 동일 토큰의 동시 재발급은 하나만 성공하며 이전 토큰 재사용은 401이다. 신규 JWT에는 고유 `jti`가 포함된다. 로그아웃과의 처리 순서 및 기존 토큰 호환성은 [토큰 회전 정책](./refresh-token-rotation.md)을 참고한다.
@@ -694,6 +696,8 @@ AI가 계산한 quietScore를 백엔드에 전달한다. 수신 코드는 구현
 }
 ```
 `tourApiContentId`로 스팟을 식별(내부 `spotId` 아님 — AI는 TourAPI 원본 ID 기준으로 관리). `rawMetrics`는 선택, JSON 문자열. quietScore는 0~100 정수, calculatedAt은 필수 로컬 시각이며 공급자와 한국 시간 기준을 맞춘다.
+
+정상 형식의 요청에서 `X-Internal-Api-Key` 누락·빈 값·불일치는 모두 `401`과 `{"code":"InvalidInternalApiKeyException","message":"..."}`을 반환한다. 서버 내부 키 설정이 비어 있어도 인증되지 않는다. 키를 자동 trim하거나 잘못된 값을 보정하지 않는다. 본문 파싱/필드 검증은 컨트롤러 호출 전 수행되므로 본문까지 잘못된 요청은 기존 400을 반환할 수 있다(#87).
 동일 장소·calculatedAt 재전송은 이력을 정정한다. 과거 이력은 저장하되 현재 캐시를 과거 값으로 되돌리지 않는다.
 
 `calculatedAt`은 서버 검증 시각(KST) 이하여야 한다. 허용 미래 오차는 0이며 초과하면 `400 InvalidObservationTimeException`으로 거부하고 이력/현재 점수를 변경하지 않는다. [시각 검증 및 기존 데이터 복구 절차](./observation-time-validation.md)를 참고한다.
