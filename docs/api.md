@@ -20,7 +20,16 @@
 | `InvalidParameterException` | 400 | 쿼리 파라미터 타입/enum 값 오류 (예: `category=NOTEXIST`) |
 | `InvalidRequestBodyException` | 400 | 요청 바디를 해석할 수 없음 (JSON 문법 오류, 바디 내 enum 값 오타 등) |
 | `ValidationException` | 400 | 요청 바디 검증 실패 (예: 빈 닉네임, 필수 필드 누락) |
-- 마지막 갱신: 2026-09-13 (현재 브랜치의 컨트롤러·DTO·보안 설정 기준)
+| `HttpRequestMethodNotSupportedException` | 405 | 경로는 있으나 HTTP 메서드 미지원. `Allow` 헤더로 지원 메서드 제공 |
+| `HttpMediaTypeNotSupportedException` | 415 | 요청 Content-Type 미지원. Spring이 제공하는 지원 미디어 타입 헤더 유지 |
+| `HttpMediaTypeNotAcceptableException` | 406 | 요청 Accept에 맞는 응답 형식 미지원 |
+| `NoResourceFoundException` / `NoHandlerFoundException` | 404 | 요청을 처리할 경로/리소스 없음 |
+| `InternalServerError` | 500 | 위 분류에 해당하지 않는 서버 내부 오류. 상세 원인은 서버 로그에만 기록 |
+
+프로토콜 오류(404/405/406/415)는 공통 JSON 본문을 반환한다. 지원하지 않는 Accept로 발생한 406도 오류 본문은 `application/json`이다. MVC 예외의 `Allow` 등 표준 헤더를 보존한다.
+인증 필터가 MVC 라우팅보다 먼저 실행된다. 공개 경로의 잘못된 요청 또는 인증된 요청은 위 4xx를 반환하지만, 보호 경로의 비인증 요청은 경로/메서드 오류보다 401이 우선한다. 이 처리를 위해 공개 접근 범위를 넓히지 않는다.
+
+- 마지막 갱신: 2026-09-14 (요청 메서드·미디어 타입·없는 경로 오류 정책 #99 반영)
 - 스키마 참고: [schema.md](./schema.md)
 - 관광지 기본정보·감성모드 적재: [spot-import-api-spec.md](./spot-import-api-spec.md) (`POST /api/internal/spots`, AI 전송 계약 협의 필요)
 
