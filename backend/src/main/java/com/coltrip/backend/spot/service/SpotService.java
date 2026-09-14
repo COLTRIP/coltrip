@@ -11,6 +11,9 @@ import com.coltrip.backend.spot.dto.QuietIndexTimelineResponse;
 import com.coltrip.backend.spot.dto.QuietIndexTimelineResponse.TimelineSlot;
 import com.coltrip.backend.spot.dto.SpotDetailResponse;
 import com.coltrip.backend.spot.dto.SpotListResponse;
+import com.coltrip.backend.spot.dto.SpotSearchResponse;
+import com.coltrip.backend.spot.exception.InvalidSearchRequestException;
+import org.springframework.data.domain.PageRequest;
 import com.coltrip.backend.spot.exception.InvalidBoundingBoxException;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
 import java.math.BigDecimal;
@@ -39,6 +42,30 @@ public class SpotService {
     private final TouristSpotRepository touristSpotRepository;
     private final QuietIndexRepository quietIndexRepository;
     private final SpotLikeRepository spotLikeRepository;
+
+    public SpotSearchResponse search(Long userId, String keyword, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.strip();
+        if (normalized.isBlank() || normalized.length() > 100) {
+            throw new InvalidSearchRequestException("검색어는 앞뒤 공백을 제외하고 1~100자여야 합니다.");
+        }
+        if (page < 0 || page > 10000 || size < 1 || size > 50) {
+            throw new InvalidSearchRequestException("page는 0~10000, size는 1~50이어야 합니다.");
+        }
+        String pattern = "%" + normalized.replace("!", "!!").replace("%", "!%")
+                .replace("_", "!_") + "%";
+        // 컬렉션 fetch join에 직접 페이징하면 메모리에서 잘릴 수 있어 ID를 먼저 페이징한다.
+        var ids = touristSpotRepository.searchIdsByName(pattern, PageRequest.of(page, size));
+        List<TouristSpot> spots = new ArrayList<>();
+        if (!ids.isEmpty()) {
+            Map<Long, TouristSpot> byId = new LinkedHashMap<>();
+            touristSpotRepository.findByIdsWithModes(ids.getContent()).forEach(s -> byId.put(s.getId(), s));
+            ids.forEach(id -> {
+                if (byId.containsKey(id)) spots.add(byId.get(id));
+            });
+        }
+        return new SpotSearchResponse(SpotListResponse.from(spots, findLikedSpotIds(userId, spots)).spots(),
+                page, size, ids.getTotalElements(), ids.getTotalPages(), ids.hasNext());
+    }
 
     // userId는 비로그인 요청이면 null (관광지 조회는 비로그인 허용)
     public SpotListResponse findInBounds(Long userId, BigDecimal swLat, BigDecimal swLng,

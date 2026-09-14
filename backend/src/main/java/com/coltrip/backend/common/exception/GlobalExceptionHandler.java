@@ -11,6 +11,7 @@ import com.coltrip.backend.review.exception.ReviewNotAllowedException;
 import com.coltrip.backend.review.exception.ReviewNotFoundException;
 import com.coltrip.backend.spot.exception.InvalidBoundingBoxException;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
+import com.coltrip.backend.spot.exception.InvalidSearchRequestException;
 import com.coltrip.backend.visit.exception.AlreadyOngoingVisitException;
 import com.coltrip.backend.visit.exception.InvalidVisitStateException;
 import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
@@ -56,7 +57,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({VisitConditionNotMetException.class, InvalidBoundingBoxException.class,
-            InvalidObservationTimeException.class})
+            InvalidObservationTimeException.class,
+            InvalidSearchRequestException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(e));
     }

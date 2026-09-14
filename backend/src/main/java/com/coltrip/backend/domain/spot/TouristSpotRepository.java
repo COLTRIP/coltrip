@@ -6,12 +6,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> {
+
+    @Query(value = "SELECT s.id FROM TouristSpot s WHERE LOWER(s.name) LIKE LOWER(:pattern) ESCAPE '!' ORDER BY s.name, s.id",
+            countQuery = "SELECT COUNT(s) FROM TouristSpot s WHERE LOWER(s.name) LIKE LOWER(:pattern) ESCAPE '!'")
+    Page<Long> searchIdsByName(@Param("pattern") String pattern, Pageable pageable);
+
+    @Query("SELECT DISTINCT s FROM TouristSpot s LEFT JOIN FETCH s.spotModes WHERE s.id IN :ids")
+    List<TouristSpot> findByIdsWithModes(@Param("ids") List<Long> ids);
 
     Optional<TouristSpot> findByTourApiContentId(String tourApiContentId);
 
