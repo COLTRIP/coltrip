@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 
 class RecommendationService {
@@ -11,9 +12,13 @@ class RecommendationService {
     required String placeTypeId,
     required String mood,
   }) async {
-    await _dio.post<void>(
-      '실제 추천 API 경로',
-      data: {'placeTypeId': placeTypeId, 'mood': mood},
-    );
+    try {
+      await _dio.post<void>(
+        '실제 추천 API 경로',
+        data: {'placeTypeId': placeTypeId, 'mood': mood},
+      );
+    } on DioException catch (error) {
+      throw ApiException.fromDioException(error);
+    }
   }
 }

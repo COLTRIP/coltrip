@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/place_review.dart';
 
@@ -30,8 +31,8 @@ class ReviewService {
       }
 
       return null;
-    } on DioException {
-      throw const ReviewException('리뷰를 불러오지 못했습니다.');
+    } on DioException catch (error) {
+      throw ApiException.fromDioException(error);
     }
   }
 
@@ -56,7 +57,7 @@ class ReviewService {
       final data = response.data;
 
       if (data == null) {
-        throw const ReviewException('수정된 리뷰 정보를 받지 못했습니다.');
+        throw const ApiException('수정된 리뷰 정보를 받지 못했습니다.');
       }
 
       return PlaceReview.fromJson(data);
@@ -64,19 +65,19 @@ class ReviewService {
       final statusCode = error.response?.statusCode;
 
       if (statusCode == 400) {
-        throw const ReviewException('별점은 1점부터 5점까지 선택해주세요.');
+        throw const ApiException('별점은 1점부터 5점까지 선택해주세요.');
       }
 
       if (statusCode == 401) {
-        throw const ReviewException('로그인이 필요합니다.');
+        throw const ApiException('로그인이 필요합니다.', statusCode: 401);
       }
 
       if (statusCode == 404) {
-        throw const ReviewException('리뷰를 찾을 수 없거나 수정 권한이 없습니다.');
+        throw const ApiException('리뷰를 찾을 수 없거나 수정 권한이 없습니다.', statusCode: 404);
       }
 
-      throw const ReviewException('리뷰를 수정하지 못했습니다.');
-    } on ReviewException {
+      throw ApiException.fromDioException(error);
+    } on ApiException {
       rethrow;
     }
   }
@@ -88,23 +89,14 @@ class ReviewService {
       final statusCode = error.response?.statusCode;
 
       if (statusCode == 401) {
-        throw const ReviewException('로그인이 필요합니다.');
+        throw const ApiException('로그인이 필요합니다.', statusCode: 401);
       }
 
       if (statusCode == 404) {
-        throw const ReviewException('리뷰를 찾을 수 없거나 삭제 권한이 없습니다.');
+        throw const ApiException('리뷰를 찾을 수 없거나 삭제 권한이 없습니다.', statusCode: 404);
       }
 
-      throw const ReviewException('리뷰를 삭제하지 못했습니다.');
+      throw ApiException.fromDioException(error);
     }
   }
-}
-
-class ReviewException implements Exception {
-  const ReviewException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }

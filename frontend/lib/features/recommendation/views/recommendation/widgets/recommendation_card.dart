@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../../app/routes/app_routes.dart';
 import '../../../models/recommendation.dart';
-
+import '../../../models/recommendation_detail_arguments.dart';
 
 class RecommendationCard extends StatelessWidget {
   final Spot spot;
@@ -15,8 +15,14 @@ class RecommendationCard extends StatelessWidget {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final cardHeight = (screenHeight * 0.15).clamp(100.0, 150.0); //카드 높이
     return InkWell(
-      onTap: () =>
-          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
+      onTap: () => Get.toNamed(
+        AppRoutes.recommendationDetail,
+        arguments: RecommendationDetailArguments(
+          spotId: spot.id,
+          predictedQuietScore: spot.quietScore,
+          predictionTargetAt: spot.quietScoreUpdatedAt,
+        ),
+      ),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         height: cardHeight,

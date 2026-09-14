@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../shared/widgets/shared_app_bar.dart';
 import '../controllers/profile_controller.dart';
 import '../models/place.dart';
@@ -8,6 +9,7 @@ import '../models/place_review.dart';
 import '../services/review_service.dart';
 import '../widgets/place_detail_bottom_sheet.dart';
 import '../widgets/place_list_card.dart';
+import '../widgets/review_edit_dialog.dart';
 
 class VisitedPlacesPage extends StatefulWidget {
   const VisitedPlacesPage({super.key});
@@ -23,9 +25,7 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
   @override
   void initState() {
     super.initState();
-    _controller = Get.isRegistered<ProfileController>()
-        ? Get.find<ProfileController>()
-        : Get.put(ProfileController());
+    _controller = Get.find<ProfileController>();
     _controller.loadVisitedPlaces();
   }
 
@@ -41,7 +41,7 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
           spotId: spotId,
           reviewId: place.reviewId!,
         );
-      } on ReviewException catch (error) {
+      } on ApiException catch (error) {
         Get.snackbar(
           '리뷰 조회 실패',
           error.message,
@@ -68,8 +68,8 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
     try {
       await _reviewService.updateReview(
         reviewId: review.id,
-        rating: result['rating'] as int,
-        content: result['content'] as String?,
+        rating: result.rating,
+        content: result.content,
       );
 
       Get.back();
@@ -81,7 +81,7 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
         colorText: const Color(0xFF252B28),
       );
       await _controller.loadVisitedPlaces();
-    } on ReviewException catch (error) {
+    } on ApiException catch (error) {
       Get.snackbar('수정 실패', error.message, snackPosition: SnackPosition.BOTTOM);
     }
   }
@@ -116,7 +116,7 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
         snackPosition: SnackPosition.BOTTOM,
       );
       await _controller.loadVisitedPlaces();
-    } on ReviewException catch (error) {
+    } on ApiException catch (error) {
       Get.snackbar('삭제 실패', error.message, snackPosition: SnackPosition.BOTTOM);
     }
   }

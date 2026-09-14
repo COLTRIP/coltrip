@@ -3,7 +3,6 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 
 import 'app/app.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

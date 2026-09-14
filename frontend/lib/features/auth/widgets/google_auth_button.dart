@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-
 class GoogleAuthButton extends StatelessWidget {
   const GoogleAuthButton({
     super.key,
     required this.label,
     required this.onPressed,
-    required this.isLoading,
+    this.isLoading = false,
   });
 
   final String label;
@@ -24,42 +23,38 @@ class GoogleAuthButton extends StatelessWidget {
           foregroundColor: const Color(0xFF202124),
           backgroundColor: Colors.white,
           disabledBackgroundColor: Colors.white,
-          side: const BorderSide(
-            color: Color(0xFFC8C8C8),
-            width: 1.2,
-          ),
+          side: const BorderSide(color: Color(0xFFC8C8C8), width: 1.2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
         ),
         child: isLoading
             ? const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.black,
-          ),
-        )
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black,
+                ),
+              )
             : Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/google_logo.png',
-              width: 28,
-              height: 28,
-            ),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontFamily: 'Paperlogy',
-                fontWeight: FontWeight.w500,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/google_logo.png',
+                    width: 28,
+                    height: 28,
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

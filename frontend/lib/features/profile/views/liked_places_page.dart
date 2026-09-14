@@ -18,9 +18,7 @@ class _LikedPlacesPageState extends State<LikedPlacesPage> {
   @override
   void initState() {
     super.initState();
-    _controller = Get.isRegistered<ProfileController>()
-        ? Get.find<ProfileController>()
-        : Get.put(ProfileController());
+    _controller = Get.find<ProfileController>();
     _controller.loadLikedPlaces();
   }
 

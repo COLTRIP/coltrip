@@ -1,8 +1,8 @@
 import 'dart:developer' as developer;
 
-import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../services/profile_service.dart';
 import '../models/place.dart';
 
@@ -21,7 +21,19 @@ class ProfileController extends GetxController {
   final isVisitedPlacesLoading = false.obs;
 
   final isLoading = false.obs;
-  final errorMessage = RxnString();
+  final profileError = RxnString();
+  final likedPlacesError = RxnString();
+  final visitedPlacesError = RxnString();
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadAll();
+  }
+
+  Future<void> loadAll() async {
+    await Future.wait([loadProfile(), loadLikedPlaces(), loadVisitedPlaces()]);
+  }
 
   Future<void> loadProfile() async {
     if (isLoading.value) {
@@ -30,15 +42,13 @@ class ProfileController extends GetxController {
 
     try {
       isLoading.value = true;
-      errorMessage.value = null;
+      profileError.value = null;
 
       final data = await _profileService.getMe();
 
-      nickname.value = data['nickname'] as String? ?? '';
-
-      visitedPlaceCount.value = data['visitCount'] as int? ?? 0;
-
-      likedPlaceCount.value = data['likeCount'] as int? ?? 0;
+      nickname.value = data.nickname;
+      visitedPlaceCount.value = data.visitCount;
+      likedPlaceCount.value = data.likeCount;
 
       developer.log(
         '프로필 조회 완료'
@@ -47,17 +57,15 @@ class ProfileController extends GetxController {
         '\nlikeCount=${likedPlaceCount.value}',
         name: 'ProfileController',
       );
-    } on DioException catch (error) {
+    } on ApiException catch (error) {
       developer.log(
         '프로필 조회 실패'
-        '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}',
+        '\nstatusCode=${error.statusCode}'
+        '\ncode=${error.code}',
         name: 'ProfileController',
       );
 
-      errorMessage.value = error.response?.data is Map
-          ? error.response?.data['message']
-          : '프로필을 불러오지 못했습니다.';
+      profileError.value = error.message;
     } finally {
       isLoading.value = false;
     }
@@ -70,7 +78,7 @@ class ProfileController extends GetxController {
 
     try {
       isLikedPlacesLoading.value = true;
-      errorMessage.value = null;
+      likedPlacesError.value = null;
 
       final result = await _profileService.getLikedPlaces();
 
@@ -80,17 +88,15 @@ class ProfileController extends GetxController {
         '좋아요 장소 조회 완료: ${result.length}개',
         name: 'ProfileController',
       );
-    } on DioException catch (error) {
+    } on ApiException catch (error) {
       developer.log(
         '좋아요 장소 조회 실패'
-        '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}',
+        '\nstatusCode=${error.statusCode}'
+        '\ncode=${error.code}',
         name: 'ProfileController',
       );
 
-      errorMessage.value = error.response?.data is Map
-          ? error.response?.data['message'] as String?
-          : '좋아요 장소를 불러오지 못했습니다.';
+      likedPlacesError.value = error.message;
     } finally {
       isLikedPlacesLoading.value = false;
     }
@@ -103,7 +109,7 @@ class ProfileController extends GetxController {
 
     try {
       isVisitedPlacesLoading.value = true;
-      errorMessage.value = null;
+      visitedPlacesError.value = null;
 
       final result = await _profileService.getVisitedPlaces();
       visitedPlaces.assignAll(result);
@@ -112,17 +118,15 @@ class ProfileController extends GetxController {
         '방문 장소 조회 완료: ${result.length}개',
         name: 'ProfileController',
       );
-    } on DioException catch (error) {
+    } on ApiException catch (error) {
       developer.log(
         '방문 장소 조회 실패'
-        '\nstatusCode=${error.response?.statusCode}'
-        '\nresponse=${error.response?.data}',
+        '\nstatusCode=${error.statusCode}'
+        '\ncode=${error.code}',
         name: 'ProfileController',
       );
 
-      errorMessage.value = error.response?.data is Map
-          ? error.response?.data['message'] as String?
-          : '방문 장소를 불러오지 못했습니다.';
+      visitedPlacesError.value = error.message;
     } finally {
       isVisitedPlacesLoading.value = false;
     }

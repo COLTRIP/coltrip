@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../shared/widgets/shared_app_bar.dart';
 import '../../auth/services/google_auth_service.dart';
+import '../controllers/profile_controller.dart';
 import '../widgets/account_action_bottom_sheet.dart';
 import '../widgets/account_menu_button.dart';
 
@@ -12,14 +13,23 @@ class AccountManagementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
+
     return Scaffold(
       appBar: const SharedAppBar(title: '계정 관리', showBackButton: true),
       body: Column(
         children: [
           AccountMenuButton(
             title: '닉네임 변경',
-            onTap: () {
-              Get.toNamed(AppRoutes.changeNickname);
+            onTap: () async {
+              final nickname = await Get.toNamed<String>(
+                AppRoutes.changeNickname,
+                arguments: profileController.nickname.value,
+              );
+
+              if (nickname != null) {
+                profileController.nickname.value = nickname;
+              }
             },
           ),
 
@@ -37,7 +47,7 @@ class AccountManagementPage extends StatelessWidget {
                     await authService.logout();
 
                     Get.back();
-                    Get.offAllNamed('/login');
+                    Get.offAllNamed(AppRoutes.login);
                   } on AuthException catch (error) {
                     Get.back();
 
@@ -66,7 +76,7 @@ class AccountManagementPage extends StatelessWidget {
                     await GoogleAuthService().deleteAccount();
 
                     Get.back();
-                    Get.offAllNamed('/login');
+                    Get.offAllNamed(AppRoutes.login);
 
                     Get.snackbar(
                       '탈퇴 완료',

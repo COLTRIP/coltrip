@@ -1,12 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/network/dio_client.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../shared/widgets/primary_button.dart';
-
+import '../../profile/services/profile_service.dart';
 
 class NicknameSetupPage extends StatefulWidget {
   const NicknameSetupPage({super.key});
@@ -17,37 +15,49 @@ class NicknameSetupPage extends StatefulWidget {
 
 class _NicknameSetupPageState extends State<NicknameSetupPage> {
   final TextEditingController _nicknameController = TextEditingController();
+  final ProfileService _profileService = ProfileService();
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
-  final Dio _dio = DioClient.instance;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   Future<void> _submitNickname() async {
+    if (_isLoading) return;
+
+    FocusScope.of(context).unfocus();
+
     final nickname = _nicknameController.text.trim();
 
-    debugPrint('입력한 닉네임: $nickname');
+    if (nickname.isEmpty) {
+      setState(() {
+        _errorMessage = '닉네임을 입력해주세요.';
+      });
+      return;
+    }
 
-    final accessToken = await _storage.read(
-      key: 'access_token',
-    );
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    debugPrint('토큰 존재: ${accessToken != null}');
+    try {
+      await _profileService.updateNickname(nickname: nickname);
 
-    final response = await _dio.patch(
-      '/api/users/me',
-      data: {
-        'nickname': nickname,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-        },
-      ),
-    );
-    debugPrint('닉네임 저장 상태: ${response.statusCode}');
-    debugPrint('닉네임 저장 응답: ${response.data}');
+      if (!mounted) return;
 
-    Get.offAllNamed(AppRoutes.main);
+      Get.offAllNamed(AppRoutes.main);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -61,25 +71,20 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Spacer(flex: 2),
 
-                Center(
-                  child: Image.asset('assets/images/logo.png')
-                ),
+                Center(child: Image.asset('assets/images/logo.png')),
 
                 const SizedBox(height: 100),
 
                 const Text(
                   '닉네임(2-15자리 한글 및 영문)',
                   style: TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF252B28),
                   ),
@@ -87,24 +92,30 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
 
                 TextField(
                   controller: _nicknameController,
-                  style: const TextStyle(
-                    fontFamily: 'Paperlogy',
-                    fontWeight: FontWeight.w400,
-                  ),
-                  decoration: const InputDecoration(
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Color(0xFF252B28),
-                      ),
+                  style: const TextStyle(fontWeight: FontWeight.w400),
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    errorText: _errorMessage,
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF252B28)),
                     ),
                   ),
+                  onChanged: (_) {
+                    if (_errorMessage != null) {
+                      setState(() {
+                        _errorMessage = null;
+                      });
+                    }
+                  },
+                  onSubmitted: (_) => _submitNickname(),
                 ),
 
                 const Spacer(flex: 10),
 
                 PrimaryButton(
                   label: '시작하기',
-                  onPressed: _submitNickname,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading ? null : _submitNickname,
                 ),
               ],
             ),

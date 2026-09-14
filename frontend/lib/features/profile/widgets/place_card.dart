@@ -24,7 +24,6 @@ class PlaceCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // TODO: 임시 이미지 연결
               // 방문한 장소 캐러셀 - 장소 사진
               Expanded(
                 child: SizedBox(
