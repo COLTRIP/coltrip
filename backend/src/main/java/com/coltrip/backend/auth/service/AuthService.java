@@ -15,6 +15,8 @@ import com.coltrip.backend.user.service.UserStatsReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
+import java.sql.SQLException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class AuthService {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final JwtProvider jwtProvider;
     private final UserStatsReader userStatsReader;
+    private final SignupTransaction signupTransaction;
 
     public JwtTokenResponse googleLogin(String idToken, AuthIntent intent) {
         GoogleUserInfo googleUserInfo = googleTokenVerifier.verify(idToken);
@@ -42,16 +45,26 @@ public class AuthService {
     }
 
     private JwtTokenResponse signup(GoogleUserInfo googleUserInfo) {
-        if (userRepository.existsByGoogleSub(googleUserInfo.sub())) {
-            throw new AlreadyRegisteredUserException();
+        try {
+            return signupTransaction.register(googleUserInfo);
+        } catch (DataIntegrityViolationException exception) {
+            // 실패한 가입 트랜잭션의 롤백 후 새 스냅샷으로 확인한다.
+            if (isDuplicateKey(exception) && signupTransaction.isRegistered(googleUserInfo.sub())) {
+                throw new AlreadyRegisteredUserException();
+            }
+            throw exception;
         }
+    }
 
-        User user = userRepository.save(User.builder()
-                .googleSub(googleUserInfo.sub())
-                .email(googleUserInfo.email())
-                .build());
-
-        return issueTokens(user, true);
+    private boolean isDuplicateKey(Throwable exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql
+                    && ((sql.getErrorCode() == 1062 && "23000".equals(sql.getSQLState()))
+                        || "23505".equals(sql.getSQLState()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public JwtTokenResponse refresh(String refreshToken) {

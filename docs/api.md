@@ -67,6 +67,7 @@ POST /api/auth/google
 - `InvalidGoogleTokenException` (401) — idToken 검증 실패
 - `UserNotRegisteredException` (404) — `intent=LOGIN`인데 가입된 사용자가 없음
 - `AlreadyRegisteredUserException` (409) — `intent=SIGNUP`인데 이미 가입된 사용자임
+- 동일 Google 계정의 동시 가입도 중복 저장 요청은 409로 반환한다. 성공한 가입의 토큰은 변경하지 않으며, 충돌 응답에는 토큰을 포함하지 않는다. 회원 생성과 토큰 저장은 함께 커밋/롤백한다. 관련 없는 DB 오류는 가입 중복으로 숨기지 않는다. 상세: `docs/signup-concurrency.md`.
 - `InvalidRequestBodyException` (400) — `intent` enum 값 오류 등 요청 바디 해석 실패
 - `ValidationException` (400) — `idToken` 누락/빈 값, `intent` 누락
 

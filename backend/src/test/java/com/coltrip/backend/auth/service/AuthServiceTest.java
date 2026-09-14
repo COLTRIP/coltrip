@@ -47,6 +47,9 @@ class AuthServiceTest {
     @Mock
     private UserStatsReader userStatsReader;
 
+    @Mock
+    private SignupTransaction signupTransaction;
+
     @InjectMocks
     private AuthService authService;
 
@@ -89,9 +92,8 @@ class AuthServiceTest {
         GoogleUserInfo googleUserInfo = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
 
         when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(googleUserInfo);
-        when(userRepository.existsByGoogleSub(GOOGLE_SUB)).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        stubTokenIssue();
+        when(signupTransaction.register(googleUserInfo)).thenReturn(
+                JwtTokenResponse.of("access-token", "refresh-token", true, null));
 
         JwtTokenResponse response = authService.googleLogin(ID_TOKEN, AuthIntent.SIGNUP);
 
@@ -100,7 +102,7 @@ class AuthServiceTest {
                 () -> assertEquals("refresh-token", response.refreshToken()),
                 () -> assertTrue(response.isNewUser())
         );
-        verify(userRepository).save(any(User.class));
+        verify(signupTransaction).register(googleUserInfo);
     }
 
     @Test
@@ -108,11 +110,49 @@ class AuthServiceTest {
         GoogleUserInfo googleUserInfo = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
 
         when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(googleUserInfo);
-        when(userRepository.existsByGoogleSub(GOOGLE_SUB)).thenReturn(true);
+        when(signupTransaction.register(googleUserInfo)).thenThrow(new AlreadyRegisteredUserException());
 
         assertThrows(AlreadyRegisteredUserException.class,
                 () -> authService.googleLogin(ID_TOKEN, AuthIntent.SIGNUP));
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void duplicateKeyWithMatchingGoogleAccountBecomesConflict() {
+        var info = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
+        var failure = new org.springframework.dao.DataIntegrityViolationException("duplicate",
+                new java.sql.SQLException("duplicate", "23000", 1062));
+        when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(info);
+        when(signupTransaction.register(info)).thenThrow(failure);
+        when(signupTransaction.isRegistered(GOOGLE_SUB)).thenReturn(true);
+        assertThrows(AlreadyRegisteredUserException.class,
+                () -> authService.googleLogin(ID_TOKEN, AuthIntent.SIGNUP));
+    }
+
+    @Test
+    void duplicateKeyWithoutMatchingGoogleAccountIsNotHidden() {
+        var info = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
+        var failure = new org.springframework.dao.DataIntegrityViolationException("duplicate",
+                new java.sql.SQLException("duplicate", "23000", 1062));
+        when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(info);
+        when(signupTransaction.register(info)).thenThrow(failure);
+        when(signupTransaction.isRegistered(GOOGLE_SUB)).thenReturn(false);
+        org.junit.jupiter.api.Assertions.assertSame(failure, assertThrows(
+                org.springframework.dao.DataIntegrityViolationException.class,
+                () -> authService.googleLogin(ID_TOKEN, AuthIntent.SIGNUP)));
+    }
+
+    @Test
+    void otherIntegrityErrorsAreNotClassifiedAsDuplicate() {
+        var info = new GoogleUserInfo(GOOGLE_SUB, EMAIL);
+        var failure = new org.springframework.dao.DataIntegrityViolationException("not null",
+                new java.sql.SQLException("not null", "23000", 1048));
+        when(googleTokenVerifier.verify(ID_TOKEN)).thenReturn(info);
+        when(signupTransaction.register(info)).thenThrow(failure);
+        org.junit.jupiter.api.Assertions.assertSame(failure, assertThrows(
+                org.springframework.dao.DataIntegrityViolationException.class,
+                () -> authService.googleLogin(ID_TOKEN, AuthIntent.SIGNUP)));
+        verify(signupTransaction, never()).isRegistered(any());
     }
 
     private void stubTokenIssue() {
