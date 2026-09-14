@@ -6,6 +6,7 @@ import com.coltrip.backend.auth.exception.InvalidRefreshTokenException;
 import com.coltrip.backend.auth.exception.UnauthorizedException;
 import com.coltrip.backend.auth.exception.UserNotRegisteredException;
 import com.coltrip.backend.internal.exception.InvalidInternalApiKeyException;
+import com.coltrip.backend.internal.exception.InvalidObservationTimeException;
 import com.coltrip.backend.review.exception.ReviewNotAllowedException;
 import com.coltrip.backend.review.exception.ReviewNotFoundException;
 import com.coltrip.backend.spot.exception.InvalidBoundingBoxException;
@@ -48,7 +49,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler({VisitConditionNotMetException.class, InvalidBoundingBoxException.class})
+    @ExceptionHandler({VisitConditionNotMetException.class, InvalidBoundingBoxException.class,
+            InvalidObservationTimeException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(e));
     }
