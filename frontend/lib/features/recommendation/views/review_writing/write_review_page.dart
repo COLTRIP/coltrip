@@ -1,5 +1,5 @@
 import 'package:coltrip/features/recommendation/views/review_writing/widget/text_review.dart';
-import 'package:coltrip/shared/widgets/app_button.dart';
+import 'package:coltrip/shared/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/recommendation.dart';

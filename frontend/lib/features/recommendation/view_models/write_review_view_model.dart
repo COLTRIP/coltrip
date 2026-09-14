@@ -4,10 +4,8 @@ import '../../../core/network/api_exception.dart';
 import '../repositories/review_repository.dart';
 
 class WriteReviewViewModel extends ChangeNotifier {
-  WriteReviewViewModel({
-    required this.visitId,
-    ReviewRepository? repository,
-  }) : _repository = repository ?? ReviewRepository();
+  WriteReviewViewModel({required this.visitId, ReviewRepository? repository})
+    : _repository = repository ?? ReviewRepository();
 
   final int visitId;
   final ReviewRepository _repository;

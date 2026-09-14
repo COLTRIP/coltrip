@@ -21,11 +21,10 @@ class VisitingSpotRepository {
     );
   }
 
-  Future<int?> viewQuietValue({
-    required int spotId,
-  }) {
+  Future<int?> viewQuietValue({required int spotId}) {
     return _api.viewQuietValue(spotId: spotId);
   }
+
   Future<List<AlternativeSpot>> getAlternatives({required int spotId}) {
     return _api.getAlternatives(spotId: spotId);
   }

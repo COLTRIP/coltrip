@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
 import '../../../../../app/routes/app_routes.dart';
+import '../../../../../app/navigation/main_navigation_controller.dart';
 import '../../../view_models/recommendation_filter_view_model.dart';
 
 class RecommendationFilterSheet extends StatelessWidget {
   final RecommendationFilterViewModel viewModel;
+  final String categoryLabel;
 
-  const RecommendationFilterSheet({super.key, required this.viewModel});
+  const RecommendationFilterSheet({
+    super.key,
+    required this.viewModel,
+    required this.categoryLabel,
+  });
 
   Future<void> _changeDate(BuildContext context) async {
     final current = viewModel.filter.dateTime;
@@ -44,8 +49,11 @@ class RecommendationFilterSheet extends StatelessWidget {
   }
 
   Future<void> _changeCategory(BuildContext context) async {
-    // TODO: 실제 카테고리 선택 화면 만들면 Get.toNamed로 이동해서 결과값 받기
-    Get.toNamed(AppRoutes.recommendation);
+    Get.until((route) => route.settings.name == AppRoutes.main);
+
+    if (Get.isRegistered<MainNavigationController>()) {
+      Get.find<MainNavigationController>().changeTab(1);
+    }
   }
 
   @override
@@ -61,7 +69,6 @@ class RecommendationFilterSheet extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           const Text(
             '장소 유형',
             style: TextStyle(
@@ -69,15 +76,15 @@ class RecommendationFilterSheet extends StatelessWidget {
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: Color(0xFF6F7773),
-
             ),
-          ), const SizedBox(height: 4,),
+          ),
+          const SizedBox(height: 4),
           GestureDetector(
             onTap: () => _changeCategory(context),
             child: Row(
               children: [
                 Text(
-                  viewModel.filter.category,
+                  categoryLabel,
                   style: const TextStyle(
                     fontFamily: 'Paperlogy',
                     fontSize: 24,
@@ -124,7 +131,11 @@ class _FilterBox extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _FilterBox({required this.value, required this.icon, required this.onTap});
+  const _FilterBox({
+    required this.value,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

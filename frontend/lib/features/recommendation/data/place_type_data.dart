@@ -2,56 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../models/place_type_item.dart';
 
-
 abstract final class PlaceTypeData {
   static const items = <PlaceTypeItem>[
+    PlaceTypeItem(id: 'CAFE', label: '☕ 카페', color: Color(0xFFF2C38B)),
+    PlaceTypeItem(id: 'NATURE', label: '🌲 자연 · 공원', color: Color(0xFFA8DDB8)),
+    PlaceTypeItem(id: 'CULTURE', label: '🖼️ 문화시설', color: Color(0xFFC5B5EA)),
     PlaceTypeItem(
-      id: 'cafe',
-      label: '☕ 카페',
-      color: Color(0xFFCDA984),
-      category: 'CAFE',
+      id: 'ALLEY',
+      label: '🏙️ 도심 · 랜드마크',
+      color: Color(0xFFAFCAD8),
     ),
+    PlaceTypeItem(id: 'TEMPLE', label: '⛩ 역사 · 종교', color: Color(0xFFE7C77F)),
     PlaceTypeItem(
-      id: 'park',
-      label: '🌲 공원',
-      color: Color(0xFFD0F8D1),
-      category: 'PARK',
+      id: 'EXPERIENCE',
+      label: '️🧩 체험 · 액티비티',
+      color: Color(0xFFF3AD9D),
     ),
-    PlaceTypeItem(
-      id: 'library',
-      label: '📚 도서관',
-      color: Color(0xFFB9F5DF),
-      category: 'LIBRARY',
-    ),
-    PlaceTypeItem(
-      id: 'exhibition',
-      label: '🖼 미술관·전시',
-      color: Color(0xFFF6C1EE),
-      category: 'GALLERY',
-    ),
-    PlaceTypeItem(
-      id: 'bookstore',
-      label: '📖 서점',
-      color: Color(0xFFFFD7B8),
-      category: 'BOOKSTORE',
-    ),
-    PlaceTypeItem(
-      id: 'temple',
-      label: '⛩️사찰',
-      color: Color(0xFFFFE4B0),
-      category: 'TEMPLE',
-    ),
-    PlaceTypeItem(
-      id: 'beach',
-      label: '🌊 해변',
-      color: Color(0xFFC8F0FA),
-      category: 'BEACH',
-    ),
-    PlaceTypeItem(
-      id: 'street',
-      label: '🏘️골목·거리',
-      color: Color(0xFFFFB1B3),
-      category: 'ALLEY',
-    ),
+    PlaceTypeItem(id: 'BOOK', label: '📚 도서관 · 서점', color: Color(0xFFAFC4EB)),
+    PlaceTypeItem(id: 'BEACH', label: '️🌊 해변', color: Color(0xFF91D6E3)),
   ];
 }

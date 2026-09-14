@@ -26,11 +26,24 @@ class QuietScoreGauge extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('고요 지수', style: TextStyle(fontFamily: 'Paperlogy', fontSize: 10, fontWeight: FontWeight.w600, color: Colors.black)),
+              const Text(
+                '고요 지수',
+                style: TextStyle(
+                  fontFamily: 'Paperlogy',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 '$quietScore',
-                style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 40, fontWeight: FontWeight.w800, color: Color(0xFF589C7E)),
+                style: const TextStyle(
+                  fontFamily: 'Paperlogy',
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF589C7E),
+                ),
               ),
             ],
           ),
