@@ -51,11 +51,32 @@ class AiQuietIndexMapClientTest {
     }
 
     @Test
-    void emptyBodyReturnsEmptyList() {
+    void emptyArrayReturnsEmptyList() {
         server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=0&is_weekend=true"))
                 .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
 
         assertTrue(client.fetchMap(0, true).isEmpty());
+        server.verify();
+    }
+
+    @Test
+    void nullEntryIsPreservedForPerItemValidation() {
+        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=9&is_weekend=false"))
+                .andRespond(withSuccess("[null,{\"poiId\":\"126081\",\"quietIndex\":50}]", MediaType.APPLICATION_JSON));
+        var items = client.fetchMap(9, false);
+        assertEquals(2, items.size());
+        org.junit.jupiter.api.Assertions.assertNull(items.getFirst());
+        assertEquals(50.0, items.get(1).quietIndex());
+        server.verify();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "null", "{broken", "{\"unexpected\":true}"})
+    void absentOrMalformedBodyFailsWholeFetch(String body) {
+        server.expect(requestTo("https://ai.invalid/quiet-index/map?hour=9&is_weekend=false"))
+                .andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+        assertEquals(HttpStatus.BAD_GATEWAY,
+                assertThrows(AiIntegrationException.class, () -> client.fetchMap(9, false)).getStatus());
         server.verify();
     }
 
