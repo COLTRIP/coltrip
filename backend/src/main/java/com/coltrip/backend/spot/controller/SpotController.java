@@ -5,6 +5,9 @@ import com.coltrip.backend.domain.spot.Mode;
 import com.coltrip.backend.spot.dto.QuietIndexTimelineResponse;
 import com.coltrip.backend.spot.dto.SpotDetailResponse;
 import com.coltrip.backend.spot.dto.SpotListResponse;
+import com.coltrip.backend.spot.dto.SpotSearchResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.http.CacheControl;
 import com.coltrip.backend.spot.service.SpotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -26,6 +29,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class SpotController {
 
     private final SpotService spotService;
+
+    @Operation(summary = "장소명 검색", description = "지도 영역 없이 장소명을 부분 일치 검색합니다. 앞뒤 공백 제외 1~100자. 이름/ID 오름차순, page=0~10000, size=1~50(기본 20). 이미지/고요지수/모드가 없어도 포함합니다. 비로그인 허용, 유효한 토큰은 isLiked에 반영합니다.")
+    @ApiResponse(responseCode = "200", description = "검색 성공. 결과 없음은 spots=[]")
+    @ApiResponse(responseCode = "400", description = "검색어 누락/길이 또는 페이지 범위/형식 오류")
+    @SecurityRequirements
+    @GetMapping("/search")
+    public ResponseEntity<SpotSearchResponse> search(
+            @AuthenticationPrincipal Long userId, @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(spotService.search(userId, keyword, page, size));
+    }
 
     @Operation(summary = "관광지 목록 조회",
             description = """

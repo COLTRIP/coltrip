@@ -19,6 +19,8 @@
 - [x] 필수 인증 헤더 누락/빈 값의 401 처리(#87), 메서드/미디어 타입/없는 경로의 405/415/406/404 처리(#99). [공통 오류](./api.md).
 
 ### 관광지 적재·조회
+- [x] 장소명 부분 일치 검색 GET /api/spots/search, 좌표 없는 페이지 조회, isLiked/누락 데이터 처리 및 통합 테스트. [검색 명세](./spot-search-api-spec.md).
+- [ ] 검색창 프론트 연동 및 배포 DB의 검색 실행 계획/응답 시간 검증.
 - [x] 지도 bounding box 및 category/mode 필터, 장소 상세, isLiked.
 - [x] 부산 12곳 개발 시드 및 감성모드 SQL 파일. 실제 DB 적재 여부는 미확인.
 - [x] POST /api/internal/spots: 내부 키 인증, tourApiContentId upsert, 감성모드 교체·중복 제거.
