@@ -69,6 +69,7 @@ class RecommendationApiService {
               if (mode != null && mode.isNotEmpty) 'mode': mode,
               'limit': 20,
             },
+            options: Options(receiveTimeout: const Duration(seconds: 60)),
           ),
         ),
       );
@@ -100,12 +101,18 @@ class RecommendationApiService {
       );
 
       return RecommendationResult(spots: spots, message: responseMessage);
-    } on DioException catch (e) {
+    } on DioException catch (e, stackTrace) {
       developer.log(
-        '추천 API 실패: status=${e.response?.statusCode}, '
-        'response=${e.response?.data}',
+        '추천 API 실패'
+        '\ntype=${e.type}'
+        '\nmethod=${e.requestOptions.method}'
+        '\nuri=${e.requestOptions.uri}'
+        '\nstatusCode=${e.response?.statusCode}'
+        '\nresponse=${e.response?.data}'
+        '\nmessage=${e.message}',
         name: 'RecommendationApiService',
         error: e,
+        stackTrace: stackTrace,
       );
       throw ApiException.fromDioException(e);
     }
@@ -150,9 +157,7 @@ class RecommendationApiService {
     }
   }
 
-  Future<List<QuietScorePoint>> getTimeline({
-    required int spotId,
-  }) async {
+  Future<List<QuietScorePoint>> getTimeline({required int spotId}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId/quiet-index/forecast',

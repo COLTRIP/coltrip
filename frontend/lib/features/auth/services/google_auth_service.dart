@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/dio_client.dart';
@@ -9,9 +10,17 @@ import '../models/auth_response.dart';
 import '../models/auth_intent.dart';
 
 class GoogleAuthService {
-  GoogleAuthService({Dio? dio}) : _dio = dio ?? DioClient.instance;
+  GoogleAuthService({Dio? dio, GoogleSignIn? googleSignIn})
+      : _dio = dio ?? DioClient.instance,
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              scopes: const ['email'],
+              serverClientId:
+                  '888142954996-ka5lothh80985ki57tfldiq0if0c9gmq.apps.googleusercontent.com',
+            );
 
   final Dio _dio;
+  final GoogleSignIn _googleSignIn;
 
   Future<AuthResponse> authenticate({required AuthIntent intent}) async {
     const logName = 'GoogleAuthService';
@@ -19,7 +28,11 @@ class GoogleAuthService {
     developer.log('STEP 1: Google 계정 인증 시작', name: logName);
 
     try {
-      final account = await GoogleSignIn.instance.authenticate();
+      final account = await _googleSignIn.signIn();
+
+      if (account == null) {
+        throw const AuthException('Google 로그인이 취소되었습니다.');
+      }
 
       developer.log(
         'STEP 2: Google 계정 인증 성공'
@@ -28,7 +41,8 @@ class GoogleAuthService {
         name: logName,
       );
 
-      final idToken = account.authentication.idToken;
+      final authentication = await account.authentication;
+      final idToken = authentication.idToken;
 
       developer.log(
         'STEP 3: ID Token 확인'
@@ -85,11 +99,11 @@ class GoogleAuthService {
       developer.log('STEP 6: Google 로그인 완료', name: logName);
 
       return authResponse;
-    } on GoogleSignInException catch (error, stackTrace) {
+    } on PlatformException catch (error, stackTrace) {
       developer.log(
         'Google 계정 인증 원본 오류'
             '\ncode=${error.code}'
-            '\ndescription=${error.description}'
+            '\nmessage=${error.message}'
             '\ndetails=${error.details}'
             '\ntoString=$error',
         name: logName,
@@ -97,19 +111,10 @@ class GoogleAuthService {
         stackTrace: stackTrace,
       );
 
-      final description = error.description ?? '';
-
-      if (description.toLowerCase().contains('reauth failed')) {
-        throw const AuthException(
-          'Google 계정 인증에 실패했어요. '
-          '앱의 SHA-1 등록과 휴대폰 Google 계정 상태를 확인해주세요.',
-        );
-      }
-
       throw AuthException(
         'Google 인증 실패'
             '\ncode: ${error.code}'
-            '\ndescription: ${error.description}'
+            '\nmessage: ${error.message}'
             '\ndetails: ${error.details}',
       );
     } on DioException catch (error, stackTrace) {
@@ -208,7 +213,7 @@ class GoogleAuthService {
       await tokenStorage.clearTokens();
 
       try {
-        await GoogleSignIn.instance.signOut();
+        await _googleSignIn.signOut();
         developer.log('로컬 및 Google 로그아웃 완료', name: logName);
       } catch (error, stackTrace) {
         developer.log(
@@ -247,7 +252,7 @@ class GoogleAuthService {
 
       // 서버에서 회원 탈퇴가 성공한 뒤에만 로컬 정보 삭제
       await tokenStorage.clearTokens();
-      await GoogleSignIn.instance.signOut();
+      await _googleSignIn.signOut();
 
       developer.log('회원 탈퇴 및 로컬 정보 삭제 완료', name: logName);
     } on DioException catch (error, stackTrace) {
