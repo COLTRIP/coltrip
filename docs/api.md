@@ -695,6 +695,8 @@ AI가 계산한 quietScore를 백엔드에 전달한다. 수신 코드는 구현
 ```
 `tourApiContentId`로 스팟을 식별(내부 `spotId` 아님 — AI는 TourAPI 원본 ID 기준으로 관리). `rawMetrics`는 선택, JSON 문자열. quietScore는 0~100 정수, calculatedAt은 필수 로컬 시각이며 공급자와 한국 시간 기준을 맞춘다.
 동일 장소·calculatedAt 재전송은 이력을 정정한다. 과거 이력은 저장하되 현재 캐시를 과거 값으로 되돌리지 않는다.
+
+`calculatedAt`은 서버 검증 시각(KST) 이하여야 한다. 허용 미래 오차는 0이며 초과하면 `400 InvalidObservationTimeException`으로 거부하고 이력/현재 점수를 변경하지 않는다. [시각 검증 및 기존 데이터 복구 절차](./observation-time-validation.md)를 참고한다.
 응답 quietScore/quietLevel은 요청값이 아니라 갱신 후 유지된 최신 캐시 값이다.
 
 **Response `200`**
