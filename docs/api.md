@@ -29,7 +29,7 @@
 프로토콜 오류(404/405/406/415)는 공통 JSON 본문을 반환한다. 지원하지 않는 Accept로 발생한 406도 오류 본문은 `application/json`이다. MVC 예외의 `Allow` 등 표준 헤더를 보존한다.
 인증 필터가 MVC 라우팅보다 먼저 실행된다. 공개 경로의 잘못된 요청 또는 인증된 요청은 위 4xx를 반환하지만, 보호 경로의 비인증 요청은 경로/메서드 오류보다 401이 우선한다. 이 처리를 위해 공개 접근 범위를 넓히지 않는다.
 
-- 마지막 갱신: 2026-09-14 (요청 메서드·미디어 타입·없는 경로 오류 정책 #99 반영)
+- 마지막 갱신: 2026-09-14 (`develop` 727bf28 기준, 지도 동기화 및 #99 오류 정책 대조)
 - 스키마 참고: [schema.md](./schema.md)
 - 관광지 기본정보·감성모드 적재: [spot-import-api-spec.md](./spot-import-api-spec.md) (`POST /api/internal/spots`, AI 전송 계약 협의 필요)
 
@@ -447,7 +447,7 @@ GET /api/visits/current
 방문이 없으면 정확히 `{"visit": null}`을 반환하며 404가 아니다. 완료/취소/타인 방문은 제외한다.
 `startQuietScore`는 시작 시점 스냅샷, `currentQuietScore`와 `currentQuietLevel`은 DB의 현재 저장값이며 미수신이면 null이다.
 `imageUrl`도 null일 수 있다. `visitRadiusMeters`는 완료 판정 반경(m)이며 체류시간 필드는 없다.
-현재 값이 실시간 관측임을 보장하지 않는다. 제안 판정은 프론트의 단순 점수 비교가 아니라 아래 방문 중 제안 API를 사용한다.
+현재 값이 실시간 관측임을 보장하지 않는다. 제안 판정은 프론트의 단순 점수 비교가 아니라 위 방문 중 제안 API를 사용한다.
 
 **Exception**: `UnauthorizedException` (401)
 
@@ -694,7 +694,11 @@ DELETE /api/reviews/{reviewId}
 ```
 POST /api/internal/quiet-index
 ```
-AI가 계산한 quietScore를 백엔드에 전달한다. 수신 코드는 구현되어 있지만 백엔드의 자동 1시간 스케줄러나 AI GET /quiet-index/map 수집기는 없다. 실제 공급 주기는 AI 운영 설정에서 확인해야 한다. `quiet_index` 이력 테이블에 저장 + `tourist_spot`의 캐시 컬럼(`current_quiet_score`, `quiet_score_updated_at`) 갱신.
+AI가 계산한 quietScore를 백엔드에 전달한다. 이 push API와 별도로 백엔드의 `QuietIndexMapSyncScheduler`가 AI `GET /quiet-index/map`을 주기적으로 호출한다. 기본 주기는 매시 5분이며 `quiet-index.map-sync.cron`으로 변경한다. 지도 조회 요청마다 AI를 호출하지 않는다. 두 경로는 공통 저장 로직으로 `quiet_index` 이력과 `tourist_spot`의 캐시 컬럼(`current_quiet_score`, `quiet_score_updated_at`)을 갱신한다.
+
+지도 수집은 KST의 `hour`와 `is_weekend` 쿼리를 보내고 응답의 `poiId`/`quietIndex`를 매핑한다. AI POST 요청의 `isWeekend`와 혼동하지 않는다. 유한한 0~100 점수를 검증한 뒤 정수로 반올림하고, 미등록/중복/잘못된 항목은 제외한다. 건별 저장 실패는 다음 장소 처리를 막지 않으며 실패한 장소의 마지막 정상값을 유지한다. 상세: [지도 동기화 명세](./quiet-index-map-sync-spec.md).
+
+지도 응답에는 실제 관측/계산 시각이 없어 **동기화 시작 시각(KST)을 calculatedAt으로 사용**한다. 따라서 캐시의 갱신 시각만으로 원천 데이터가 새로 관측되었다고 판단하면 안 된다. AI 원천 데이터 공급 주기와 서버 호출 주기는 별개이며 운영 설정에서 확인한다. push 요청의 calculatedAt은 아래 공급자 전달 시각 검증을 따른다.
 
 **Request** — Header `X-Internal-Api-Key: {sharedSecret}`
 ```json
