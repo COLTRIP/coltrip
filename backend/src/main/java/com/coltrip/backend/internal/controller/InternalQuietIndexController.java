@@ -4,6 +4,8 @@ import com.coltrip.backend.internal.dto.QuietIndexPushRequest;
 import com.coltrip.backend.internal.dto.QuietIndexPushResponse;
 import com.coltrip.backend.internal.service.InternalQuietIndexService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,8 +37,11 @@ public class InternalQuietIndexController {
                     """)
     @SecurityRequirements
     @PostMapping("/quiet-index")
+    @ApiResponse(responseCode = "200", description = "고요지수 수신 성공")
+    @ApiResponse(responseCode = "401", description = "내부 인증 키 누락/빈 값/불일치. code: InvalidInternalApiKeyException")
     public ResponseEntity<QuietIndexPushResponse> pushQuietIndex(
-            @RequestHeader("X-Internal-Api-Key") String apiKey,
+            @Parameter(required = true, description = "필수 내부 API 키. 누락 시 401")
+            @RequestHeader(value = "X-Internal-Api-Key", required = false) String apiKey,
             @Valid @RequestBody QuietIndexPushRequest request) {
         return ResponseEntity.ok(internalQuietIndexService.push(apiKey, request));
     }

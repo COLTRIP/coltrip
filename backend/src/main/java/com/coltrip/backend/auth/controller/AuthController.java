@@ -5,6 +5,9 @@ import com.coltrip.backend.auth.dto.JwtTokenResponse;
 import com.coltrip.backend.auth.exception.InvalidRefreshTokenException;
 import com.coltrip.backend.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.util.StringUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -53,7 +56,11 @@ public class AuthController {
                     응답으로 받은 accessToken으로 다시 Authorize 하세요.
                     """)
     @PostMapping("/refresh")
-    public ResponseEntity<JwtTokenResponse> refresh(@RequestHeader("Authorization") String authorizationHeader) {
+    @ApiResponse(responseCode = "200", description = "토큰 재발급 성공")
+    @ApiResponse(responseCode = "401", description = "인증 헤더 누락/빈 값/잘못된 형식 또는 유효하지 않은 리프레시 토큰. code: InvalidRefreshTokenException")
+    public ResponseEntity<JwtTokenResponse> refresh(
+            @Parameter(required = true, description = "필수: Bearer {refreshToken}. 누락 시 401")
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         String refreshToken = extractToken(authorizationHeader);
         return ResponseEntity.ok(authService.refresh(refreshToken));
     }
@@ -66,7 +73,8 @@ public class AuthController {
     }
 
     private String extractToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")
+                || !StringUtils.hasText(authorizationHeader.substring(7))) {
             throw new InvalidRefreshTokenException();
         }
         return authorizationHeader.substring(7);

@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @Transactional
@@ -59,7 +60,8 @@ public class InternalQuietIndexService {
     }
 
     private void validateApiKey(String apiKey) {
-        if (apiKey == null || !apiKey.equals(internalApiProperties.apiKey())) {
+        if (!StringUtils.hasText(apiKey) || !StringUtils.hasText(internalApiProperties.apiKey())
+                || !apiKey.equals(internalApiProperties.apiKey())) {
             throw new InvalidInternalApiKeyException();
         }
     }
