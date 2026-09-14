@@ -214,6 +214,10 @@ DELETE /api/users/me
 
 ### 날짜/시간대별 추천 및 예측 타임라인
 
+추천 목록 최초 진입 및 현재 모드 복귀는 `GET /api/spots/recommendations/current`를 사용한다. 현재 저장 고요지수 기준으로 조회하며 type=CURRENT, spots[].spot.quietScore를 반환한다. 위치/반경/category/mode/limit은 예측 추천과 같은 정책이고 점수 없는 장소는 뒤에 배치한다. [현재 추천 명세](./current-recommendation-api-spec.md).
+
+날짜/시간을 선택했을 때만 아래 예측 API를 호출한다. 기존 예측 API가 현재값으로 자동 전환되지는 않는다.
+
 날짜별 추천, 별도 예측 타임라인, 예측 배치 수신 계약은
 [예측 추천 API 명세](./forecast-api-spec.md)를 참고한다.
 기존 지도·상세의 현재 점수와 최근 24시간 관측 이력은 유지한다.
