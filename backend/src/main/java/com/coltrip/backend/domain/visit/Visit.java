@@ -14,7 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -42,12 +41,6 @@ public class Visit {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private VisitStatus status;
-
-    @Column(name = "start_latitude", nullable = false, precision = 10, scale = 7)
-    private BigDecimal startLatitude;
-
-    @Column(name = "start_longitude", nullable = false, precision = 10, scale = 7)
-    private BigDecimal startLongitude;
 
     @Column(name = "start_quiet_score")
     private Integer startQuietScore;
@@ -79,12 +72,10 @@ public class Visit {
     private LocalDateTime completedAt;
 
     @Builder
-    public Visit(User user, TouristSpot spot, BigDecimal startLatitude, BigDecimal startLongitude) {
+    public Visit(User user, TouristSpot spot) {
         this.user = user;
         this.spot = spot;
         this.status = VisitStatus.STARTED;
-        this.startLatitude = startLatitude;
-        this.startLongitude = startLongitude;
         this.startQuietScore = spot.getCurrentQuietScore();
         this.startQuietScoreObservedAt = spot.getQuietScoreUpdatedAt();
     }

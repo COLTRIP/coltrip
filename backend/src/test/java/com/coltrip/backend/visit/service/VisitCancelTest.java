@@ -115,8 +115,6 @@ class VisitCancelTest {
         return Visit.builder()
                 .user(user)
                 .spot(spot)
-                .startLatitude(BigDecimal.valueOf(35.15))
-                .startLongitude(BigDecimal.valueOf(129.06))
                 .build();
     }
 

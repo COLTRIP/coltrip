@@ -44,7 +44,7 @@ class NudgeStoreTest {
                 .latitude(BigDecimal.valueOf(35)).longitude(BigDecimal.valueOf(129)).category(Category.PARK).build();
         set(spot, "id", 2L);
         spot.updateQuietScoreIfNewer(70, now.minusHours(1));
-        visit = Visit.builder().user(user).spot(spot).startLatitude(spot.getLatitude()).startLongitude(spot.getLongitude()).build();
+        visit = Visit.builder().user(user).spot(spot).build();
         set(visit, "id", 10L);
         set(visit, "startedAt", now.minusMinutes(30));
         spot.updateQuietScoreIfNewer(30, now);
@@ -144,7 +144,7 @@ class NudgeStoreTest {
         return new AlternativeListResponse(true, 30, List.of(new Alternative(place, 70.5, 1.1, .8, "Quieter")), "ok");
     }
     private NudgeSelectRequest request(Long spotId) {
-        return new NudgeSelectRequest(spotId, BigDecimal.valueOf(35), BigDecimal.valueOf(129));
+        return new NudgeSelectRequest(spotId);
     }
     private void set(Object object, String name, Object value) throws Exception {
         var field = object.getClass().getDeclaredField(name);

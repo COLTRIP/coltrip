@@ -124,7 +124,7 @@ class SpotImportIntegrationTest {
         var spot = spots.findById(id).orElseThrow();
         var user = User.builder().googleSub("test-user").email("test@example.com").build();
         em.persist(user);
-        var visit = Visit.builder().user(user).spot(spot).startLatitude(BigDecimal.valueOf(35)).startLongitude(BigDecimal.valueOf(129)).build();
+        var visit = Visit.builder().user(user).spot(spot).build();
         visit.complete();
         em.persist(visit);
         var like = SpotLike.builder().user(user).spot(spot).build();

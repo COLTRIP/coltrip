@@ -1,7 +1,6 @@
 package com.coltrip.backend.visit.controller;
 
 import com.coltrip.backend.visit.dto.VisitCancelResponse;
-import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitHistoryResponse;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
@@ -50,12 +49,14 @@ public class VisitController {
         return ResponseEntity.ok(visitService.start(userId, request));
     }
 
-    @Operation(summary = "방문 완료", description = "목적지 반경(점형 100m/면적형 250m) 진입 시 완료됩니다. 미충족 시 400. 반경 값은 장소 상세/현재 방문 조회 응답의 visitRadiusMeters로 안내됩니다.")
+    @Operation(summary = "방문 완료", description = """
+            목적지 반경(점형 100m/면적형 250m) 진입 판정은 클라이언트가 수행합니다 — 서버는 사용자 위치를 받지 않습니다.
+            클라이언트가 장소 상세/현재 방문 조회 응답의 visitRadiusMeters로 반경 안임을 확인한 뒤 이 API를 호출하세요.
+            """)
     @PatchMapping("/{visitId}/complete")
     public ResponseEntity<VisitCompleteResponse> complete(@AuthenticationPrincipal Long userId,
-                                                            @PathVariable Long visitId,
-                                                            @Valid @RequestBody VisitCompleteRequest request) {
-        return ResponseEntity.ok(visitService.complete(userId, visitId, request));
+                                                            @PathVariable Long visitId) {
+        return ResponseEntity.ok(visitService.complete(userId, visitId));
     }
 
     @Operation(summary = "방문 취소", description = "진행 중인 방문을 취소합니다. 대체지 선택 등 목적지 전환 시에도 사용. STARTED가 아니면 409.")

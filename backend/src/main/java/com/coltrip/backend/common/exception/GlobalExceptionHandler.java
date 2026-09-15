@@ -14,7 +14,6 @@ import com.coltrip.backend.spot.exception.SpotNotFoundException;
 import com.coltrip.backend.spot.exception.InvalidSearchRequestException;
 import com.coltrip.backend.visit.exception.AlreadyOngoingVisitException;
 import com.coltrip.backend.visit.exception.InvalidVisitStateException;
-import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +55,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler({VisitConditionNotMetException.class, InvalidBoundingBoxException.class,
+    @ExceptionHandler({InvalidBoundingBoxException.class,
             InvalidObservationTimeException.class,
             InvalidSearchRequestException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e) {

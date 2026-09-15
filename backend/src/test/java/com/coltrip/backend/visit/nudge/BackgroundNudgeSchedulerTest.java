@@ -63,8 +63,7 @@ class BackgroundNudgeSchedulerTest {
     }
 
     private Visit visit(Long id, User user) {
-        Visit visit = Visit.builder().user(user).spot(spot()).startLatitude(BigDecimal.ZERO)
-                .startLongitude(BigDecimal.ZERO).build();
+        Visit visit = Visit.builder().user(user).spot(spot()).build();
         setId(visit, id);
         return visit;
     }

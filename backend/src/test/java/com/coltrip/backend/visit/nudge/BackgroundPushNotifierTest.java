@@ -24,8 +24,7 @@ class BackgroundPushNotifierTest {
     @Test
     void sendsAndMarksWhenNeverNotified() {
         User user = User.builder().googleSub("g").email("a@a.com").build();
-        Visit visit = Visit.builder().user(user).spot(spot()).startLatitude(BigDecimal.ZERO)
-                .startLongitude(BigDecimal.ZERO).build();
+        Visit visit = Visit.builder().user(user).spot(spot()).build();
         when(visits.findById(10L)).thenReturn(Optional.of(visit));
         var proposal = new NudgeResponse.Proposal(10L, 1L, 80, 30, LocalDateTime.now(), LocalDateTime.now(),
                 LocalDateTime.now().plusMinutes(10), List.of());
@@ -38,8 +37,7 @@ class BackgroundPushNotifierTest {
     @Test
     void skipsWhenAlreadyNotifiedForThisProposal() {
         User user = User.builder().googleSub("g").email("a@a.com").build();
-        Visit visit = Visit.builder().user(user).spot(spot()).startLatitude(BigDecimal.ZERO)
-                .startLongitude(BigDecimal.ZERO).build();
+        Visit visit = Visit.builder().user(user).spot(spot()).build();
         LocalDateTime issuedAt = LocalDateTime.now();
         visit.markAlternativeNotified(issuedAt);
         when(visits.findById(10L)).thenReturn(Optional.of(visit));
@@ -54,8 +52,7 @@ class BackgroundPushNotifierTest {
     @Test
     void notifiesAgainForNewerProposalAfterExpiry() {
         User user = User.builder().googleSub("g").email("a@a.com").build();
-        Visit visit = Visit.builder().user(user).spot(spot()).startLatitude(BigDecimal.ZERO)
-                .startLongitude(BigDecimal.ZERO).build();
+        Visit visit = Visit.builder().user(user).spot(spot()).build();
         visit.markAlternativeNotified(LocalDateTime.now().minusHours(1));
         when(visits.findById(10L)).thenReturn(Optional.of(visit));
         var newerProposal = new NudgeResponse.Proposal(10L, 1L, 80, 30, LocalDateTime.now(), LocalDateTime.now(),

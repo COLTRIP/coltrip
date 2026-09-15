@@ -1,7 +1,6 @@
 package com.coltrip.backend.visit.service;
 
 import com.coltrip.backend.auth.exception.UnauthorizedException;
-import com.coltrip.backend.common.util.GeoUtils;
 import com.coltrip.backend.domain.review.Review;
 import com.coltrip.backend.domain.review.ReviewRepository;
 import com.coltrip.backend.domain.spot.TouristSpot;
@@ -13,14 +12,12 @@ import com.coltrip.backend.domain.visit.VisitRepository;
 import com.coltrip.backend.domain.visit.VisitStatus;
 import com.coltrip.backend.spot.exception.SpotNotFoundException;
 import com.coltrip.backend.visit.dto.VisitCancelResponse;
-import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.dto.VisitHistoryResponse;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
 import com.coltrip.backend.visit.dto.VisitStartResponse;
 import com.coltrip.backend.visit.exception.AlreadyOngoingVisitException;
 import com.coltrip.backend.visit.exception.InvalidVisitStateException;
-import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,17 +51,15 @@ public class VisitService {
         Visit visit = visitRepository.save(Visit.builder()
                 .user(user)
                 .spot(spot)
-                .startLatitude(request.startLatitude())
-                .startLongitude(request.startLongitude())
                 .build());
 
         return VisitStartResponse.from(visit);
     }
 
-    public VisitCompleteResponse complete(Long userId, Long visitId, VisitCompleteRequest request) {
+    // 반경 판정은 클라이언트가 수행한다(서버는 사용자 위치를 받지 않음, 이슈 #113).
+    // 여기서는 본인 소유의 진행 중 방문인지만 확인하고 완료 처리한다.
+    public VisitCompleteResponse complete(Long userId, Long visitId) {
         Visit visit = findOwnedStartedVisit(userId, visitId);
-
-        validateCondition(visit, request);
 
         visit.markArrived();
         visit.complete();
@@ -117,16 +112,5 @@ public class VisitService {
                 .collect(Collectors.toMap(review -> review.getVisit().getId(), Review::getId));
 
         return VisitHistoryResponse.from(visits, reviewIdByVisitId);
-    }
-
-    private void validateCondition(Visit visit, VisitCompleteRequest request) {
-        TouristSpot spot = visit.getSpot();
-        double distance = GeoUtils.distanceMeters(
-                spot.getLatitude(), spot.getLongitude(),
-                request.arrivedLatitude(), request.arrivedLongitude());
-
-        if (distance > spot.getCategory().getVisitRadiusMeters()) {
-            throw new VisitConditionNotMetException();
-        }
     }
 }

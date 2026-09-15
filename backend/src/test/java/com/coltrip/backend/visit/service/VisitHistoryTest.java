@@ -87,8 +87,6 @@ class VisitHistoryTest {
         Visit visit = Visit.builder()
                 .user(user)
                 .spot(spot)
-                .startLatitude(BigDecimal.valueOf(35.1))
-                .startLongitude(BigDecimal.valueOf(129.1))
                 .build();
         visit.markArrived();
         visit.complete();

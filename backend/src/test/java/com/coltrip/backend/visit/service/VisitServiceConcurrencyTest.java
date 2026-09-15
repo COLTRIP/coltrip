@@ -104,7 +104,7 @@ class VisitServiceConcurrencyTest {
         try {
             ready.countDown();
             go.await();
-            visitService.start(userId, new VisitStartRequest(spotId, BigDecimal.valueOf(35.0), BigDecimal.valueOf(129.0)));
+            visitService.start(userId, new VisitStartRequest(spotId));
             successCount.incrementAndGet();
         } catch (AlreadyOngoingVisitException e) {
             conflictCount.incrementAndGet();

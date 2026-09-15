@@ -16,7 +16,6 @@ import com.coltrip.backend.domain.visit.VisitRepository;
 import com.coltrip.backend.like.controller.SpotLikeController;
 import com.coltrip.backend.like.service.SpotLikeService;
 import com.coltrip.backend.review.controller.ReviewController;
-import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitStartRequest;
 import com.coltrip.backend.visit.service.VisitService;
 import java.math.BigDecimal;
@@ -85,8 +84,8 @@ class LikeReviewConcurrencyIntegrationTest {
         spotId = spots.save(TouristSpot.builder().tourApiContentId("RACE-" + suffix)
                 .name("Concurrency test").address("Busan").latitude(LAT).longitude(LNG)
                 .category(Category.CAFE).build()).getId();
-        visitId = visitService.start(userId, new VisitStartRequest(spotId, LAT, LNG)).visitId();
-        visitService.complete(userId, visitId, new VisitCompleteRequest(LAT, LNG));
+        visitId = visitService.start(userId, new VisitStartRequest(spotId)).visitId();
+        visitService.complete(userId, visitId);
     }
 
     @AfterEach
@@ -149,7 +148,7 @@ class LikeReviewConcurrencyIntegrationTest {
 
     @Test
     void incompleteVisitStillGets409() throws Exception {
-        Long activeId = visitService.start(userId, new VisitStartRequest(spotId, LAT, LNG)).visitId();
+        Long activeId = visitService.start(userId, new VisitStartRequest(spotId)).visitId();
         var result = request(userId, post("/api/visits/{id}/review", activeId)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"rating\":5}"));
         status().isConflict().match(result);

@@ -464,14 +464,12 @@ GET /api/visits/current
 ```
 POST /api/visits/start
 ```
-"조용한 여행 시작하기" 버튼 → 위치 추적 세션 시작.
+"조용한 여행 시작하기" 버튼. **서버는 사용자 위치를 받지 않는다**(이슈 #113 — 위치기반서비스 신고 의무를 피하기 위해 반경 판정을 클라이언트로 이전).
 
 **Request**
 ```json
 {
-  "spotId": 1,
-  "startLatitude": 35.15,
-  "startLongitude": 129.06
+  "spotId": 1
 }
 ```
 
@@ -492,15 +490,9 @@ POST /api/visits/start
 ```
 PATCH /api/visits/{visitId}/complete
 ```
-목적지 반경 진입 시 프론트가 호출. 체류시간 조건은 없다(2026-09 제거 — 위변조 여지가 있고 시연 시 대기가 길어 반경 진입만으로 판정하도록 팀 확정). 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·실측 검증 필요 — 장소 상세/현재 방문 조회 응답의 `visitRadiusMeters`로도 안내됨).
+**반경 판정은 클라이언트가 수행한다**(이슈 #113 — 서버는 사용자 위치를 전혀 받지 않음). 클라이언트가 기기 GPS와 장소 좌표로 자체 계산해, 목적지 반경 안이라고 판단했을 때만 이 API를 호출한다. 체류시간 조건은 없다(2026-09 제거 — 위변조 여지가 있고 시연 시 대기가 길어 반경 진입만으로 판정하도록 팀 확정). 반경은 카테고리별로 다름 — 점형 장소(카페/도서관/미술관/서점/사찰) **100m**, 면적형 장소(공원/해변/골목) **250m** (`Category.getVisitRadiusMeters()`, 잠정값·실측 검증 필요 — 장소 상세/현재 방문 조회 응답의 `visitRadiusMeters`로도 안내됨).
 
-**Request**
-```json
-{
-  "arrivedLatitude": 35.1502,
-  "arrivedLongitude": 129.0601
-}
-```
+**Request**: 바디 없음.
 
 **Response `200`** — `VisitCompleteResponse`
 ```json
@@ -511,7 +503,7 @@ PATCH /api/visits/{visitId}/complete
 }
 ```
 
-**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문, `VisitConditionNotMetException` (400) — 반경 조건 미충족
+**Exception**: `VisitNotFoundException` (404), `InvalidVisitStateException` (409) — 이미 완료/취소된 방문. 반경 미충족은 더 이상 서버가 400으로 응답하지 않는다 — 클라이언트가 반경 밖이면 이 API 자체를 호출하지 않아야 한다.
 
 ---
 

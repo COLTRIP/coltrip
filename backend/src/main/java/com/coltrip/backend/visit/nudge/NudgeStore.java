@@ -101,8 +101,7 @@ public class NudgeStore {
         }
         visitService.cancel(userId, visitId);
         visits.flush();
-        VisitStartResponse started = visitService.start(userId,
-                new VisitStartRequest(request.spotId(), request.startLatitude(), request.startLongitude()));
+        VisitStartResponse started = visitService.start(userId, new VisitStartRequest(request.spotId()));
         visit.selectAlternativeVisit(started.visitId());
         return started;
     }
