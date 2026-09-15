@@ -51,6 +51,16 @@ public interface TouristSpotRepository extends JpaRepository<TouristSpot, Long> 
                                    @Param("category") Category category,
                                    @Param("mode") Mode mode);
 
+    // 추천 목록은 위치/반경 없이 필터에 부합하는 전체 장소를 대상으로 한다(사업자 등록 이슈로 위치 미사용).
+    @Query("""
+            SELECT DISTINCT s FROM TouristSpot s
+            LEFT JOIN FETCH s.spotModes
+            WHERE (:category IS NULL OR s.category = :category)
+              AND (:mode IS NULL OR EXISTS (
+                    SELECT 1 FROM SpotMode sm WHERE sm.spot = s AND sm.mode = :mode))
+            """)
+    List<TouristSpot> findByFilters(@Param("category") Category category, @Param("mode") Mode mode);
+
     @Query("""
             SELECT s FROM TouristSpot s
             LEFT JOIN FETCH s.spotModes

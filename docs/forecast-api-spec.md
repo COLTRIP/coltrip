@@ -46,17 +46,13 @@ GET /api/spots/recommendations?date=2026-09-14&hour=15&category=PARK&mode=NATURA
 |---|---|---|
 | date | Y | 한국 날짜 YYYY-MM-DD |
 | hour | Y | 0~23 정수 |
-| latitude / longitude | N | 둘 다 제공하거나 둘 다 생략 |
-| radiusMeters | N | 기본 15000, 허용 100~50000 |
 | category | N | 기존 Category enum |
 | mode | N | 기존 Mode enum |
 | limit | N | 기본 20, 허용 1~50 |
 
-위치 생략 시 중심점은 부산 시청 좌표 35.1796, 129.0756이다. 위치 기본점은 이번 코드의 제안이며 부산 행정구역 필터라는 의미가 아니다. 기본 반경 15km는 기존 문서의 초기 검색 반경에 맞춘 값이다. 기존 bounding box 요청 파라미터는 필요 없다.
+위치기반서비스사업자 등록 이슈로 이 API는 위치를 전혀 받지 않는다(2026-09-15, 이슈 #115). latitude/longitude/radiusMeters 파라미터는 없으며, 부산시청 기본 중심점/반경 개념도 없다. category/mode 필터에 부합하는 전체 장소를 대상으로 한다.
 
-사용자 좌표가 있으면 그 좌표를 중심점으로 사용한다. 지도 축소/확대에 따라 자동 변경되지 않는다. 반경은 직선거리로 계산하며 표시용 반올림 전에 필터링한다.
-
-정렬은 예측 점수 내림차순 → 거리 오름차순 → 장소 ID 오름차순으로 고정한다. 이는 감성 임베딩 점수 기반 개인화 순위가 아니라 선택한 감성모드/카테고리 안에서의 예측 고요지수 순위다.
+정렬은 예측 점수 내림차순 → 장소 ID 오름차순으로 고정한다. 이는 감성 임베딩 점수 기반 개인화 순위가 아니라 선택한 감성모드/카테고리 안에서의 예측 고요지수 순위다.
 
 Category: CAFE, PARK, LIBRARY, GALLERY, BOOKSTORE, TEMPLE, BEACH, ALLEY.
 
@@ -70,10 +66,6 @@ Mode: COZY, NATURAL, URBAN, VINTAGE, EXOTIC, VIBRANT, SENSORY, TRANQUIL. mode는
 {
   "timezone": "Asia/Seoul",
   "targetAt": "2026-09-14T15:00:00+09:00",
-  "latitude": 35.1796,
-  "longitude": 129.0756,
-  "radiusMeters": 15000,
-  "defaultCenter": true,
   "sort": "QUIET_DESC",
   "spots": [
     {
@@ -88,7 +80,6 @@ Mode: COZY, NATURAL, URBAN, VINTAGE, EXOTIC, VIBRANT, SENSORY, TRANQUIL. mode는
         "longitude": 129.08,
         "isLiked": false
       },
-      "distanceMeters": 403,
       "forecast": {
         "type": "FORECAST",
         "targetAt": "2026-09-14T15:00:00+09:00",
@@ -188,7 +179,7 @@ GET /api/spots/42/quiet-index/forecast?date=2026-09-14&hour=0
 
 | 상황 | 응답 |
 |---|---|
-| 날짜/시간/좌표/반경/limit/enum 형식 오류 | 400 |
+| 날짜/시간/limit/enum 형식 오류 | 400 |
 | 예측 수신 필드/시간 관계/출처/중복 오류 | 400 |
 | 타임라인 장소 없음, 수신 대상 장소 미등록 | 404 |
 | 내부 인증키 없음/불일치/서버 키 미설정 | 401 |
@@ -214,7 +205,7 @@ quiet_forecast 테이블을 새로 사용한다. quiet_index 관측 이력이나
 
 유니크 키는 (spot_id, target_at, source, generated_at), 조회 인덱스는 (target_at, source, generated_at)이다.
 
-현재 구현은 SQL에서 대상 시간/출처/영역/필터를 먼저 적용한 후 후보의 정확한 거리와 정렬을 Java에서 계산한다. 필터 후 전체 후보를 읽기 때문에 관광지 규모가 크게 늘면 공간 인덱스 및 DB 거리 정렬/페이지 처리를 별도로 검토한다.
+현재 구현은 SQL에서 대상 시간/출처/category/mode 필터를 먼저 적용한 후 정렬을 Java에서 계산한다. 위치 필터가 없어졌으므로 필터 후 전체 후보를 읽기 때문에 관광지 규모가 크게 늘면 페이지 처리를 별도로 검토한다.
 
 이력 보존 기간·오래된 예측 정리 배치·AI 재전송 주기는 이번 구현에 포함하지 않는다.
 

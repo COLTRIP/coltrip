@@ -25,10 +25,9 @@ public final class ForecastResponses {
     public record Place(Long id, String name, String address, String category, List<String> modes,
             String imageUrl, BigDecimal latitude, BigDecimal longitude, boolean isLiked) { }
 
-    public record Item(Place spot, long distanceMeters, Point forecast) { }
+    public record Item(Place spot, Point forecast) { }
 
     public record Recommendations(String timezone, OffsetDateTime targetAt,
-            BigDecimal latitude, BigDecimal longitude, int radiusMeters, boolean defaultCenter,
             String sort, List<Item> spots, String message) { }
 
     public record Timeline(String timezone, Long spotId, List<Point> timeline) { }

@@ -64,12 +64,11 @@ class QuietForecastRepositoryTest {
         var timeline = forecasts.findTimeline(spot.getId(), target, target.plusHours(24), "coltrip-ai", now);
         assertEquals(1, timeline.size());
         assertEquals(candidates(null, null).getFirst().getId(), timeline.getFirst().getId());
-        assertTrue(forecasts.findCandidates(target.plusHours(1), "coltrip-ai", now,
-                bd("34"), bd("36"), bd("128"), bd("130"), null, null).isEmpty());
+        assertTrue(forecasts.findCandidates(target.plusHours(1), "coltrip-ai", now, null, null).isEmpty());
     }
 
     private List<QuietForecast> candidates(Category category, Mode mode) {
-        return forecasts.findCandidates(target, "coltrip-ai", now, bd("34"), bd("36"), bd("128"), bd("130"), category, mode);
+        return forecasts.findCandidates(target, "coltrip-ai", now, category, mode);
     }
     private TouristSpot spot(String contentId, Category category) {
         return spots.save(TouristSpot.builder().tourApiContentId(contentId).name("Test").address("Busan")

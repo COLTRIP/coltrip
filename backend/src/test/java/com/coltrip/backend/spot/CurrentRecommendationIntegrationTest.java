@@ -56,22 +56,22 @@ class CurrentRecommendationIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.spots[0].quietScore").value(98));
     }
 
-    @Test void sortsScoreThenDistanceThenIdAndNullLastBeforeLimiting() throws Exception {
-        var unknown = spot("10", null, Category.BEACH);
-        var zero = spot("10", 0, Category.BEACH);
-        var farther = spot("10.01", 90, Category.BEACH);
-        var first = spot("10", 90, Category.BEACH);
-        var second = spot("10", 90, Category.BEACH);
-        spot("11", 100, Category.BEACH);
+    @Test void sortsScoreDescThenIdAscAndNullLastBeforeLimiting() throws Exception {
+        // 로컬 개발 DB의 기존 시드 장소(12곳)는 spot_mode가 없으므로 mode 필터로 격리한다.
+        var unknown = taggedSpot("10", null, Category.BEACH);
+        var zero = taggedSpot("10", 0, Category.BEACH);
+        var first = taggedSpot("10", 90, Category.BEACH);
+        var second = taggedSpot("10", 90, Category.BEACH);
+        var highest = taggedSpot("11", 100, Category.BEACH);
         flush();
-        mvc.perform(request()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.spots[*].spot.id", contains(first.getId().intValue(), second.getId().intValue(),
-                        farther.getId().intValue(), zero.getId().intValue(), unknown.getId().intValue())))
+        mvc.perform(request().param("mode", "TRANQUIL")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.spots[*].spot.id", contains(highest.getId().intValue(), first.getId().intValue(),
+                        second.getId().intValue(), zero.getId().intValue(), unknown.getId().intValue())))
                 .andExpect(jsonPath("$.spots[4].spot.quietScore").isEmpty())
                 .andExpect(jsonPath("$.spots[4].spot.quietLevel").isEmpty())
                 .andExpect(jsonPath("$.spots[4].spot.quietScoreUpdatedAt").isEmpty());
-        mvc.perform(request().param("limit", "2")).andExpect(jsonPath("$.spots", hasSize(2)))
-                .andExpect(jsonPath("$.spots[0].spot.id").value(first.getId()));
+        mvc.perform(request().param("mode", "TRANQUIL").param("limit", "2")).andExpect(jsonPath("$.spots", hasSize(2)))
+                .andExpect(jsonPath("$.spots[0].spot.id").value(highest.getId()));
     }
 
     @Test void filtersKeepAllModesAndPersonalizeOnlyOwnersLikes() throws Exception {
@@ -95,31 +95,28 @@ class CurrentRecommendationIntegrationTest {
     }
 
     @Test void emptyAndAllMissingScoresRemainSuccessful() throws Exception {
-        mvc.perform(request()).andExpect(status().isOk()).andExpect(jsonPath("$.spots", hasSize(0)))
-                .andExpect(jsonPath("$.message").isNotEmpty());
-        spot("10", null, Category.BEACH);
+        // 로컬 개발 DB의 기존 시드 장소(12곳)는 spot_mode가 없으므로 mode 필터로 격리한다.
+        mvc.perform(request().param("mode", "TRANQUIL")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.spots", hasSize(0))).andExpect(jsonPath("$.message").isNotEmpty());
+        taggedSpot("10", null, Category.BEACH);
         flush();
-        mvc.perform(request()).andExpect(status().isOk()).andExpect(jsonPath("$.spots", hasSize(1)))
+        mvc.perform(request().param("mode", "TRANQUIL")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.spots", hasSize(1)))
                 .andExpect(jsonPath("$.spots[0].spot.imageUrl").isEmpty())
                 .andExpect(jsonPath("$.spots[0].spot.quietScore").isEmpty());
     }
 
-    @Test void defaultCenterAndValidationMatchRecommendationPolicy() throws Exception {
-        mvc.perform(get(URL)).andExpect(status().isOk()).andExpect(jsonPath("$.defaultCenter").value(true))
-                .andExpect(jsonPath("$.latitude").value(35.1796)).andExpect(jsonPath("$.radiusMeters").value(15000));
-        mvc.perform(get(URL).param("latitude", "10")).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("InvalidCurrentRecommendationRequest"));
-        for (String[] input : new String[][]{{"radiusMeters", "99"}, {"radiusMeters", "50001"},
-                {"limit", "0"}, {"limit", "51"}, {"limit", "abc"}, {"category", "invalid"}, {"mode", "invalid"}}) {
+    @Test void noLocationRequiredAndLimitValidation() throws Exception {
+        mvc.perform(get(URL)).andExpect(status().isOk());
+        for (String[] input : new String[][]{{"limit", "0"}, {"limit", "51"}, {"limit", "abc"},
+                {"category", "invalid"}, {"mode", "invalid"}}) {
             mvc.perform(request().param(input[0], input[1])).andExpect(status().isBadRequest());
         }
-        mvc.perform(get(URL).param("latitude", "91").param("longitude", "20"))
-                .andExpect(status().isBadRequest());
-        mvc.perform(request().param("limit", "50").param("radiusMeters", "50000")).andExpect(status().isOk());
+        mvc.perform(request().param("limit", "50")).andExpect(status().isOk());
     }
 
     private MockHttpServletRequestBuilder request() {
-        return get(URL).param("latitude", "10").param("longitude", "20");
+        return get(URL);
     }
 
     private TouristSpot spot(String latitude, Integer score, Category category) {
@@ -128,6 +125,12 @@ class CurrentRecommendationIntegrationTest {
                 .category(category).build();
         if (score != null) spot.updateQuietScoreIfNewer(score, OBSERVED);
         em.persist(spot);
+        return spot;
+    }
+
+    private TouristSpot taggedSpot(String latitude, Integer score, Category category) {
+        var spot = spot(latitude, score, category);
+        em.persist(SpotMode.builder().spot(spot).mode(Mode.TRANQUIL).build());
         return spot;
     }
 

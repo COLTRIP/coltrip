@@ -19,7 +19,8 @@
 - [x] 필수 인증 헤더 누락/빈 값의 401 처리(#87), 메서드/미디어 타입/없는 경로의 405/415/406/404 처리(#99). [공통 오류](./api.md).
 
 ### 관광지 적재·조회
-- [x] 현재 고요지수 기준 추천 GET /api/spots/recommendations/current. 위치/필터, 점수(null 마지막)/거리/ID 정렬, type=CURRENT 및 지도/상세 공통 점수 응답. [명세](./current-recommendation-api-spec.md).
+- [x] 현재 고요지수 기준 추천 GET /api/spots/recommendations/current. 점수(null 마지막)/ID 정렬, type=CURRENT 및 지도/상세 공통 점수 응답. [명세](./current-recommendation-api-spec.md).
+- [x] 위치기반서비스사업자 등록 이슈로 추천 목록(현재/예측) 위치·반경 개념 완전 제거(2026-09-15, 이슈 #115) — latitude/longitude/radiusMeters 파라미터 삭제, 부산시청 기본 중심점 제거, category/mode 필터에 맞는 전체 장소를 고요지수 순으로 반환.
 - [ ] 프론트 최초 진입/현재 복귀와 날짜·시간 선택의 현재/예측 API 분기 연동 및 운영 검증.
 - [x] 장소명 부분 일치 검색 GET /api/spots/search, 좌표 없는 페이지 조회, isLiked/누락 데이터 처리 및 통합 테스트. [검색 명세](./spot-search-api-spec.md).
 - [ ] 검색창 프론트 연동 및 배포 DB의 검색 실행 계획/응답 시간 검증.

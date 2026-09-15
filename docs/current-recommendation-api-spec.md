@@ -6,6 +6,8 @@
 
 기존 GET /api/spots/recommendations는 선택한 날짜/시간의 예측 전용으로 유지한다. 관측 타임라인 KST 수정, AI 점수 산식 조정, 프론트 화면 구현은 이 작업의 범위 밖이다.
 
+위치기반서비스사업자 등록 이슈로 이 API는 위치를 전혀 받지 않는다(2026-09-15, 이슈 #115). 부산시청 기본 중심점/반경 개념을 제거했고, category/mode 필터에 부합하는 전체 장소를 대상으로 한다.
+
 ## 요청
 
 ```http
@@ -16,15 +18,13 @@ GET /api/spots/recommendations/current?category=BEACH&mode=SENSORY&limit=20
 
 | 파라미터 | 필수 | 정책 |
 |---|---|---|
-| latitude / longitude | N | 함께 입력하거나 함께 생략. 위도 -90~90, 경도 -180~180 |
-| radiusMeters | N | 기본 15000, 100~50000 |
 | category | N | 기존 Category enum |
 | mode | N | 기존 Mode enum |
 | limit | N | 기본 20, 1~50 |
 
-위치 생략 시 부산 시청 좌표 35.1796, 129.0756을 사용한다. 기존 ForecastPolicy.area와 GeoUtils를 재사용해 예측 추천과 동일한 검증/검색 영역을 적용한다. 날짜/시간은 이 API의 입력이 아니며 예측 모드로 전환하지 않는다.
+latitude/longitude/radiusMeters 파라미터는 없다. 날짜/시간은 이 API의 입력이 아니며 예측 모드로 전환하지 않는다.
 
-DB에서 영역/category/mode 후보를 조회하고 정확한 직선거리로 반경을 판정한다. 반올림 전 거리로 필터/정렬한 뒤 최종 limit을 적용한다. 점수 내림차순(null 마지막), 거리 오름차순, ID 오름차순이다. 0점은 유효한 점수이며 null보다 앞선다. 이미지/모드/점수 없음만으로 장소를 제외하지 않는다. mode 필터가 있으면 해당 모드가 있는 장소만 선택하되 응답은 전체 모드를 반환한다.
+DB에서 category/mode 후보를 조회한다. 점수 내림차순(null 마지막), ID 오름차순이다. 0점은 유효한 점수이며 null보다 앞선다. 이미지/모드/점수 없음만으로 장소를 제외하지 않는다. mode 필터가 있으면 해당 모드가 있는 장소만 선택하되 응답은 전체 모드를 반환한다.
 
 ## 응답
 
@@ -34,10 +34,6 @@ DB에서 영역/category/mode 후보를 조회하고 정확한 직선거리로 �
 {
   "type": "CURRENT",
   "timezone": "Asia/Seoul",
-  "latitude": 35.1796,
-  "longitude": 129.0756,
-  "radiusMeters": 15000,
-  "defaultCenter": true,
   "sort": "QUIET_DESC",
   "spots": [{
     "spot": {
@@ -53,24 +49,22 @@ DB에서 영역/category/mode 후보를 조회하고 정확한 직선거리로 �
       "quietLevel": "QUIET",
       "quietScoreUpdatedAt": "2026-09-14T22:05:00",
       "isLiked": false
-    },
-    "distanceMeters": 8028
+    }
   }],
   "message": "현재 저장된 고요지수가 높은 순서입니다."
 }
 ```
 
-- spots[].spot은 지도 목록의 SpotSummaryResponse를 재사용한다. quietScore는 정수, quietLevel과 quietScoreUpdatedAt은 지도/상세와 같은 값이다.
+- spots[].spot은 지도 목록의 SpotSummaryResponse를 재사용한다. quietScore는 정수, quietLevel과 quietScoreUpdatedAt은 지도/상세와 같은 값이다. spot.latitude/longitude는 지도 표시용으로 그대로 남아있으나 필터/정렬에는 쓰이지 않는다.
 - 미수신 점수/등급/시각은 null이다. 0점이나 예측값으로 대체하지 않는다. 갱신 시각은 기존 API처럼 KST LocalDateTime 문자열로 반환한다.
 - forecast/targetAt/generatedAt 필드는 없다. 현재 모드는 최상위 type=CURRENT로 구분한다.
-- distanceMeters는 표시용 정수 반올림 값이다.
 - 결과 없음은 200, spots=[], message="현재 조건에 맞는 장소가 없습니다."다. 모든 장소의 점수가 null이어도 조건에 맞는 장소는 반환한다.
 - Cache-Control: no-store로 사용자별 좋아요 응답의 공유 캐시를 방지한다.
 - 별도 HTTP 요청 사이 동기화가 발생하면 지도/상세와 점수가 달라질 수 있다. 동일 저장 상태에서 일치하는 계약이다.
 
 | HTTP | code | 조건 |
 |---|---|---|
-| 400 | InvalidCurrentRecommendationRequest | 좌표 쌍 누락/범위, 반경 또는 limit 범위 오류 |
+| 400 | InvalidCurrentRecommendationRequest | limit 범위 오류 |
 | 400 | InvalidParameterException | 숫자/enum 파싱 오류 |
 | 500 | InternalServerError | 예상하지 못한 서버/DB 오류 |
 
@@ -87,6 +81,6 @@ DB에서 영역/category/mode 후보를 조회하고 정확한 직선거리로 �
 
 ## 검증 및 운영
 
-CurrentRecommendationIntegrationTest와 CurrentRecommendationServiceTest는 현재/지도/상세 점수 일치, null/0점 정렬, 거리/ID 동점, 반경 경계, 필터/전체 모드, 인증별 좋아요, 빈 결과와 입력 검증을 확인한다. 기존 Forecast 테스트도 함께 실행한다.
+CurrentRecommendationIntegrationTest와 CurrentRecommendationServiceTest는 현재/지도/상세 점수 일치, null/0점 정렬, ID 동점, 필터/전체 모드, 인증별 좋아요, 빈 결과와 입력 검증을 확인한다. 기존 Forecast 테스트도 함께 실행한다.
 
-신규 DB 컬럼/마이그레이션은 없다. 조회는 읽기 전용이다. 기존 예측과 마찬가지로 DB 필터 후 후보를 메모리에서 거리/정렬 처리하므로, 데이터 증가 시 실행 계획·최대 반경 부하 검증이 필요하다. 운영 MySQL 및 실제 프론트 연동 검증은 별도로 진행한다.
+신규 DB 컬럼/마이그레이션은 없다. 조회는 읽기 전용이다. 위치 필터가 없어졌으므로 장소 수 증가 시 category/mode 조건만으로 전체 스캔에 가까워질 수 있다 — 데이터 증가 시 실행 계획 검증이 필요하다. 운영 MySQL 및 실제 프론트 연동 검증은 별도로 진행한다.
