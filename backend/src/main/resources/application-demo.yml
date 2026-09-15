@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${demo.datasource-url}
+    username: ${demo.datasource-username}
+    password: ${demo.datasource-password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+app:
+  environment: ${APP_ENVIRONMENT:}
+
+demo:
+  enabled: true
+  allowed-google-subs: ${DEMO_ALLOWED_GOOGLE_SUBS:}
+
+jwt:
+  secret: ${demo.jwt-secret}
+
+fcm:
+  credentials-path: ""
+
+quiet-index:
+  map-sync:
+    cron: "-"

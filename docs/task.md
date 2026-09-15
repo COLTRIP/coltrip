@@ -7,6 +7,8 @@
 ## 구현 완료
 
 ### 프로젝트 및 인증
+- [x] 시연 전용 demo 프로필, 허용 Google 계정 제한, 전용 DB/키 기동 검증 및 FCM/자동 배치 차단. [시연 명세](./demo-mode-spec.md).
+- [ ] 별도 테스트 DB/계정/키·네트워크 구성 및 프론트 로고 진입·가상 위치 실기기 검증. 방문 반경은 #113 기준 프론트 담당.
 - [x] Spring Boot 4.1.0, Java 21, Gradle wrapper, MySQL/JPA 구성.
 - [x] GitHub Actions backend CI: MySQL 8.4 서비스, Java 21, Gradle build(테스트 포함) 구성. 최근 실행 성공 여부는 CI에서 별도 확인.
 - [x] Google idToken 검증, LOGIN/SIGNUP intent 분기, JWT 발급·재발급·로그아웃.

@@ -53,6 +53,9 @@ class AuthServiceTest {
     @InjectMocks
     private AuthService authService;
 
+    @Mock
+    private com.coltrip.backend.demo.DemoAccessPolicy demoAccessPolicy;
+
     @Test
     void loginIntentIssuesTokensForExistingUser() {
         GoogleUserInfo googleUserInfo = new GoogleUserInfo(GOOGLE_SUB, EMAIL);

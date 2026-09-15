@@ -35,6 +35,12 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(com.coltrip.backend.demo.DemoAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleDemoAccessDenied() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("DemoAccessDenied", "시연 환경 접근이 허용되지 않았습니다."));
+    }
+
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler({InvalidGoogleTokenException.class, InvalidRefreshTokenException.class,
