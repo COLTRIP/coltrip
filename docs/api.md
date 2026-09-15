@@ -297,9 +297,12 @@ GET /api/spots/{spotId}
   "quietLevel": "QUIET",
   "quietScoreUpdatedAt": "2026-08-17T09:00:00",
   "visitRadiusMeters": 100,
+  "spotAreaType": "POINT",
   "isLiked": false
 }
 ```
+
+`spotAreaType`은 `visitRadiusMeters`가 어느 기준(점형/면적형)에서 나온 값인지 명시하는 필드다 — `POINT`(카페/도서관/미술관/서점/사찰, 100m) 또는 `AREA`(공원/해변/골목, 250m). `Category.getAreaType()`에서 파생되며 반경 숫자만으로 점형/면적형을 추론할 필요가 없다.
 
 **Exception**: `SpotNotFoundException` (404)
 
