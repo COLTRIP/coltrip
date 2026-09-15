@@ -62,6 +62,7 @@
 - [x] GET /api/visits/history: 완료 이력과 reviewId.
 - [x] 체류시간 조건 제거, 반경 진입으로 완료. 장소 상세/현재 방문 응답 visitRadiusMeters.
 - [x] 점형 100m/면적형 250m 카테고리 반경 코드. 실제 적정성 검증은 별도.
+- [x] 장소 상세 응답에 spotAreaType(POINT/AREA) 필드 추가(2026-09-15, 프론트 요청) — visitRadiusMeters 숫자로 점형/면적형을 추론하지 않도록 명시적 구분 필드 제공.
 - [x] 방문 반경 판정을 클라이언트로 이전(2026-09-15, 이슈 #113) — 서버는 시작/완료/대체지 선택 어디서도 사용자 위치를 받지 않음. `VisitConditionNotMetException` 제거, `visitRadiusMeters`로 클라이언트가 자체 판정.
 - [x] 좋아요 등록/취소 및 내 좋아요 목록.
 - [x] 완료 방문당 리뷰 1개, 별점 1~5, 작성/조회/수정/삭제, 본인 확인.
@@ -71,7 +72,7 @@
 
 ### 예측 추천
 - [x] quiet_forecast 저장 구조 및 내부 예측 배치 수신.
-- [x] 날짜/시간 추천, 위치 기본값·반경·category/mode 필터, 정렬/개수 제한.
+- [x] 날짜/시간 추천, category/mode 필터, 정렬/개수 제한(2026-09-15, 이슈 #115로 위치·반경 파라미터 제거).
 - [x] 24시간 예측 타임라인 및 관측 이력 분리. 없거나 만료된 예측은 현재값으로 대체하지 않음.
 - [x] 예측 입력·필터·저장/조회 테스트 및 [예측 명세](./forecast-api-spec.md).
 - [ ] AI 실제 날짜별 예측 가능 기간과 generatedAt/targetAt/validUntil/source/modelVersion 계약 확정.
