@@ -35,6 +35,9 @@ class UserNotificationSettingsTest {
     private com.coltrip.backend.domain.review.ReviewRepository reviewRepository;
 
     @Mock
+    private com.coltrip.backend.domain.push.DeviceTokenRepository deviceTokenRepository;
+
+    @Mock
     private com.coltrip.backend.user.service.UserStatsReader userStatsReader;
 
     @Mock
@@ -81,11 +84,12 @@ class UserNotificationSettingsTest {
         User user = User.builder().googleSub("sub").email("a@coltrip.dev").build();
         when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
         userService.deleteMe(USER_ID);
-        var order = inOrder(userRepository, reviewRepository, spotLikeRepository, visitRepository);
+        var order = inOrder(userRepository, reviewRepository, spotLikeRepository, visitRepository, deviceTokenRepository);
         order.verify(userRepository).findByIdForUpdate(USER_ID);
         order.verify(reviewRepository).deleteByUser_Id(USER_ID);
         order.verify(spotLikeRepository).deleteByUser_Id(USER_ID);
         order.verify(visitRepository).deleteByUser_Id(USER_ID);
+        order.verify(deviceTokenRepository).deleteByUser_Id(USER_ID);
         order.verify(userRepository).delete(user);
     }
 

@@ -1,6 +1,8 @@
 package com.coltrip.backend.user.controller;
 
 import com.coltrip.backend.auth.dto.UserResponse;
+import com.coltrip.backend.push.dto.DeviceTokenRequest;
+import com.coltrip.backend.push.service.DeviceTokenService;
 import com.coltrip.backend.user.dto.NotificationSettingsResponse;
 import com.coltrip.backend.user.dto.NotificationSettingsUpdateRequest;
 import com.coltrip.backend.user.dto.UpdateNicknameRequest;
@@ -14,17 +16,19 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "사용자", description = "내 정보 조회 / 닉네임 설정 / 알림 설정 / 회원 탈퇴")
+@Tag(name = "사용자", description = "내 정보 조회 / 닉네임 설정 / 알림 설정 / 기기 푸시 토큰 / 회원 탈퇴")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
+    private final DeviceTokenService deviceTokenService;
 
     @Operation(summary = "내 정보 조회")
     @GetMapping("/me")
@@ -51,6 +55,25 @@ public class UserController {
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody NotificationSettingsUpdateRequest request) {
         return ResponseEntity.ok(userService.updateNotificationSettings(userId, request.alternativeNotificationEnabled()));
+    }
+
+    @Operation(summary = "기기 푸시 토큰 등록", description = """
+            FCM 기기 토큰을 등록/갱신합니다. 같은 토큰으로 다른 계정이 등록하면(기기 재사용) 소유자가 그 계정으로 넘어갑니다.
+            로그인 직후, 그리고 앱이 새 토큰을 발급받을 때마다(APNs/FCM 토큰 갱신 콜백) 호출하세요.
+            """)
+    @PostMapping("/me/device-tokens")
+    public ResponseEntity<Void> registerDeviceToken(@AuthenticationPrincipal Long userId,
+                                                      @Valid @RequestBody DeviceTokenRequest request) {
+        deviceTokenService.register(userId, request.token());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "기기 푸시 토큰 해제", description = "로그아웃 직전에 호출해 이 기기로의 푸시 발송을 멈춥니다. 본인 소유가 아니거나 이미 없는 토큰이면 조용히 무시합니다.")
+    @DeleteMapping("/me/device-tokens")
+    public ResponseEntity<Void> unregisterDeviceToken(@AuthenticationPrincipal Long userId,
+                                                        @Valid @RequestBody DeviceTokenRequest request) {
+        deviceTokenService.unregister(userId, request.token());
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "회원 탈퇴", description = "⚠️ 하드 삭제입니다. 계정과 방문/좋아요/리뷰가 모두 즉시 삭제되며 복구할 수 없습니다.")
