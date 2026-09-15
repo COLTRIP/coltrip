@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 // 프론트가 앱을 띄워 /check를 직접 호출하는 기존 흐름과 별개로, 백그라운드에서도 같은 판정이 이뤄지게 한다.
 // 평가 주기(2분)는 잠정값 - 운영 데이터로 AI 호출 비용과 알림 지연을 보고 조정 필요(이슈 #89).
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "demo.enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 public class BackgroundNudgeScheduler {
 

@@ -2,6 +2,8 @@ package com.coltrip.backend.config;
 
 import com.coltrip.backend.auth.jwt.JwtAuthenticationFilter;
 import com.coltrip.backend.auth.jwt.JwtProvider;
+import com.coltrip.backend.demo.DemoAccessFilter;
+import com.coltrip.backend.demo.DemoAccessPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +24,7 @@ public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final DemoAccessPolicy demoAccessPolicy;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,7 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/spots/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new DemoAccessFilter(demoAccessPolicy), JwtAuthenticationFilter.class);
 
         return http.build();
     }

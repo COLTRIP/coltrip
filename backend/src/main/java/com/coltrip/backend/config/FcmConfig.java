@@ -23,6 +23,7 @@ public class FcmConfig {
     private static final Logger log = LoggerFactory.getLogger(FcmConfig.class);
 
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "demo.enabled", havingValue = "false", matchIfMissing = true)
     public FirebaseMessaging firebaseMessaging(FcmProperties properties) {
         if (!StringUtils.hasText(properties.credentialsPath())) {
             log.warn("fcm.credentials-path 미설정 - 백그라운드 푸시 발송이 비활성화됩니다.");

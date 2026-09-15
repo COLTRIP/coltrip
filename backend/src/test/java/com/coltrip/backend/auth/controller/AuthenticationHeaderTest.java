@@ -55,7 +55,8 @@ class AuthenticationHeaderTest {
         history = mock(QuietIndexRepository.class);
         jwt = new JwtProvider(new JwtProperties(SECRET, 3600, 1209600));
         var auth = new AuthService(users, mock(GoogleTokenVerifier.class), jwt, stats,
-                mock(com.coltrip.backend.auth.service.SignupTransaction.class));
+                mock(com.coltrip.backend.auth.service.SignupTransaction.class),
+                mock(com.coltrip.backend.demo.DemoAccessPolicy.class));
         var internal = new InternalQuietIndexService(spots, history, new InternalApiProperties(KEY));
         mvc = MockMvcBuilders.standaloneSetup(new AuthController(auth), new InternalQuietIndexController(internal))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();

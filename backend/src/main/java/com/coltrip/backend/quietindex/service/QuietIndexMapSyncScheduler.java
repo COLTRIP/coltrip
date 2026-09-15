@@ -21,6 +21,7 @@ import org.springframework.util.StringUtils;
 // 지도 요청마다 AI를 부르지 않고, 이 스케줄러가 당긴 값을 tourist_spot 캐시가 대신 서빙한다.
 // AI 호출 실패 시 이번 주기는 건너뛰고 마지막 정상값을 그대로 유지한다.
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "demo.enabled", havingValue = "false", matchIfMissing = true)
 public class QuietIndexMapSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(QuietIndexMapSyncScheduler.class);

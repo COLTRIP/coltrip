@@ -12,6 +12,7 @@ import com.coltrip.backend.auth.jwt.JwtProvider;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
 import com.coltrip.backend.user.service.UserStatsReader;
+import com.coltrip.backend.demo.DemoAccessPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +29,11 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final UserStatsReader userStatsReader;
     private final SignupTransaction signupTransaction;
+    private final DemoAccessPolicy demoAccessPolicy;
 
     public JwtTokenResponse googleLogin(String idToken, AuthIntent intent) {
         GoogleUserInfo googleUserInfo = googleTokenVerifier.verify(idToken);
+        demoAccessPolicy.requireAllowedSubject(googleUserInfo.sub());
 
         return switch (intent) {
             case LOGIN -> login(googleUserInfo);
@@ -80,6 +83,8 @@ public class AuthService {
         if (!jwtProvider.validateToken(refreshToken) || !refreshToken.equals(user.getRefreshToken())) {
             throw new InvalidRefreshTokenException();
         }
+
+        demoAccessPolicy.requireAllowedSubject(user.getGoogleSub());
 
         return issueTokens(user, false);
     }

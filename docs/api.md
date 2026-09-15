@@ -1,5 +1,7 @@
 # coltrip API 명세서
 
+아래 공개 GET 인증 정책은 일반 환경 기준이다. 별도 demo 환경은 로그인/재발급 외 요청에 허용 계정의 인증이 필요하며 내부 API는 차단한다. 관리자 권한이나 방문 검증 우회는 제공하지 않는다. [시연 모드 계약](./demo-mode-spec.md).
+
 - Base URL: `/api` (예: `/api/spots`)
 - 인증 정책은 현재 SecurityConfig와 JwtAuthenticationFilter 기준이다.
   - `POST /api/auth/google`: 사용자 JWT 불필요. 본문의 Google idToken은 필수.

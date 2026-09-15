@@ -1,5 +1,7 @@
 # 백엔드 개발 환경 가이드
 
+가상 위치 시연은 일반 로컬 실행과 분리한다. [시연 모드 준비·접근 제한](./demo-mode-spec.md)을 참고한다. demo 프로필은 별도 DB/키/허용 계정 설정 없이는 기동하지 않는다.
+
 기준: 2026-09-14, develop 727bf28의 Java 21 toolchain, application.yml, application-secret.example.yml.
 아래 PowerShell 명령은 별도 표시가 없으면 **backend 폴더**에서 실행한다.
 운영 DB가 아닌 개인 로컬 DB를 사용한다.
