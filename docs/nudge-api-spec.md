@@ -114,12 +114,11 @@ OFFERED 이외에는 proposal=null이다. startQuietScore는 저장된 시작 �
 ### POST /api/visits/{visitId}/alternative-suggestion/select
 
 인증 필수. 사용자가 제안된 장소를 직접 선택했을 때 호출한다. 자동 이동시키지 않는다.
+서버는 위치를 받지 않는다(이슈 #113) — 새 방문의 반경 판정도 다른 방문 시작과 동일하게 클라이언트가 담당한다.
 
 ```json
 {
-  "spotId": 3,
-  "startLatitude": 35.01,
-  "startLongitude": 129.0
+  "spotId": 3
 }
 ```
 

@@ -9,14 +9,11 @@ import com.coltrip.backend.domain.spot.Category;
 import com.coltrip.backend.domain.spot.TouristSpot;
 import com.coltrip.backend.domain.visit.Visit;
 import com.coltrip.backend.domain.visit.VisitRepository;
-import com.coltrip.backend.domain.visit.VisitStatus;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
 import com.coltrip.backend.domain.spot.TouristSpotRepository;
-import com.coltrip.backend.visit.dto.VisitCompleteRequest;
 import com.coltrip.backend.visit.dto.VisitCompleteResponse;
 import com.coltrip.backend.visit.exception.InvalidVisitStateException;
-import com.coltrip.backend.visit.exception.VisitConditionNotMetException;
 import com.coltrip.backend.visit.exception.VisitNotFoundException;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -27,7 +24,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-// 체류시간 조건 제거 후 반경 진입만으로 방문 완료를 판정하는지 검증한다.
+// 반경 판정이 클라이언트로 이전된 뒤(이슈 #113), 서버는 사용자 위치를 받지 않고
+// 본인 소유의 STARTED 방문인지만 확인해 완료 처리한다.
 @ExtendWith(MockitoExtension.class)
 class VisitServiceTest {
 
@@ -58,27 +56,13 @@ class VisitServiceTest {
     }
 
     @Test
-    void completesWhenArrivedExactlyAtSpot() {
+    void completesOwnedStartedVisitWithoutAnyLocation() {
         Visit visit = newStartedVisit();
         when(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(visit));
 
-        VisitCompleteResponse response = visitService.complete(USER_ID, VISIT_ID,
-                new VisitCompleteRequest(SPOT_LAT, SPOT_LNG));
+        VisitCompleteResponse response = visitService.complete(USER_ID, VISIT_ID);
 
         assertEquals("COMPLETED", response.status());
-    }
-
-    @Test
-    void rejectsWhenFarOutsideRadius() {
-        Visit visit = newStartedVisit();
-        when(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(visit));
-
-        // 카페(반경 100m) 기준으로 약 1.1km 떨어진 좌표
-        VisitCompleteRequest farAway = new VisitCompleteRequest(
-                SPOT_LAT.add(BigDecimal.valueOf(0.01)), SPOT_LNG);
-
-        assertThrows(VisitConditionNotMetException.class,
-                () -> visitService.complete(USER_ID, VISIT_ID, farAway));
     }
 
     @Test
@@ -87,7 +71,7 @@ class VisitServiceTest {
         when(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(visit));
 
         assertThrows(VisitNotFoundException.class,
-                () -> visitService.complete(USER_ID + 1, VISIT_ID, new VisitCompleteRequest(SPOT_LAT, SPOT_LNG)));
+                () -> visitService.complete(USER_ID + 1, VISIT_ID));
     }
 
     @Test
@@ -98,7 +82,7 @@ class VisitServiceTest {
         when(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(visit));
 
         assertThrows(InvalidVisitStateException.class,
-                () -> visitService.complete(USER_ID, VISIT_ID, new VisitCompleteRequest(SPOT_LAT, SPOT_LNG)));
+                () -> visitService.complete(USER_ID, VISIT_ID));
     }
 
     private Visit newStartedVisit() {
@@ -116,8 +100,6 @@ class VisitServiceTest {
         return Visit.builder()
                 .user(user)
                 .spot(spot)
-                .startLatitude(SPOT_LAT)
-                .startLongitude(SPOT_LNG)
                 .build();
     }
 
