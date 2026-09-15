@@ -29,37 +29,31 @@ class ForecastQueryServiceTest {
     }
 
     @Test void emptyForecastDoesNotReadCurrentScore() {
-        var response = service.recommend(null, now.toLocalDate(), 13, null, null, 15000, null, null, 20);
+        var response = service.recommend(null, now.toLocalDate(), 13, null, null, 20);
         assertTrue(response.spots().isEmpty());
         assertFalse(response.message().isBlank());
         verifyNoInteractions(spots, likes);
     }
 
-    @Test void sortsByForecastThenDistanceAndLimitsAfterRadius() {
+    @Test void sortsByForecastScoreThenIdAndLimits() {
         var lower = forecast(1L, "70.25", "35.01");
         var far = forecast(2L, "100", "36.0");
         var tiedFarther = forecast(3L, "80.75", "35.02");
         var tiedNearer = forecast(4L, "80.75", "35.01");
-        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), eq(Category.PARK), eq(Mode.NATURAL)))
+        when(forecasts.findCandidates(any(), anyString(), any(), eq(Category.PARK), eq(Mode.NATURAL)))
                 .thenReturn(List.of(lower, far, tiedFarther, tiedNearer));
-        when(likes.findLikedSpotIds(eq(7L), anyCollection())).thenReturn(Set.of(4L));
-        var result = service.recommend(7L, now.toLocalDate(), 13, bd("35"), bd("129"),
-                15000, Category.PARK, Mode.NATURAL, 2);
-        assertEquals(List.of(4L, 3L), result.spots().stream().map(i -> i.spot().id()).toList());
-        assertEquals(bd("80.75"), result.spots().getFirst().forecast().quietIndex());
-        assertTrue(result.spots().getFirst().spot().isLiked());
+        when(likes.findLikedSpotIds(eq(7L), anyCollection())).thenReturn(Set.of(3L));
+        var result = service.recommend(7L, now.toLocalDate(), 13, Category.PARK, Mode.NATURAL, 2);
+        assertEquals(List.of(2L, 3L), result.spots().stream().map(i -> i.spot().id()).toList());
+        assertEquals(bd("100"), result.spots().getFirst().forecast().quietIndex());
+        assertTrue(result.spots().get(1).spot().isLiked());
         verify(forecasts).findCandidates(eq(now.withMinute(0).withHour(13)), eq("coltrip-ai"), eq(now),
-                any(), any(), any(), any(), eq(Category.PARK), eq(Mode.NATURAL));
+                eq(Category.PARK), eq(Mode.NATURAL));
     }
 
-    @Test void radiusUsesUnroundedDistance() {
-        double boundary = 35 + Math.toDegrees(15000.0 / 6371000);
-        var inside = forecast(1L, "80", Double.toString(boundary - .0000001));
-        var outside = forecast(2L, "90", Double.toString(boundary + .0000001));
-        when(forecasts.findCandidates(any(), anyString(), any(), any(), any(), any(), any(), isNull(), isNull()))
-                .thenReturn(List.of(inside, outside));
-        var response = service.recommend(null, now.toLocalDate(), 13, bd("35"), bd("129"), 15000, null, null, 20);
-        assertEquals(List.of(1L), response.spots().stream().map(i -> i.spot().id()).toList());
+    @Test void limitValidationRejectsOutOfRange() {
+        assertThrows(InvalidForecastRequestException.class,
+                () -> service.recommend(null, now.toLocalDate(), 13, null, null, 51));
     }
 
     @Test void timelineHas24SlotsAndNeverFillsMissingValues() {

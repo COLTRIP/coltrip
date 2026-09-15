@@ -1,6 +1,5 @@
 package com.coltrip.backend.forecast;
 
-import com.coltrip.backend.common.util.GeoUtils;
 import com.coltrip.backend.domain.forecast.QuietForecast;
 import com.coltrip.backend.domain.forecast.QuietForecastRepository;
 import com.coltrip.backend.domain.like.SpotLikeRepository;
@@ -44,30 +43,25 @@ public class ForecastQueryService {
         this.clock = clock;
     }
 
-    public Recommendations recommend(Long userId, LocalDate date, Integer hour, BigDecimal latitude,
-            BigDecimal longitude, int radiusMeters, Category category, Mode mode, int limit) {
+    // 위치기반서비스사업자 등록 이슈로 서버는 위치를 받지 않는다. 필터에 맞는 전체 장소를 예측 고요지수 순으로 반환한다.
+    public Recommendations recommend(Long userId, LocalDate date, Integer hour, Category category, Mode mode, int limit) {
+        policy.validateLimit(limit);
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime target = policy.target(date, hour, now);
-        var area = policy.area(latitude, longitude, radiusMeters, limit);
-        List<Ranked> ranked = forecasts.findCandidates(target, source, now,
-                        area.south(), area.north(), area.west(), area.east(), category, mode).stream()
-                .map(f -> new Ranked(f, GeoUtils.distanceMeters(area.latitude(), area.longitude(),
-                        f.getSpot().getLatitude(), f.getSpot().getLongitude())))
-                .filter(f -> Double.isFinite(f.distance()) && f.distance() <= radiusMeters)
-                .sorted(Comparator.<Ranked, BigDecimal>comparing(f -> f.forecast().getQuietIndex()).reversed()
-                        .thenComparingDouble(Ranked::distance).thenComparing(f -> f.forecast().getSpot().getId()))
+        List<QuietForecast> ranked = forecasts.findCandidates(target, source, now, category, mode).stream()
+                .sorted(Comparator.<QuietForecast, BigDecimal>comparing(QuietForecast::getQuietIndex).reversed()
+                        .thenComparing(f -> f.getSpot().getId()))
                 .limit(limit).toList();
         Set<Long> liked = userId == null || ranked.isEmpty() ? Set.of()
-                : likes.findLikedSpotIds(userId, ranked.stream().map(f -> f.forecast().getSpot().getId()).toList());
-        List<Item> result = ranked.stream().map(r -> {
-            var spot = r.forecast().getSpot();
+                : likes.findLikedSpotIds(userId, ranked.stream().map(f -> f.getSpot().getId()).toList());
+        List<Item> result = ranked.stream().map(f -> {
+            var spot = f.getSpot();
             Place place = new Place(spot.getId(), spot.getName(), spot.getAddress(), spot.getCategory().name(),
                     spot.getModes().stream().map(Enum::name).toList(), spot.getImageUrl(), spot.getLatitude(),
                     spot.getLongitude(), liked.contains(spot.getId()));
-            return new Item(place, Math.round(r.distance()), Point.from(r.forecast()));
+            return new Item(place, Point.from(f));
         }).toList();
-        return new Recommendations("Asia/Seoul", ForecastResponses.offset(target), area.latitude(), area.longitude(),
-                radiusMeters, area.defaultCenter(), "QUIET_DESC", result,
+        return new Recommendations("Asia/Seoul", ForecastResponses.offset(target), "QUIET_DESC", result,
                 result.isEmpty() ? "선택한 시간과 조건에 맞는 유효한 예측 데이터가 없습니다." : "예측 고요지수가 높은 순서입니다.");
     }
 
@@ -88,6 +82,4 @@ public class ForecastQueryService {
         }
         return new Timeline("Asia/Seoul", spotId, points);
     }
-
-    private record Ranked(QuietForecast forecast, double distance) { }
 }

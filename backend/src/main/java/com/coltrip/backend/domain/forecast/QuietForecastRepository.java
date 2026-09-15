@@ -2,7 +2,6 @@ package com.coltrip.backend.domain.forecast;
 
 import com.coltrip.backend.domain.spot.Category;
 import com.coltrip.backend.domain.spot.Mode;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,8 +19,6 @@ public interface QuietForecastRepository extends JpaRepository<QuietForecast, Lo
             join fetch f.spot s left join fetch s.spotModes
             where f.targetAt = :target and f.source = :source
               and f.generatedAt <= :now and f.validUntil > :now
-              and s.latitude between :south and :north
-              and s.longitude between :west and :east
               and (:category is null or s.category = :category)
               and (:mode is null or exists (select 1 from SpotMode sm where sm.spot = s and sm.mode = :mode))
               and not exists (select 1 from QuietForecast newer
@@ -30,8 +27,6 @@ public interface QuietForecastRepository extends JpaRepository<QuietForecast, Lo
             """)
     List<QuietForecast> findCandidates(@Param("target") LocalDateTime target,
             @Param("source") String source, @Param("now") LocalDateTime now,
-            @Param("south") BigDecimal south, @Param("north") BigDecimal north,
-            @Param("west") BigDecimal west, @Param("east") BigDecimal east,
             @Param("category") Category category, @Param("mode") Mode mode);
 
     @Query("""

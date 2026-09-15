@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,23 +26,20 @@ public class ForecastController {
 
     @Operation(summary = "날짜/시간대별 추천", description = """
             한국 시간 date와 hour로 예측값이 있는 장소만 조회합니다. 현재 시간 슬롯부터 7일 이내.
-            위치 생략 시 부산 시청 중심, 기본 반경 15km. 두 좌표는 함께 입력해야 합니다.
-            radiusMeters 100~50000, limit 1~50(기본 20). 예측 점수 내림차순, 거리 오름차순, 장소 ID 오름차순.
-            category/mode는 기존 enum 필터. 결과가 없으면 spots=[]와 안내 문구이며 현재 점수로 대체하지 않습니다.
+            위치기반서비스사업자 등록 이슈로 서버는 위치를 받지 않으며, category/mode 필터에 맞는 전체 장소를 대상으로 합니다.
+            limit 1~50(기본 20). 예측 점수 내림차순, 장소 ID 오름차순.
+            결과가 없으면 spots=[]와 안내 문구이며 현재 점수로 대체하지 않습니다.
             """)
     @SecurityRequirements
     @GetMapping("/api/spots/recommendations")
     public ResponseEntity<Recommendations> recommend(@AuthenticationPrincipal Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam Integer hour,
-            @RequestParam(required = false) BigDecimal latitude,
-            @RequestParam(required = false) BigDecimal longitude,
-            @RequestParam(defaultValue = "15000") int radiusMeters,
             @RequestParam(required = false) Category category,
             @RequestParam(required = false) Mode mode,
             @RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(
-                query.recommend(userId, date, hour, latitude, longitude, radiusMeters, category, mode, limit));
+                query.recommend(userId, date, hour, category, mode, limit));
     }
 
     @Operation(summary = "예측 고요지수 24시간 타임라인", description = """
