@@ -3,6 +3,7 @@ package com.coltrip.backend.user.service;
 import com.coltrip.backend.auth.dto.UserResponse;
 import com.coltrip.backend.auth.exception.UnauthorizedException;
 import com.coltrip.backend.domain.like.SpotLikeRepository;
+import com.coltrip.backend.domain.push.DeviceTokenRepository;
 import com.coltrip.backend.domain.review.ReviewRepository;
 import com.coltrip.backend.domain.user.User;
 import com.coltrip.backend.domain.user.UserRepository;
@@ -21,6 +22,7 @@ public class UserService {
     private final VisitRepository visitRepository;
     private final SpotLikeRepository spotLikeRepository;
     private final ReviewRepository reviewRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
     private final UserStatsReader userStatsReader;
 
     @Transactional(readOnly = true)
@@ -52,6 +54,7 @@ public class UserService {
         reviewRepository.deleteByUser_Id(userId);
         spotLikeRepository.deleteByUser_Id(userId);
         visitRepository.deleteByUser_Id(userId);
+        deviceTokenRepository.deleteByUser_Id(userId);
         userRepository.delete(user);
     }
 

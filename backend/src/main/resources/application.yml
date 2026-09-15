@@ -29,6 +29,12 @@ visit:
   nudge:
     max-score-age: PT5H
     proposal-ttl: PT10M
+    # 진행 중 방문 백그라운드 평가 주기(ms). 잠정값 - 이슈 #89
+    background-interval-ms: 120000
+
+fcm:
+  # 서비스 계정 JSON 파일 경로. 비어있으면 백그라운드 푸시 발송이 자동으로 비활성화된다(로그만 남김).
+  credentials-path: ${FCM_CREDENTIALS_PATH:}
 
 forecast:
   source: coltrip-ai

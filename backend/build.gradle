@@ -27,6 +27,11 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	// Spring Boot 4.x 대응은 springdoc 3.x (2.x는 Spring Boot 3.x용)
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+	// jackson-dataformat-xml 제외: 이게 classpath에 있으면 Spring이 XML 메시지 컨버터를
+	// 자동 등록해 Accept: application/xml 요청이 406 대신 200으로 통과해버린다(우리는 JSON만 지원).
+	implementation('com.google.firebase:firebase-admin:9.10.0') {
+		exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-xml'
+	}
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
