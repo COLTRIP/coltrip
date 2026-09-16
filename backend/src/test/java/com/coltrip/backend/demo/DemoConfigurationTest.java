@@ -51,6 +51,9 @@ class DemoConfigurationTest {
         assertEquals("true", env.getProperty("demo.enabled"));
         assertEquals("jdbc:mysql://localhost:3307/coltrip_demo", env.getProperty("spring.datasource.url"));
         assertEquals(KEY, env.getProperty("jwt.secret"));
+        // application.yml/application-secret.yml에 기본값이 없어 여기서 누락되면 0(즉시 만료)으로 바인딩된다.
+        assertTrue(Long.parseLong(env.getProperty("jwt.access-token-expire-seconds")) > 0);
+        assertTrue(Long.parseLong(env.getProperty("jwt.refresh-token-expire-seconds")) > 0);
         assertEquals("validate", env.getProperty("spring.jpa.hibernate.ddl-auto"));
         assertEquals("", env.getProperty("fcm.credentials-path"));
     }

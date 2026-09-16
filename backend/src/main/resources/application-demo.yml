@@ -16,6 +16,9 @@ demo:
 
 jwt:
   secret: ${demo.jwt-secret}
+  # 베이스 application.yml/application-secret.yml에 기본값이 없어 미설정 시 0(즉시 만료)으로 바인딩된다.
+  access-token-expire-seconds: 3600
+  refresh-token-expire-seconds: 1209600
 
 fcm:
   credentials-path: ""
