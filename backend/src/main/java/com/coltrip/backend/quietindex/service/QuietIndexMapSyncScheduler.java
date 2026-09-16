@@ -20,8 +20,9 @@ import org.springframework.util.StringUtils;
 // AI GET /quiet-index/map을 1시간 주기로 당겨와 우리 DB에 있는 장소만 반영한다(이슈 #63).
 // 지도 요청마다 AI를 부르지 않고, 이 스케줄러가 당긴 값을 tourist_spot 캐시가 대신 서빙한다.
 // AI 호출 실패 시 이번 주기는 건너뛰고 마지막 정상값을 그대로 유지한다.
+// 읽기 전용 GET + 자기 프로필의 DB만 갱신하므로 demo 프로필에서도 그대로 켜둔다(이슈 #127) -
+// 운영 데이터에 영향 없이 시연 서버도 실제 실시간 고요지수를 반영하기 위함이다.
 @Service
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "demo.enabled", havingValue = "false", matchIfMissing = true)
 public class QuietIndexMapSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(QuietIndexMapSyncScheduler.class);
