@@ -15,6 +15,7 @@ abstract final class AppRoutes {
   static const nickname = '/nickname';
   static const changeNickname = '/nickname/change';
   static const terms = '/terms'; //이용 약관
+  static const info = '/info';
 
   // 추천
   static const moodSelection = '/recommendation/mood-selection';

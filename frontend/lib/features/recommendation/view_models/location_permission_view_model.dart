@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/storage/api_environment_storage.dart';
+
 class LocationPermissionViewModel extends ChangeNotifier {
   String? errorMessage;
   bool isPermanentlyDenied = false;
@@ -10,6 +12,7 @@ class LocationPermissionViewModel extends ChangeNotifier {
 
   // OS 팝업 없이 현재 위치 권한 보유 여부만 확인 (방문 시작 시 권한 화면 스킵 판단용)
   static Future<bool> isGranted() async {
+    if (await const ApiEnvironmentStorage().isDemoMode()) return true;
     if (!await Geolocator.isLocationServiceEnabled()) return false;
     final permission = await Geolocator.checkPermission();
     return permission == LocationPermission.whileInUse ||

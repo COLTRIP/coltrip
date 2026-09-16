@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../core/storage/api_environment_storage.dart';
 import '../../../core/storage/token_storage.dart';
 import '../models/auth_response.dart';
 import '../models/auth_intent.dart';
@@ -17,8 +18,11 @@ class GoogleAuthService {
     Dio? dio,
     GoogleSignIn? googleSignIn,
     TokenStorage? tokenStorage,
+    ApiEnvironmentStorage? environmentStorage,
   }) : _dio = dio ?? DioClient.instance,
        _tokenStorage = tokenStorage ?? const TokenStorage(),
+       _environmentStorage =
+           environmentStorage ?? const ApiEnvironmentStorage(),
        _googleSignIn =
            googleSignIn ??
            GoogleSignIn(
@@ -30,6 +34,7 @@ class GoogleAuthService {
   final Dio _dio;
   final GoogleSignIn _googleSignIn;
   final TokenStorage _tokenStorage;
+  final ApiEnvironmentStorage _environmentStorage;
 
   Future<AuthResponse> authenticate({required AuthIntent intent}) async {
     const logName = 'GoogleAuthService';
@@ -194,6 +199,8 @@ class GoogleAuthService {
       );
     } finally {
       await _tokenStorage.clearTokens();
+      await _environmentStorage.setDemoMode(false);
+      DioClient.configureEnvironment(demoMode: false);
 
       try {
         await _googleSignIn.signOut();

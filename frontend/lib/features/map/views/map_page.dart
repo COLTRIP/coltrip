@@ -281,6 +281,65 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
+  void _showQuietScoreInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, 8, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '고요 지수가 뭔가요?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF252B28),
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '고요 지수는 장소의 혼잡도를 0~100점으로 '
+                '나타낸\n수치에요. 숫자가 클수록 고요하고, '
+                '작을수록 혼잡해요.',
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: Color(0xFF59605D),
+                ),
+              ),
+              SizedBox(height: 20),
+              _QuietScoreGuideRow(
+                color: Color(0xFF589C7E),
+                range: '71~100',
+                description: '고요',
+              ),
+              SizedBox(height: 10),
+              _QuietScoreGuideRow(
+                color: Color(0xFFE4A94B),
+                range: '41~70',
+                description: '보통',
+              ),
+              SizedBox(height: 10),
+              _QuietScoreGuideRow(
+                color: Color(0xFFC96363),
+                range: '0~40',
+                description: '혼잡',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _cameraIdleDebounce?.cancel();
@@ -435,6 +494,87 @@ class _MapPageState extends State<MapPage> {
             mapController: _mapController,
             size: 44,
             roundness: 8,
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 64,
+          child: _QuietScoreHelpButton(onPressed: _showQuietScoreInfo),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuietScoreHelpButton extends StatelessWidget {
+  const _QuietScoreHelpButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: const SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(
+            Icons.question_mark_rounded,
+            size: 22,
+            color: Color(0xFF39765D),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuietScoreGuideRow extends StatelessWidget {
+  const _QuietScoreGuideRow({
+    required this.color,
+    required this.range,
+    required this.description,
+  });
+
+  final Color color;
+  final String range;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 70,
+          child: Text(
+            range,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF252B28),
+            ),
+          ),
+        ),
+        Text(
+          description,
+          style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF59605D),
           ),
         ),
       ],

@@ -6,6 +6,7 @@ import '../../features/auth/views/onboarding_page.dart';
 import '../../features/auth/views/startup_page.dart';
 import '../../features/auth/views/terms_page.dart';
 import '../../features/profile/views/change_nickname_page.dart';
+import '../../features/profile/views/app_info_page.dart';
 import '../../features/recommendation/models/current_visit.dart';
 import '../../features/recommendation/models/recommendation.dart';
 import '../../features/recommendation/models/recommendation_detail_arguments.dart';
@@ -110,5 +111,6 @@ abstract final class AppPages {
       page: () => const LocationPermissionPage(),
     ),
     GetPage(name: AppRoutes.terms, page: () => const TermsPage()),
+    GetPage(name: AppRoutes.info, page: () => const AppInfoPage()),
   ];
 }

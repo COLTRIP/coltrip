@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/network/dio_client.dart';
 import '../../../core/storage/api_environment_storage.dart';
-import '../../../core/storage/token_storage.dart';
+import '../../../shared/widgets/primary_button.dart';
 import '../models/auth_intent.dart';
+import '../services/demo_auth_service.dart';
 import '../services/google_auth_service.dart';
 import '../widgets/google_auth_button.dart';
 
@@ -23,8 +23,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GoogleAuthService _authService = GoogleAuthService();
+  final DemoAuthService _demoAuthService = DemoAuthService();
   static const _environmentStorage = ApiEnvironmentStorage();
-  static const _tokenStorage = TokenStorage();
 
   bool _isLoading = false;
   bool _isDemoMode = false;
@@ -44,6 +44,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onLogoTapped() async {
+    if (_isLoading) return;
+
     _logoTapTimer?.cancel();
     _logoTapCount++;
     if (_logoTapCount < 5) {
@@ -54,16 +56,60 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     _logoTapCount = 0;
-    final nextDemoMode = !_isDemoMode;
-    await _tokenStorage.clearTokens();
-    await _environmentStorage.setDemoMode(nextDemoMode);
-    DioClient.configureEnvironment(demoMode: nextDemoMode);
-    if (!mounted) return;
+    setState(() => _isLoading = true);
 
-    setState(() => _isDemoMode = nextDemoMode);
+    try {
+      if (_isDemoMode) {
+        await _demoAuthService.exitDemoMode();
+        if (!mounted) return;
+        setState(() => _isDemoMode = false);
+        _showEnvironmentMessage('일반 모드로 전환했어요.');
+        return;
+      }
+
+      await _demoAuthService.enableDemoMode();
+      if (!mounted) return;
+      setState(() => _isDemoMode = true);
+      _showEnvironmentMessage('관리자 모드로 전환했어요.');
+    } catch (error, stackTrace) {
+      debugPrint('관리자 모드 전환 실패: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      _showError('관리자 모드로 전환하지 못했어요.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _startDemoSession() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      await _demoAuthService.startGuestSession();
+      if (!mounted) return;
+      Get.offAllNamed(AppRoutes.main);
+      Get.rawSnackbar(
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF589C7E),
+        messageText: const Text(
+          '관리자 모드로 시작했어요.',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('관리자 모드 게스트 로그인 실패: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      _showError('관리자 모드에 연결하지 못했어요. 다시 시도해주세요.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showEnvironmentMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(nextDemoMode ? '시연 모드로 전환했어요.' : '일반 모드로 전환했어요.'),
+        content: Text(message),
         backgroundColor: const Color(0xFF589C7E),
       ),
     );
@@ -158,68 +204,62 @@ class _LoginPageState extends State<LoginPage> {
                 behavior: HitTestBehavior.opaque,
                 onTap: _onLogoTapped,
                 child: Column(
-                  children: [
-                    Image.asset('assets/images/logo.png'),
-                    if (_isDemoMode) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE7F2ED),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          '시연 모드',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF39765D),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                  children: [Image.asset('assets/images/logo.png')],
                 ),
               ),
 
               const SizedBox(height: 200),
 
-              GoogleAuthButton(
-                label: 'Google로 로그인',
-                isLoading: _isLoading,
-                onPressed: _signInWithGoogle,
-              ),
+              if (_isDemoMode) ...[
+                const Text(
+                  '관리자 모드',
+                  style: TextStyle(
+                    color: Color(0xFF39765D),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  label: '관리자 모드로 시작하기',
+                  isLoading: _isLoading,
+                  onPressed: _startDemoSession,
+                ),
+              ] else ...[
+                GoogleAuthButton(
+                  label: 'Google로 로그인',
+                  isLoading: _isLoading,
+                  onPressed: _signInWithGoogle,
+                ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: Color(0xFFE0E0E0))),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '처음이신가요?',
-                      style: TextStyle(
-                        color: Color(0xFF6F7773),
-                        fontWeight: FontWeight.w400,
-                        fontSize: 15,
+                const Row(
+                  children: [
+                    Expanded(child: Divider(color: Color(0xFFE0E0E0))),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        '처음이신가요?',
+                        style: TextStyle(
+                          color: Color(0xFF6F7773),
+                          fontWeight: FontWeight.w400,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
-                  ),
-                  Expanded(child: Divider(color: Color(0xFFE0E0E0))),
-                ],
-              ),
+                    Expanded(child: Divider(color: Color(0xFFE0E0E0))),
+                  ],
+                ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              GoogleAuthButton(
-                label: 'Google로 회원가입',
-                isLoading: _isLoading,
-                onPressed: _signUpWithGoogle,
-              ),
+                GoogleAuthButton(
+                  label: 'Google로 회원가입',
+                  isLoading: _isLoading,
+                  onPressed: _signUpWithGoogle,
+                ),
+              ],
 
               const SizedBox(height: 24),
             ],

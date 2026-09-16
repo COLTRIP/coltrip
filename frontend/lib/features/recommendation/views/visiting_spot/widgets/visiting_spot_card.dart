@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../models/recommendation.dart';
 
 class VisitingSpotCard extends StatelessWidget {
@@ -24,7 +25,9 @@ class VisitingSpotCard extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(10),
+            ),
             child: (spot.imageUrl == null || spot.imageUrl!.isEmpty)
                 ? Container(
                     width: double.infinity,
@@ -58,9 +61,8 @@ class VisitingSpotCard extends StatelessWidget {
                   Text(
                     spot.name,
                     style: const TextStyle(
-                      fontFamily: 'Paperlogy',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
                   ),
@@ -70,7 +72,6 @@ class VisitingSpotCard extends StatelessWidget {
                       spot.address,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 10,
                         color: Color(0xFF7C7C7C),
                       ),

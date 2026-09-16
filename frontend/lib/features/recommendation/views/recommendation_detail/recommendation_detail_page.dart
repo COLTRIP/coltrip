@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../data/place_mood_data.dart';
 import '../../models/recommendation.dart';
+import '../../view_models/location_permission_view_model.dart';
 import '../../view_models/recommendation_detail_view_model.dart';
 import '../../view_models/review_view_model.dart';
 import '../review/widgets/review_section.dart';
@@ -44,6 +45,12 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
   }
 
   Future<void> _startVisit(SpotDetail spot) async {
+    final hasLocationPermission = await LocationPermissionViewModel.isGranted();
+    if (!hasLocationPermission) {
+      final granted = await Get.toNamed<bool>(AppRoutes.locationPermission);
+      if (granted != true || !mounted) return;
+    }
+
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
     final visitingResult = await Get.toNamed(
       AppRoutes.visitingSpot,
@@ -80,7 +87,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-
                       child: PrimaryButton(
                         label: '다시 시도',
                         isOutlined: true,
@@ -132,7 +138,21 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                               },
                             ),
                     ),
-                    const SizedBox(height: 20),
+                    if (spot.imageUrl != null && spot.imageUrl!.isNotEmpty) ...[
+                      const SizedBox(height: 7),
+                      const Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '사진 제공: 한국관광공사',
+                          style: TextStyle(
+                            fontSize: 7,
+                            fontWeight: FontWeight.w300,
+                            color: Color(0xFF8A918E),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
                     Align(
                       alignment: AlignmentGeometry.center,
                       child: Row(
@@ -195,7 +215,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                                   PlaceMoodData.labelFor(mode),
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                     color: Color(0xFF474444),
                                   ),
                                 ),
@@ -239,8 +259,19 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         QuietScoreGauge(quietScore: displayedQuietScore),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    const Center(
+                      child: Text(
+                        '혼잡도 데이터 제공: SK텔레콤 지오비전 퍼즐',
+                        style: TextStyle(
+                          fontSize: 7,
+                          fontWeight: FontWeight.w300,
+                          color: Color(0xFF8A918E),
+                        ),
+                      ),
+                    ),
                     if (displayedAt != null) ...[
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 10),
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
@@ -258,7 +289,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     ],
                     const SizedBox(height: 32),
                     const Text(
-                      '고요 지수 타임라인',
+                      '주간 고요 지수',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -266,7 +297,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // TODO: 고요지수 타임라인 API 연결 전까지 빈 값
                     QuietScoreTimelineChart(points: _viewModel.timelinePoints),
                     const SizedBox(height: 32),
                     ReviewSection(

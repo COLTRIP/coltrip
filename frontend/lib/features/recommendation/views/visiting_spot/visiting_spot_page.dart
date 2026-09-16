@@ -56,7 +56,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           title: const Text(
             '방문중인 장소',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black,
@@ -96,7 +95,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           SizedBox(height: 16),
           Text(
             '방문을 시작하는 중...',
-            style: TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+            style: TextStyle(
+                fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -110,7 +111,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+          style: const TextStyle(
+              fontSize: 14,
+          ),
         ),
         const SizedBox(height: 20),
         PrimaryButton(
@@ -151,7 +154,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                 _viewModel.errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 12,
                   color: Color(0xFFC0392B),
                 ),
@@ -218,7 +220,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                 const Text(
                   '다른 장소 둘러보기',
                   style: TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -240,7 +241,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                     child: Text(
                       _viewModel.alternativesError!,
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 13,
                         color: Color(0xFF7C7C7C),
                       ),
@@ -300,7 +300,6 @@ class _AlternativeCard extends StatelessWidget {
                 Text(
                   spot.name,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -309,7 +308,6 @@ class _AlternativeCard extends StatelessWidget {
                 Text(
                   '고요지수 ${spot.quietScore}',
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF589C7E),
@@ -321,7 +319,6 @@ class _AlternativeCard extends StatelessWidget {
             Text(
               alternative.recommendReason,
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 12,
                 fontWeight: FontWeight.w300,
                 color: Color(0xFF474444),

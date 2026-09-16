@@ -3,43 +3,36 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/api_request.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/current_visit.dart';
 import '../models/recommendation.dart';
 
-// TODO(예외처리 통합): 아래 메서드마다 반복되는 try/catch(DioException) → ApiException 변환은
-//   api_exception.dart 의 통합 계획대로 에러 인터셉터로 옮길 예정. 그때 여기 catch 들 제거.
 class VisitingSpotApiService {
   VisitingSpotApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
   final Dio _dio;
 
-  Future<int> startVisit({required int spotId}) async {
-    try {
+  Future<int> startVisit({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/visits/start',
         data: {'spotId': spotId},
       );
       return response.data!['visitId'] as int;
-    } on DioException catch (e) {
-      // 409 AlreadyOngoingVisitException → 진행 중 방문 복구 로직에서 처리
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
-  Future<void> completeVisit({required int visitId}) async {
-    try {
+  Future<void> completeVisit({required int visitId}) {
+    return executeApiRequest(() async {
       await _dio.patch<void>('/api/visits/$visitId/complete');
-    } on DioException catch (e) {
-      // 409 InvalidVisitStateException(이미 완료/취소)
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
   /// GET /api/spots/{spotId}/alternatives — 혼잡 시 유사 분위기의 더 한적한 대체지 목록.
   /// 대체지가 없으면 빈 배열(200).
-  Future<List<AlternativeSpot>> getAlternatives({required int spotId}) async {
-    try {
+  Future<List<AlternativeSpot>> getAlternatives({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId/alternatives',
       );
@@ -49,43 +42,38 @@ class VisitingSpotApiService {
           .cast<Map<String, dynamic>>()
           .map(AlternativeSpot.fromJson)
           .toList();
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
-  Future<void> cancelVisit({required int visitId}) async {
-    try {
+  Future<void> cancelVisit({required int visitId}) {
+    return executeApiRequest(() async {
       await _dio.patch<Map<String, dynamic>>('/api/visits/$visitId/cancel');
-    } on DioException catch (e) {
-      // 404 VisitNotFoundException, 409 InvalidVisitStateException
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
-  Future<CurrentVisit?> getCurrentVisit() async {
-    try {
+  Future<CurrentVisit?> getCurrentVisit() {
+    return executeApiRequest(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/visits/current',
       );
       final visit = response.data?['visit'] as Map<String, dynamic>?;
       debugPrint('[VisitingSpotApiService] 현재 방문 응답: $visit');
       return visit == null ? null : CurrentVisit.fromJson(visit);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return null;
-      throw ApiException.fromDioException(e);
-    }
+    }, recover: _recoverMissingCurrentVisit);
   }
 
   /// 현재 고요지수 재조회. 아직 계산 안 된 스팟이면 null.
-  Future<int?> viewQuietValue({required int spotId}) async {
-    try {
+  Future<int?> viewQuietValue({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId',
       );
       return SpotDetail.fromJson(response.data!).quietScore;
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
+  }
+
+  CurrentVisit? _recoverMissingCurrentVisit(DioException error) {
+    if (error.response?.statusCode == 404) return null;
+    throw ApiException.fromDioException(error);
   }
 }
