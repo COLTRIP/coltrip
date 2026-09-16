@@ -62,7 +62,11 @@ public class SpotController {
     }
 
     @Operation(summary = "관광지 상세 조회",
-            description = "인증 불필요(유효한 토큰이 있으면 isLiked에 반영). 목록 응답에 없는 description, recommendReason, visitRadiusMeters(완료 반경, m)가 추가로 담깁니다. 체류시간 조건은 없습니다.")
+            description = """
+                    인증 불필요(유효한 토큰이 있으면 isLiked에 반영). 목록 응답에 없는 description, recommendReason,
+                    visitRadiusMeters(완료 반경, m), spotAreaType(POINT/AREA - visitRadiusMeters 판정 기준 구분)가 추가로 담깁니다.
+                    체류시간 조건은 없습니다.
+                    """)
     @SecurityRequirements
     @GetMapping("/{spotId}")
     public ResponseEntity<SpotDetailResponse> findById(@AuthenticationPrincipal Long userId,
