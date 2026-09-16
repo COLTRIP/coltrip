@@ -24,4 +24,9 @@ class DemoDisabledIntegrationTest {
         mvc.perform(patch("/api/visits/1/complete").param("demo", "true").header("X-Demo", "true"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test void guestSessionEndpointDoesNotExistOutsideDemoProfile() throws Exception {
+        var mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc.perform(post("/api/demo/guest-session")).andExpect(status().isNotFound());
+    }
 }
