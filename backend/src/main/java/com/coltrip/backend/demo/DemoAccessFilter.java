@@ -26,8 +26,10 @@ public class DemoAccessFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
         // 로그인/재발급은 검증된 Google sub로 서비스 내부에서 허용 여부를 판정한다.
+        // 게스트 세션 발급은 인증 자체가 없는 진입점이라 필터 통과 후 서비스에서 새 계정을 만든다.
         if ("POST".equals(request.getMethod())
-                && ("/api/auth/google".equals(path) || "/api/auth/refresh".equals(path))) {
+                && ("/api/auth/google".equals(path) || "/api/auth/refresh".equals(path)
+                    || "/api/demo/guest-session".equals(path))) {
             chain.doFilter(request, response);
             return;
         }

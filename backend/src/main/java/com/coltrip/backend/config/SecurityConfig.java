@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/google", "/api/auth/refresh").permitAll()
+                        .requestMatchers("/api/demo/guest-session").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
                         // Swagger UI (개발용 API 문서)
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()

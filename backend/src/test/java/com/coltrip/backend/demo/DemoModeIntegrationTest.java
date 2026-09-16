@@ -163,6 +163,30 @@ class DemoModeIntegrationTest {
         assertEquals(VisitStatus.STARTED, otherVisit.getStatus());
     }
 
+    @Test void guestSessionIssuesTokenWithoutGoogleAndCanImmediatelyUseIt() throws Exception {
+        var body = mvc.perform(post("/api/demo/guest-session"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.isNewUser").value(true))
+                .andReturn().getResponse().getContentAsString();
+        String accessToken = new ObjectMapper().readTree(body).get("accessToken").asText();
+        mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test void repeatedGuestSessionCallsCreateDistinctIsolatedAccounts() throws Exception {
+        var first = new ObjectMapper().readTree(
+                mvc.perform(post("/api/demo/guest-session")).andReturn().getResponse().getContentAsString());
+        var second = new ObjectMapper().readTree(
+                mvc.perform(post("/api/demo/guest-session")).andReturn().getResponse().getContentAsString());
+        assertNotEquals(first.get("accessToken").asText(), second.get("accessToken").asText());
+        mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + first.get("accessToken").asText()))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/users/me").header("Authorization", "Bearer " + second.get("accessToken").asText()))
+                .andExpect(status().isOk());
+    }
+
     private User user(String sub) {
         User user = User.builder().googleSub(sub).email(UUID.randomUUID() + "@example.test").build();
         em.persist(user);
