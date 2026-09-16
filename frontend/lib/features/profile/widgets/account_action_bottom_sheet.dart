@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 
 import '../../../shared/widgets/primary_button.dart';
 
+/// 계정 관련 작업을 확인하는 공통 바텀시트입니다.
+///
+/// 로그아웃 및 회원 탈퇴와 같이 사용자 확인이 필요한 작업에 사용되며, 확인 및 취소 동작을 제공합니다.
 class AccountActionBottomSheet extends StatelessWidget {
   const AccountActionBottomSheet({
     super.key,
@@ -49,7 +52,6 @@ class AccountActionBottomSheet extends StatelessWidget {
             Text(
               message,
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
                 height: 1.4,

@@ -178,7 +178,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               label: '방문 취소하기',
               icon: Icons.close,
               isLoading: _viewModel.isCancelling,
-              onPressed: () => _viewModel.cancelVisit(_viewModel.visitId!),
+              onPressed: _viewModel.cancelVisit,
             ),
           ],
         ),

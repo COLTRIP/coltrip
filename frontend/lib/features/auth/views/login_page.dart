@@ -6,6 +6,9 @@ import '../models/auth_intent.dart';
 import '../services/google_auth_service.dart';
 import '../widgets/google_auth_button.dart';
 
+/// Google 계정을 통해 로그인 및 회원가입을 진행하는 화면입니다.
+///
+/// 인증 결과에 따라 닉네임 설정 또는 메인 화면으로 이동하며, 인증 과정의 로딩 및 오류 상태를 관리합니다.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 

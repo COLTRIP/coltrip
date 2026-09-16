@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// 사용자의 주요 프로필 정보를 표시하는 카드 위젯입니다.
+///
+/// 닉네임과 방문한 장소 및 좋아요한 장소의 개수를 표시합니다.
 class UserInfoCard extends StatelessWidget {
   const UserInfoCard({
     super.key,
@@ -29,7 +32,6 @@ class UserInfoCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
-                fontFamily: 'Paperlogy',
                 fontWeight: FontWeight.w500,
                 fontSize: 18,
               ),
@@ -47,6 +49,7 @@ class UserInfoCard extends StatelessWidget {
   }
 }
 
+/// 프로필 카드에서 장소 관련 개수를 표시하는 위젯입니다.
 class _PlaceCount extends StatelessWidget {
   const _PlaceCount({required this.label, required this.count});
 
@@ -62,7 +65,6 @@ class _PlaceCount extends StatelessWidget {
           label,
           style: const TextStyle(
             color: Colors.white,
-            fontFamily: 'Paperlogy',
             fontWeight: FontWeight.w500,
             fontSize: 13,
           ),
@@ -72,7 +74,6 @@ class _PlaceCount extends StatelessWidget {
           '$count',
           style: const TextStyle(
             color: Colors.white,
-            fontFamily: 'Paperlogy',
             fontWeight: FontWeight.w600,
             fontSize: 24,
           ),

@@ -45,7 +45,6 @@ class _MoodSelectionPageState extends State<MoodSelectionPage> {
             const Text(
               '원하시는 여행 감성을',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontWeight: FontWeight.w600,
                 fontSize: 20,
               ),
@@ -53,7 +52,6 @@ class _MoodSelectionPageState extends State<MoodSelectionPage> {
             const Text(
               '선택해주세요 💫',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontWeight: FontWeight.w600,
                 fontSize: 20,
               ),
@@ -61,7 +59,6 @@ class _MoodSelectionPageState extends State<MoodSelectionPage> {
             const Text(
               '*필수는 아니지만, 사용자님에게 맞는 관광지를',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontWeight: FontWeight.w300,
                 fontSize: 12,
               ),
@@ -69,7 +66,6 @@ class _MoodSelectionPageState extends State<MoodSelectionPage> {
             const Text(
               '추천드리기 위해 선택해주세요!',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontWeight: FontWeight.w300,
                 fontSize: 12,
               ),

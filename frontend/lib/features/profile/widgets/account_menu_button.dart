@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// 계정 관리 화면에서 사용하는 메뉴 버튼입니다.
+///
+/// 메뉴 항목을 표시하고, 위험 작업 여부에 따라 텍스트 스타일을 구분하여 제공합니다.
 class AccountMenuButton extends StatelessWidget {
   const AccountMenuButton({
     super.key,
@@ -31,7 +34,6 @@ class AccountMenuButton extends StatelessWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'Paperlogy',
                       fontSize: 17,
                       fontWeight: FontWeight.w500,
                       color: isDanger

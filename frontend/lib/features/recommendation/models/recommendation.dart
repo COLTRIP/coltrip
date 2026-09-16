@@ -1,3 +1,5 @@
+import 'spot_area_type.dart';
+
 // TODO: 이전 화면에서 받은 감성 모드 받아와서 띄우기
 const spotModes = ['ASMR', '풍경위주', '적막함'];
 
@@ -19,7 +21,7 @@ class Spot {
   final double longitude;
   final int? quietScore;
   final String? quietLevel;
-  final DateTime quietScoreUpdatedAt;
+  final DateTime? quietScoreUpdatedAt;
 
   const Spot({
     required this.id,
@@ -45,9 +47,9 @@ class Spot {
       longitude: (json['longitude'] as num).toDouble(),
       quietScore: json['quietScore'] as int?,
       quietLevel: json['quietLevel'] as String?,
-      quietScoreUpdatedAt: DateTime.parse(
-        json['quietScoreUpdatedAt'] as String,
-      ),
+      quietScoreUpdatedAt: json['quietScoreUpdatedAt'] == null
+          ? null
+          : DateTime.parse(json['quietScoreUpdatedAt'] as String),
       address: json['address'] as String,
       imageUrl: json['imageUrl'] as String?,
     );
@@ -75,6 +77,10 @@ class Spot {
           : DateTime.parse(targetAt).toLocal(),
     );
   }
+
+  factory Spot.fromCurrentRecommendationJson(Map<String, dynamic> json) {
+    return Spot.fromJson(json['spot'] as Map<String, dynamic>);
+  }
 }
 
 class SpotDetail {
@@ -92,6 +98,8 @@ class SpotDetail {
   final String? quietLevel;
   final DateTime? quietScoreUpdatedAt; // quietScore 미계산 스팟은 null
   final bool isLiked;
+  final int? visitRadiusMeters;
+  final SpotAreaType? spotAreaType;
 
   const SpotDetail({
     required this.id,
@@ -108,6 +116,8 @@ class SpotDetail {
     required this.quietLevel,
     required this.quietScoreUpdatedAt,
     required this.isLiked,
+    required this.visitRadiusMeters,
+    required this.spotAreaType,
   });
 
   factory SpotDetail.fromJson(Map<String, dynamic> json) {
@@ -128,6 +138,8 @@ class SpotDetail {
           : DateTime.parse(json['quietScoreUpdatedAt'] as String),
       quietLevel: json['quietLevel'] as String?,
       isLiked: json['isLiked'] as bool? ?? false,
+      visitRadiusMeters: (json['visitRadiusMeters'] as num?)?.toInt(),
+      spotAreaType: SpotAreaType.fromJson(json['spotAreaType'] as String?),
     );
   }
 
@@ -147,6 +159,8 @@ class SpotDetail {
       quietLevel: quietLevel,
       quietScoreUpdatedAt: quietScoreUpdatedAt,
       isLiked: isLiked ?? this.isLiked,
+      visitRadiusMeters: visitRadiusMeters,
+      spotAreaType: spotAreaType,
     );
   }
 }

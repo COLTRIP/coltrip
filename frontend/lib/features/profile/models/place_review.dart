@@ -1,3 +1,6 @@
+/// 장소에 작성된 리뷰 정보를 나타내는 모델입니다.
+///
+/// 리뷰의 평점, 내용 및 작성 일시 정보를 관리합니다.
 class PlaceReview {
   const PlaceReview({
     required this.id,

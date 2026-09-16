@@ -9,6 +9,9 @@ import '../../../core/storage/token_storage.dart';
 import '../models/auth_response.dart';
 import '../models/auth_intent.dart';
 
+/// Google 계정 기반의 사용자 인증을 처리하는 서비스입니다.
+///
+/// Google 로그인 및 회원가입을 통해 인증 정보를 서버에 전달하고, 인증 토큰 저장, 로그아웃 및 회원 탈퇴를 처리합니다.
 class GoogleAuthService {
   GoogleAuthService({
     Dio? dio,
@@ -259,6 +262,9 @@ class GoogleAuthService {
   }
 }
 
+/// 인증 처리 중 발생한 오류를 나타내는 예외입니다.
+///
+/// 사용자에게 전달할 인증 관련 오류 메시지를 포함합니다.
 class AuthException implements Exception {
   const AuthException(this.message);
 

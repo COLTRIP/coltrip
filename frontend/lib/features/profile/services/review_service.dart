@@ -4,6 +4,9 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/place_review.dart';
 
+/// 장소 리뷰 관련 API 통신을 담당하는 서비스입니다.
+///
+/// 사용자가 작성한 리뷰를 조회하고, 리뷰 수정 및 삭제 요청을 처리합니다.
 class ReviewService {
   ReviewService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 

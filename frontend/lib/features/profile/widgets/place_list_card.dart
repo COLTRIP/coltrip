@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/place.dart';
 
+/// 장소 정보를 목록 형태로 표시하는 카드 위젯입니다.
+///
+/// 장소의 이미지, 이름, 주소와 함께 방문 일자 및 평점 정보를 표시합니다.
 class PlaceListCard extends StatelessWidget {
   const PlaceListCard({super.key, required this.place, this.onTap});
 
@@ -84,7 +87,6 @@ class PlaceListCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontFamily: 'Paperlogy',
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
@@ -95,7 +97,6 @@ class PlaceListCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontFamily: 'Paperlogy',
                           fontSize: 14,
                           color: Color(0xFF6F7773),
                           fontWeight: FontWeight.w400,
@@ -114,7 +115,6 @@ class PlaceListCard extends StatelessWidget {
                             Text(
                               formattedRating,
                               style: const TextStyle(
-                                fontFamily: 'Paperlogy',
                                 fontSize: 15,
                               ),
                             ),
@@ -124,7 +124,6 @@ class PlaceListCard extends StatelessWidget {
                             Text(
                               formattedDate!,
                               style: const TextStyle(
-                                fontFamily: 'Paperlogy',
                                 fontSize: 12,
                                 color: Color(0xFF6F7773),
                               ),

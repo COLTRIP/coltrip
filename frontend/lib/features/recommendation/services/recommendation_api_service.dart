@@ -93,8 +93,7 @@ class RecommendationApiService {
         }
       }
 
-      final spots = spotsById.values.toList()
-        ..sort((a, b) => (b.quietScore ?? 0).compareTo(a.quietScore ?? 0));
+      final spots = spotsById.values.toList()..sort(_compareQuietScore);
 
       developer.log(
         '추천 응답: ${spots.length}개, message=$responseMessage',
@@ -117,6 +116,58 @@ class RecommendationApiService {
       );
       throw ApiException.fromDioException(e);
     }
+  }
+
+  /// GET /api/spots/recommendations/current — 현재 고요지수 기준 추천
+  Future<RecommendationResult> getCurrentRecommendations({
+    String? category,
+    List<String> modes = const [],
+  }) async {
+    try {
+      final requestModes = modes.isEmpty ? <String?>[null] : modes;
+      final responses = await Future.wait(
+        requestModes.map(
+          (mode) => _dio.get<Map<String, dynamic>>(
+            '/api/spots/recommendations/current',
+            queryParameters: {
+              if (category != null && category.isNotEmpty) 'category': category,
+              if (mode != null && mode.isNotEmpty) 'mode': mode,
+              'limit': 20,
+            },
+          ),
+        ),
+      );
+
+      final spotsById = <int, Spot>{};
+      String? responseMessage;
+      for (final response in responses) {
+        final items = response.data?['spots'] as List? ?? const [];
+        responseMessage ??= response.data?['message'] as String?;
+        for (final item in items.cast<Map<String, dynamic>>()) {
+          final spot = Spot.fromCurrentRecommendationJson(item);
+          final previous = spotsById[spot.id];
+          if (previous == null ||
+              (spot.quietScore ?? -1) > (previous.quietScore ?? -1)) {
+            spotsById[spot.id] = spot;
+          }
+        }
+      }
+
+      final spots = spotsById.values.toList()..sort(_compareQuietScore);
+      return RecommendationResult(spots: spots, message: responseMessage);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+  int _compareQuietScore(Spot a, Spot b) {
+    final aScore = a.quietScore;
+    final bScore = b.quietScore;
+    if (aScore == null && bScore == null) return a.id.compareTo(b.id);
+    if (aScore == null) return 1;
+    if (bScore == null) return -1;
+    final scoreOrder = bScore.compareTo(aScore);
+    return scoreOrder == 0 ? a.id.compareTo(b.id) : scoreOrder;
   }
 
   String _formatDate(DateTime dateTime) {

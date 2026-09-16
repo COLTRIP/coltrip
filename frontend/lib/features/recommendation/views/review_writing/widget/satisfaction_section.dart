@@ -34,7 +34,6 @@ class SatisfactionSection extends StatelessWidget {
           const Text(
             '만족도',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black,
@@ -72,7 +71,6 @@ class SatisfactionSection extends StatelessWidget {
                   Text(
                     '${step.score}',
                     style: const TextStyle(
-                      fontFamily: 'Paperlogy',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: _labelColor,

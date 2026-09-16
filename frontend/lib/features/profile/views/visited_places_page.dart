@@ -11,6 +11,9 @@ import '../widgets/place_detail_bottom_sheet.dart';
 import '../widgets/place_list_card.dart';
 import '../widgets/review_edit_dialog.dart';
 
+/// 사용자가 방문한 장소 목록을 확인하고 리뷰를 관리하는 화면입니다.
+///
+/// 방문한 장소의 상세 정보와 작성한 리뷰를 확인할 수 있으며, 리뷰 수정 및 삭제 기능을 제공합니다.
 class VisitedPlacesPage extends StatefulWidget {
   const VisitedPlacesPage({super.key});
 
@@ -136,7 +139,6 @@ class _VisitedPlacesPageState extends State<VisitedPlacesPage> {
             child: Text(
               '아직 방문한 장소가 없어요.',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 color: Color(0xFF7C8581),
               ),
             ),

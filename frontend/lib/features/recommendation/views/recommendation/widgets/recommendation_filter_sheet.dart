@@ -72,7 +72,6 @@ class RecommendationFilterSheet extends StatelessWidget {
           const Text(
             '장소 유형',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: Color(0xFF6F7773),
@@ -86,7 +85,6 @@ class RecommendationFilterSheet extends StatelessWidget {
                 Text(
                   categoryLabel,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 24,
                     fontWeight: FontWeight.w500,
                     color: Colors.black,
@@ -156,7 +154,6 @@ class _FilterBox extends StatelessWidget {
             Text(
               value,
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,

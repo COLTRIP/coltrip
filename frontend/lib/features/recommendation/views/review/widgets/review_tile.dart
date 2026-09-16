@@ -33,7 +33,6 @@ class ReviewTile extends StatelessWidget {
                     Text(
                       review.nickname,
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -49,7 +48,6 @@ class ReviewTile extends StatelessWidget {
                         Text(
                           ' ${review.rating}',
                           style: const TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 12,
                           ),
                         ),
@@ -66,7 +64,6 @@ class ReviewTile extends StatelessWidget {
                 child: Text(
                   review.content!,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
                     color: Colors.black,

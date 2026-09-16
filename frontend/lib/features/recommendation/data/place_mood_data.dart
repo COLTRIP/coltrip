@@ -11,4 +11,14 @@ abstract final class PlaceMoodData {
     PlaceMoodItem(id: 'SENSORY', label: '감각적'),
     PlaceMoodItem(id: 'TRANQUIL', label: '고요한'),
   ];
+
+  static String labelFor(String id) {
+    for (final mood in items) {
+      if (mood.id == id) {
+        return mood.label;
+      }
+    }
+
+    return id;
+  }
 }

@@ -7,5 +7,5 @@ class RecommendationDetailArguments {
 
   final int spotId;
   final int? predictedQuietScore;
-  final DateTime predictionTargetAt;
+  final DateTime? predictionTargetAt;
 }

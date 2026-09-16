@@ -17,7 +17,6 @@ class TextReview extends StatelessWidget {
             child: Text(
               '리뷰 작성',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: Colors.black,
@@ -41,7 +40,6 @@ class TextReview extends StatelessWidget {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(12),
                 hintStyle: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 13,
                   color: Color(0xFF9CA3AF),
                 ),

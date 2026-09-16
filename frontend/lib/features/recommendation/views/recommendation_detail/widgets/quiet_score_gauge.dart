@@ -29,7 +29,6 @@ class QuietScoreGauge extends StatelessWidget {
               const Text(
                 '고요 지수',
                 style: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -39,7 +38,6 @@ class QuietScoreGauge extends StatelessWidget {
               Text(
                 '$quietScore',
                 style: const TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 40,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF589C7E),

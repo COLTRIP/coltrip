@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../models/place.dart';
 import '../models/place_review.dart';
 
+/// 방문한 장소의 상세 정보와 리뷰를 표시하는 바텀시트입니다.
+///
+/// 장소의 이미지와 주소, 작성한 리뷰를 표시하며, 리뷰가 있는 경우 수정 및 삭제 기능을 제공합니다.
 void showPlaceDetailBottomSheet({
   required Place place,
   PlaceReview? review,
@@ -109,7 +112,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                       Text(
                         place.name,
                         style: const TextStyle(
-                          fontFamily: 'Paperlogy',
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF252B28),
@@ -131,7 +133,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                             child: Text(
                               place.address ?? '주소 정보 없음',
                               style: const TextStyle(
-                                fontFamily: 'Paperlogy',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w300,
                                 color: Color(0xFF737B77),
@@ -151,7 +152,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                         const Text(
                           '내 리뷰',
                           style: TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF252B28),
@@ -182,7 +182,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                   Text(
                                     _formatRating(review!.rating),
                                     style: const TextStyle(
-                                      fontFamily: 'Paperlogy',
                                       fontSize: 17,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -191,7 +190,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                   Text(
                                     _formatDate(review!.createdAt),
                                     style: const TextStyle(
-                                      fontFamily: 'Paperlogy',
                                       fontSize: 13,
                                       color: Color(0xFF858C89),
                                     ),
@@ -205,7 +203,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                 Text(
                                   review!.content,
                                   style: const TextStyle(
-                                    fontFamily: 'Paperlogy',
                                     fontSize: 15,
                                     fontWeight: FontWeight.w300,
                                     height: 1.55,
@@ -216,7 +213,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                 const Text(
                                   '한줄평 없이 별점만 남겼어요.',
                                   style: TextStyle(
-                                    fontFamily: 'Paperlogy',
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300,
                                     color: Color(0xFF929996),
@@ -247,7 +243,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                           child: const Text(
                                             '수정',
                                             style: TextStyle(
-                                              fontFamily: 'Paperlogy',
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                               color: Color(0xFF589C7E),
@@ -272,7 +267,6 @@ class PlaceDetailBottomSheet extends StatelessWidget {
                                           child: const Text(
                                             '삭제',
                                             style: TextStyle(
-                                              fontFamily: 'Paperlogy',
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                               color: Color(0xFFE15D5D),

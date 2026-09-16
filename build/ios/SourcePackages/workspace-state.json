@@ -1,0 +1,278 @@
+{
+  "object" : {
+    "artifacts" : [
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "spm-nmapsgeometry",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/navermaps/SPM-NMapsGeometry.git",
+          "name" : "NMapsGeometry"
+        },
+        "path" : "/Users/sungyeon/StudioProjects/coltrip/coltrip-repo/build/ios/SourcePackages/artifacts/spm-nmapsgeometry/NMapsGeometry/framework/NMapsGeometry.xcframework",
+        "source" : {
+          "checksum" : "3b213dee5ebd5fa2bfbc3feb0258f8fec6d70abd6c71c5fa33324af9c1b8b2e2",
+          "type" : "remote",
+          "url" : "https://repository.map.naver.com/archive/pod/NMapsGeometry/1.0.2/NMapsGeometry.zip"
+        },
+        "targetName" : "NMapsGeometry"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "spm-nmapsmap",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/navermaps/SPM-NMapsMap.git",
+          "name" : "NMapsMap"
+        },
+        "path" : "/Users/sungyeon/StudioProjects/coltrip/coltrip-repo/build/ios/SourcePackages/artifacts/spm-nmapsmap/NMapsMapBinary/framework/NMapsMap.xcframework",
+        "source" : {
+          "checksum" : "7e00f92805d0706c7a2c41dad20f930e0f030a7317f3fa99e15219534be73290",
+          "type" : "remote",
+          "url" : "https://repository.map.naver.com/archive/pod/NMapsMap/3.23.3/NMapsMap.zip"
+        },
+        "targetName" : "NMapsMapBinary"
+      }
+    ],
+    "dependencies" : [
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "app-check",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/app-check.git",
+          "name" : "AppCheck"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "3e33dd27dd4c69bd81c7c81fe61d8ccf58846902",
+            "version" : "11.3.1"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "app-check"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "appauth-ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/openid/AppAuth-iOS.git",
+          "name" : "AppAuth"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "a7caeda164dc5108bf4649472b28a5af65dc6f33",
+            "version" : "2.1.0"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "AppAuth-iOS"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "flutter_naver_map-1.4.4",
+          "kind" : "fileSystem",
+          "location" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/flutter_naver_map-1.4.4",
+          "name" : "flutter_naver_map"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/flutter_naver_map-1.4.4"
+        },
+        "subpath" : "flutter_naver_map-1.4.4"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "flutter_secure_storage_darwin-0.4.0",
+          "kind" : "fileSystem",
+          "location" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/flutter_secure_storage_darwin-0.4.0",
+          "name" : "flutter_secure_storage_darwin"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/flutter_secure_storage_darwin-0.4.0"
+        },
+        "subpath" : "flutter_secure_storage_darwin-0.4.0"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "flutterframework",
+          "kind" : "fileSystem",
+          "location" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/FlutterFramework",
+          "name" : "FlutterFramework"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/FlutterFramework"
+        },
+        "subpath" : "flutterframework"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "google_sign_in_ios-6.3.0",
+          "kind" : "fileSystem",
+          "location" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/google_sign_in_ios-6.3.0",
+          "name" : "google_sign_in_ios"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sungyeon/StudioProjects/coltrip/ios/Flutter/ephemeral/Packages/.packages/google_sign_in_ios-6.3.0"
+        },
+        "subpath" : "google_sign_in_ios-6.3.0"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "googlesignin-ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/GoogleSignIn-iOS.git",
+          "name" : "GoogleSignIn"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "08d8dcecafb575f98879ffdbb8302c1b9ad65d19",
+            "version" : "9.2.0"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "GoogleSignIn-iOS"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "googleutilities",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/GoogleUtilities.git",
+          "name" : "GoogleUtilities"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "9f183ae842be978784f2963a343682e0c46d8fb3",
+            "version" : "8.1.2"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "GoogleUtilities"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "gtm-session-fetcher",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/gtm-session-fetcher.git",
+          "name" : "GTMSessionFetcher"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "a2ab612cb980066ee56d90d60d8462992c07f24b",
+            "version" : "3.5.0"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "gtm-session-fetcher"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "gtmappauth",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/GTMAppAuth.git",
+          "name" : "GTMAppAuth"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "56e0ccf09a6dd29dc7e68bdf729598240ca8aa16",
+            "version" : "5.0.0"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "GTMAppAuth"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "interop-ios-for-google-sdks",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/interop-ios-for-google-sdks.git",
+          "name" : "InteropForGoogle"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "040d087ac2267d2ddd4cca36c757d1c6a05fdbfe",
+            "version" : "101.0.0"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "interop-ios-for-google-sdks"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "promises",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/google/promises.git",
+          "name" : "Promises"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "f4a19a3c313dc2616c70bb49d29a799fb16be837",
+            "version" : "2.4.1"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "promises"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "spm-nmapsgeometry",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/navermaps/SPM-NMapsGeometry.git",
+          "name" : "NMapsGeometry"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "436d5e2e684f557faf5ef5862fd6633a42d7af11",
+            "version" : "1.0.2"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "SPM-NMapsGeometry"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "spm-nmapsmap",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/navermaps/SPM-NMapsMap.git",
+          "name" : "NMapsMap"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "14e1cfa1e270458fc58b0cd8827c87b3cee905ab",
+            "version" : "3.23.3"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "SPM-NMapsMap"
+      }
+    ],
+    "prebuilts" : [
+
+    ]
+  },
+  "version" : 7
+}

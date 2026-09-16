@@ -5,6 +5,9 @@ import '../../../core/network/dio_client.dart';
 import '../models/place.dart';
 import '../models/user_profile.dart';
 
+/// 사용자 프로필 관련 API 통신을 담당하는 서비스입니다.
+///
+/// 프로필 정보 조회 및 닉네임 수정과 좋아요·방문 장소 목록 조회를 처리합니다.
 class ProfileService {
   ProfileService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 

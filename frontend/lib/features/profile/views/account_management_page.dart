@@ -8,6 +8,9 @@ import '../controllers/profile_controller.dart';
 import '../widgets/account_action_bottom_sheet.dart';
 import '../widgets/account_menu_button.dart';
 
+/// 사용자 계정 관련 기능을 관리하는 화면입니다.
+///
+/// 닉네임 변경, 로그아웃 및 회원 탈퇴 기능을 제공합니다.
 class AccountManagementPage extends StatelessWidget {
   const AccountManagementPage({super.key});
 

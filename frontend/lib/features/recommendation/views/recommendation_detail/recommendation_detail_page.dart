@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../data/place_mood_data.dart';
 import '../../models/recommendation.dart';
-import '../../view_models/location_permission_view_model.dart';
 import '../../view_models/recommendation_detail_view_model.dart';
 import '../../view_models/review_view_model.dart';
 import '../review/widgets/review_section.dart';
@@ -44,20 +44,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
   }
 
   Future<void> _startVisit(SpotDetail spot) async {
-    // 방문 시작 API(POST /api/visits/start)는 VisitingSpotViewModel 진입 시 호출된다.
-    // 방문 완료 시 위치로 방문을 인증하므로, 시작 시점에 권한을 확보해 둔다.
-    var granted = await LocationPermissionViewModel.isGranted();
-    if (!mounted) return;
-
-    if (!granted) {
-      // 권한 없으면 허용 화면으로 → 허용받으면 true 반환
-      // Get.toNamed<bool>() 제네릭 지정 시 GetX 내부에서 GetPageRoute<dynamic> →
-      // Route<bool?> 캐스팅 중 터지는 알려진 버그가 있어 제네릭 없이 호출 후 직접 캐스팅
-      final permissionResult = await Get.toNamed(AppRoutes.locationPermission);
-      granted = (permissionResult as bool?) ?? false;
-      if (!granted || !mounted) return;
-    }
-
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
     final visitingResult = await Get.toNamed(
       AppRoutes.visitingSpot,
@@ -135,16 +121,15 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: (spot.imageUrl == null || spot.imageUrl!.isEmpty)
-                          ? Container(
-                              width: double.infinity,
-                              height: 208,
-                              color: const Color(0xFFE5E5E5),
-                            )
+                          ? const _UnavailablePlaceImage()
                           : Image.network(
                               spot.imageUrl!,
                               width: double.infinity,
                               height: 208,
                               fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) {
+                                return const _UnavailablePlaceImage();
+                              },
                             ),
                     ),
                     const SizedBox(height: 20),
@@ -159,7 +144,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                             spot.name,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontFamily: 'Paperlogy',
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
                               color: Colors.black,
@@ -174,11 +158,11 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 5),
                     Center(
                       child: Text(
                         spot.address,
                         style: const TextStyle(
-                          fontFamily: 'Paperlogy',
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                           color: Colors.black,
@@ -208,9 +192,8 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                                   borderRadius: BorderRadius.circular(45),
                                 ),
                                 child: Text(
-                                  mode,
+                                  PlaceMoodData.labelFor(mode),
                                   style: const TextStyle(
-                                    fontFamily: 'Paperlogy',
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Color(0xFF474444),
@@ -231,7 +214,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                           spot.description,
                           style: const TextStyle(
                             fontWeight: FontWeight.w400,
-                            fontFamily: 'Paperlogy',
                             fontSize: 12,
                           ),
                           textAlign: TextAlign.center,
@@ -245,7 +227,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     Text(
                       isForecast ? '예상 고요 지수' : '현재 고요 지수',
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -269,7 +250,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                               : '${displayedAt.hour.toString().padLeft(2, '0')}:'
                                     '${displayedAt.minute.toString().padLeft(2, '0')} 기준',
                           style: const TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 10,
                             color: Color(0xFF7C7C7C),
                           ),
@@ -280,7 +260,6 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                     const Text(
                       '고요 지수 타임라인',
                       style: TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
@@ -335,6 +314,36 @@ class _FavoriteButton extends StatelessWidget {
             : 'assets/icons/heart_outline.svg',
         width: size,
         height: size,
+      ),
+    );
+  }
+}
+
+class _UnavailablePlaceImage extends StatelessWidget {
+  const _UnavailablePlaceImage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: double.infinity,
+      height: 208,
+      child: ColoredBox(
+        color: Color(0xFFE9ECEF),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 42,
+              color: Color(0xFF8A918E),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '이미지를 불러올 수 없어요.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF737B77)),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,6 @@
+/// 인증된 사용자 정보를 나타내는 모델입니다.
+///
+/// 사용자의 ID, 이메일 및 닉네임 정보를 관리합니다.
 class AuthUser {
   const AuthUser({
     required this.id,

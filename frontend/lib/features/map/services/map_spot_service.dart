@@ -7,6 +7,29 @@ import '../models/map_spot.dart';
 class MapSpotService {
   const MapSpotService();
 
+  Future<List<MapSpot>> search({
+    required String keyword,
+    int page = 0,
+    int size = 20,
+  }) async {
+    try {
+      final response = await DioClient.instance.get<Map<String, dynamic>>(
+        '/api/spots/search',
+        queryParameters: {'keyword': keyword, 'page': page, 'size': size},
+      );
+
+      final items = response.data?['spots'];
+      if (items is! List) return const [];
+
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(MapSpot.fromJson)
+          .toList();
+    } on DioException catch (error) {
+      throw ApiException.fromDioException(error);
+    }
+  }
+
   Future<List<MapSpot>> findInBounds({
     required double swLat,
     required double swLng,

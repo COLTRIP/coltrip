@@ -1,5 +1,6 @@
 import 'package:coltrip/features/recommendation/models/alternative_spot.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/dio_client.dart';
@@ -13,19 +14,11 @@ class VisitingSpotApiService {
 
   final Dio _dio;
 
-  Future<int> startVisit({
-    required int spotId,
-    required double startLatitude,
-    required double startLongitude,
-  }) async {
+  Future<int> startVisit({required int spotId}) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/visits/start',
-        data: {
-          'spotId': spotId,
-          'startLatitude': startLatitude,
-          'startLongitude': startLongitude,
-        },
+        data: {'spotId': spotId},
       );
       return response.data!['visitId'] as int;
     } on DioException catch (e) {
@@ -34,23 +27,11 @@ class VisitingSpotApiService {
     }
   }
 
-  Future<void> completeVisit({
-    required int visitId,
-    required double arrivedLatitude,
-    required double arrivedLongitude,
-  }) async {
+  Future<void> completeVisit({required int visitId}) async {
     try {
-      await _dio.patch<Map<String, dynamic>>(
-        '/api/visits/$visitId/complete',
-        data: {
-          'arrivedLatitude': arrivedLatitude,
-          'arrivedLongitude': arrivedLongitude,
-        },
-      );
+      await _dio.patch<void>('/api/visits/$visitId/complete');
     } on DioException catch (e) {
-      // 400 VisitConditionNotMetException(반경 미충족),
-      // 409 InvalidVisitStateException(이미 완료/취소) → 메시지는 ApiException 으로 전달
-
+      // 409 InvalidVisitStateException(이미 완료/취소)
       throw ApiException.fromDioException(e);
     }
   }
@@ -88,6 +69,7 @@ class VisitingSpotApiService {
         '/api/visits/current',
       );
       final visit = response.data?['visit'] as Map<String, dynamic>?;
+      debugPrint('[VisitingSpotApiService] 현재 방문 응답: $visit');
       return visit == null ? null : CurrentVisit.fromJson(visit);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;

@@ -26,7 +26,6 @@ class ReviewSection extends StatelessWidget {
             const Text(
               '리뷰',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
@@ -37,7 +36,6 @@ class ReviewSection extends StatelessWidget {
               child: const Text(
                 '전체보기',
                 style: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 10,
                   color: Color(0xFF7C7C7C),
                 ),

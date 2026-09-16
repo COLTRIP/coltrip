@@ -54,7 +54,6 @@ class PlaceSelectionPage extends StatelessWidget {
           const Text(
             '원하시는 장소 유형을',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontWeight: FontWeight.w600,
               fontSize: 20,
             ),
@@ -62,7 +61,6 @@ class PlaceSelectionPage extends StatelessWidget {
           const Text(
             '선택해주세요📍',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontWeight: FontWeight.w600,
               fontSize: 20,
             ),

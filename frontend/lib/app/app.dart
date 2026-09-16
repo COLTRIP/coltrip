@@ -17,6 +17,16 @@ class ColtripApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.login,
       getPages: AppPages.pages,
+
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            boldText: false,
+          ),
+          child: child!,
+        );
+      },
+
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF7F9F8),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Google 계정을 통한 인증에 사용하는 공통 버튼입니다.
+///
+/// 로그인 및 회원가입에 재사용되며, 인증 처리 중에는 로딩 상태를 표시하고 중복 입력을 방지합니다.
 class GoogleAuthButton extends StatelessWidget {
   const GoogleAuthButton({
     super.key,

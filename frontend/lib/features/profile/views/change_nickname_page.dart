@@ -6,6 +6,9 @@ import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/shared_app_bar.dart';
 import '../services/profile_service.dart';
 
+/// 사용자의 닉네임을 변경하는 화면입니다.
+///
+/// 현재 닉네임을 표시하고, 변경된 닉네임을 서버에 저장한 뒤 계정 관리 화면에 변경 결과를 전달합니다.
 class ChangeNicknamePage extends StatefulWidget {
   const ChangeNicknamePage({super.key, this.currentNickname});
 
@@ -97,15 +100,13 @@ class _ChangeNicknamePageState extends State<ChangeNicknamePage> {
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 style: const TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 18,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFF252B28),
                 ),
                 decoration: InputDecoration(
-                  hintText: '변경하고 싶은 닉네임(2-15자리 한글 및 영문)',
+                  hintText: '변경하고 싶은 닉네임(1~20자리 한글, 영문 및 숫자)',
                   hintStyle: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: Color(0xFF505653),

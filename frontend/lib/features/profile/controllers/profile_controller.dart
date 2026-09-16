@@ -6,6 +6,9 @@ import '../../../core/network/api_exception.dart';
 import '../services/profile_service.dart';
 import '../models/place.dart';
 
+/// 프로필 화면에서 사용하는 데이터와 상태를 관리하는 컨트롤러입니다.
+///
+/// 사용자 프로필, 좋아요한 장소, 방문한 장소를 조회하고 각 데이터의 로딩 및 오류 상태를 관리합니다.
 class ProfileController extends GetxController {
   ProfileController({ProfileService? profileService})
     : _profileService = profileService ?? ProfileService();
