@@ -15,14 +15,12 @@ class ColtripApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'COLTRIP',
       debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.startup,
       getPages: AppPages.pages,
 
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            boldText: false,
-          ),
+          data: MediaQuery.of(context).copyWith(boldText: false),
           child: child!,
         );
       },
@@ -31,9 +29,7 @@ class ColtripApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF7F9F8),
         fontFamily: 'Paperlogy',
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF589C7E),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF589C7E)),
       ),
     );
   }

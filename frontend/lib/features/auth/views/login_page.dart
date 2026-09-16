@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/storage/api_environment_storage.dart';
+import '../../../core/storage/token_storage.dart';
 import '../models/auth_intent.dart';
 import '../services/google_auth_service.dart';
 import '../widgets/google_auth_button.dart';
@@ -18,8 +23,57 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GoogleAuthService _authService = GoogleAuthService();
+  static const _environmentStorage = ApiEnvironmentStorage();
+  static const _tokenStorage = TokenStorage();
 
   bool _isLoading = false;
+  bool _isDemoMode = false;
+  int _logoTapCount = 0;
+  Timer? _logoTapTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEnvironment();
+  }
+
+  Future<void> _loadEnvironment() async {
+    final isDemoMode = await _environmentStorage.isDemoMode();
+    if (!mounted) return;
+    setState(() => _isDemoMode = isDemoMode);
+  }
+
+  Future<void> _onLogoTapped() async {
+    _logoTapTimer?.cancel();
+    _logoTapCount++;
+    if (_logoTapCount < 5) {
+      _logoTapTimer = Timer(const Duration(seconds: 2), () {
+        _logoTapCount = 0;
+      });
+      return;
+    }
+
+    _logoTapCount = 0;
+    final nextDemoMode = !_isDemoMode;
+    await _tokenStorage.clearTokens();
+    await _environmentStorage.setDemoMode(nextDemoMode);
+    DioClient.configureEnvironment(demoMode: nextDemoMode);
+    if (!mounted) return;
+
+    setState(() => _isDemoMode = nextDemoMode);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(nextDemoMode ? '시연 모드로 전환했어요.' : '일반 모드로 전환했어요.'),
+        backgroundColor: const Color(0xFF589C7E),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _logoTapTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _authenticateWithGoogle({required AuthIntent intent}) async {
     if (_isLoading) return;
@@ -100,7 +154,36 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Spacer(flex: 2),
 
-              Image.asset('assets/images/logo.png'),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _onLogoTapped,
+                child: Column(
+                  children: [
+                    Image.asset('assets/images/logo.png'),
+                    if (_isDemoMode) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE7F2ED),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          '시연 모드',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF39765D),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 200),
 

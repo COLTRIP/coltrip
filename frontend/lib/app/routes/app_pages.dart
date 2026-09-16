@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 
 import '../../features/auth/views/nickname_setup_page.dart';
 import '../../features/auth/views/login_page.dart';
+import '../../features/auth/views/onboarding_page.dart';
+import '../../features/auth/views/startup_page.dart';
+import '../../features/auth/views/terms_page.dart';
 import '../../features/profile/views/change_nickname_page.dart';
 import '../../features/recommendation/models/current_visit.dart';
 import '../../features/recommendation/models/recommendation.dart';
@@ -24,6 +27,8 @@ import 'app_routes.dart';
 /// 화면 생성 방식, 의존성 바인딩 및 화면 이동 argument 변환을 관리합니다.
 abstract final class AppPages {
   static final pages = <GetPage<dynamic>>[
+    GetPage(name: AppRoutes.startup, page: () => const StartupPage()),
+    GetPage(name: AppRoutes.onboarding, page: () => const OnboardingPage()),
     GetPage(
       name: AppRoutes.main,
       page: () => const MainShell(),
@@ -104,5 +109,6 @@ abstract final class AppPages {
       name: AppRoutes.locationPermission,
       page: () => const LocationPermissionPage(),
     ),
+    GetPage(name: AppRoutes.terms, page: () => const TermsPage()),
   ];
 }

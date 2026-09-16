@@ -23,6 +23,8 @@ class VisitingSpotPage extends StatefulWidget {
 }
 
 class _VisitingSpotPageState extends State<VisitingSpotPage> {
+  bool _canLeave = false;
+
   late final _viewModel = widget.resumeVisit == null
       ? VisitingSpotViewModel(spot: widget.spot)
       : VisitingSpotViewModel.resume(
@@ -43,7 +45,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     final spot = widget.spot;
 
     return PopScope(
-      canPop: false,
+      canPop: _canLeave,
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F9F8),
         appBar: AppBar(
@@ -178,12 +180,24 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               label: '방문 취소하기',
               icon: Icons.close,
               isLoading: _viewModel.isCancelling,
-              onPressed: _viewModel.cancelVisit,
+              onPressed: _cancelVisit,
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _cancelVisit() async {
+    final cancelled = await _viewModel.cancelVisit();
+    if (!cancelled || !mounted) return;
+
+    setState(() {
+      _canLeave = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Get.back();
+    });
   }
 
   Widget _buildAlternativesBody(SpotDetail spot) {

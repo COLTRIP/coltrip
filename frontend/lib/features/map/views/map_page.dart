@@ -343,7 +343,7 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _clearSearch() async {
     _searchController.clear();
-    _searchFocusNode.requestFocus();
+    _searchFocusNode.unfocus();
 
     setState(() {
       _isShowingSearchResults = false;
@@ -420,6 +420,13 @@ class _MapPageState extends State<MapPage> {
           child: const _QuietLevelLegend(),
         ),
 
+        if (_isShowingSearchResults)
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 76,
+            right: 16,
+            child: _ResetSearchButton(onPressed: _clearSearch),
+          ),
+
         // 확대·축소 버튼
         Positioned(
           right: 16,
@@ -431,6 +438,44 @@ class _MapPageState extends State<MapPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ResetSearchButton extends StatelessWidget {
+  const _ResetSearchButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF589C7E),
+      elevation: 3,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.refresh_rounded, size: 17, color: Colors.white),
+              SizedBox(width: 5),
+              Text(
+                '전체 장소 보기',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -486,10 +531,7 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF252B28),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF252B28)),
         ),
       ],
     );

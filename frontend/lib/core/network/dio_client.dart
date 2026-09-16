@@ -10,6 +10,12 @@ import 'auth_interceptor.dart';
 class DioClient {
   DioClient._();
 
+  static const productionBaseUrl = 'https://api.coltrip.co.kr';
+  static const demoBaseUrl = String.fromEnvironment(
+    'DEMO_API_BASE_URL',
+    defaultValue: 'https://demo-api.coltrip.co.kr',
+  );
+
   static const TokenStorage _tokenStorage = TokenStorage();
 
   /// 인증 인터셉터를 거치지 않는 토큰 재발급용 클라이언트입니다.
@@ -20,7 +26,7 @@ class DioClient {
 
   static BaseOptions _createBaseOptions() {
     return BaseOptions(
-      baseUrl: 'https://api.coltrip.co.kr',
+      baseUrl: productionBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       sendTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
@@ -35,5 +41,12 @@ class DioClient {
     dio.interceptors.add(AuthInterceptor(_tokenStorage, plain));
 
     return dio;
+  }
+
+  /// 저장된 모드에 따라 모든 API 클라이언트의 서버 주소를 함께 변경합니다.
+  static void configureEnvironment({required bool demoMode}) {
+    final baseUrl = demoMode ? demoBaseUrl : productionBaseUrl;
+    instance.options.baseUrl = baseUrl;
+    plain.options.baseUrl = baseUrl;
   }
 }

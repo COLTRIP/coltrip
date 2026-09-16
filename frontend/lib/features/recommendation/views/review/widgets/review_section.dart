@@ -31,23 +31,32 @@ class ReviewSection extends StatelessWidget {
                 color: Colors.black,
               ),
             ),
-            GestureDetector(
-              onTap: onSeeAllPressed,
-              child: const Text(
-                '전체보기',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF7C7C7C),
+            if (reviews.isNotEmpty)
+              GestureDetector(
+                onTap: onSeeAllPressed,
+                child: const Text(
+                  '전체보기',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF7C7C7C)),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
-        for (final review in reviews.take(previewCount)) ...[
-          const Divider(height: 24, color: Color(0x33252B28)),
-          ReviewTile(review: review),
-        ],
+        if (reviews.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 22),
+            child: Center(
+              child: Text(
+                '아직 등록된 리뷰가 없어요.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF8A918E)),
+              ),
+            ),
+          )
+        else
+          for (final review in reviews.take(previewCount)) ...[
+            const Divider(height: 24, color: Color(0x33252B28)),
+            ReviewTile(review: review),
+          ],
       ],
     );
   }

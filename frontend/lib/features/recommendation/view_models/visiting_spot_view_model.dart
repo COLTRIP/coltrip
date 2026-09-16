@@ -217,8 +217,8 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     return visitId;
   }
 
-  Future<void> cancelVisit() async {
-    if (isCancelling) return;
+  Future<bool> cancelVisit() async {
+    if (isCancelling) return false;
 
     isCancelling = true;
     errorMessage = null;
@@ -227,19 +227,17 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     try {
       debugPrint('[VisitingSpotViewModel] 방문 취소 버튼 클릭: visitId=$visitId');
       final activeVisitId = await _resolveActiveVisitId(requireSameSpot: false);
-      if (activeVisitId == null) return;
+      if (activeVisitId == null) return false;
 
       developer.log(
         '방문 취소 요청: visitId=$activeVisitId',
         name: 'VisitingSpotViewModel',
       );
       await _repository.cancelVisit(visitId: activeVisitId);
-      if (_disposed) return;
+      if (_disposed) return false;
 
       _refreshTimer?.cancel();
-      // 이 화면은 진행 중 방문의 실수 이탈을 막기 위해 PopScope에서 pop을
-      // 차단한다. 취소가 성공한 경우에는 현재 화면을 장소 상세로 교체한다.
-      Get.offNamed(AppRoutes.recommendationDetail, arguments: spot.id);
+      return true;
     } on ApiException catch (e) {
       switch (e.code) {
         case 'InvalidVisitStateException':
@@ -255,6 +253,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
       isCancelling = false;
       _safeNotify();
     }
+    return false;
   }
 
   /// 다음 리프레시 경계 시각에 맞춰 one-shot 타이머 예약
