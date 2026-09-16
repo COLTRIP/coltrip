@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../models/map_spot.dart';
 import '../services/map_spot_service.dart';
 import '../widgets/map_search_bar.dart';
 
@@ -23,6 +24,7 @@ class _MapPageState extends State<MapPage> {
 
   bool _isLoadingSpots = false;
   bool _hasLoadedSpots = false;
+  bool _isShowingSearchResults = false;
   Timer? _cameraIdleDebounce;
   final Map<String, NOverlayImage> _markerIconCache = {};
 
@@ -78,7 +80,6 @@ class _MapPageState extends State<MapPage> {
         child: Text(
           label,
           style: TextStyle(
-            fontFamily: 'Paperlogy',
             fontSize: label.length >= 3 ? 12 : 14,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -93,7 +94,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _loadSpotsInCurrentBounds(NaverMapController controller) async {
-    if (_isLoadingSpots) return;
+    if (_isLoadingSpots || _isShowingSearchResults) return;
 
     _isLoadingSpots = true;
 
@@ -107,42 +108,12 @@ class _MapPageState extends State<MapPage> {
         neLng: bounds.northEast.longitude,
       );
 
-      if (!mounted || !widget.isActive) return;
+      if (!mounted || !widget.isActive || _isShowingSearchResults) return;
 
-      final markers = <NAddableOverlay>{};
-
-      for (final spot in spots) {
-        final markerColor = _markerColor(spot.quietLevel, spot.quietScore);
-        final markerIcon = await _markerIcon(
-          color: markerColor,
-          quietScore: spot.quietScore,
-        );
-
-        final marker = NMarker(
-          id: 'spot_${spot.id}',
-          position: NLatLng(spot.latitude, spot.longitude),
-          icon: markerIcon,
-          size: const Size(44, 44),
-          anchor: const NPoint(0.5, 0.5),
-          caption: NOverlayCaption(text: spot.name),
-          captionOffset: 4,
-        );
-
-        marker.setOnTapListener((_) {
-          debugPrint('선택한 장소: id=${spot.id}, name=${spot.name}');
-          Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id);
-        });
-
-        markers.add(marker);
-      }
-
-      if (!mounted || !widget.isActive) return;
-
-      await controller.clearOverlays(type: NOverlayType.marker);
-      await controller.addOverlayAll(markers);
+      await _replaceSpotMarkers(controller, spots);
       _hasLoadedSpots = true;
 
-      debugPrint('현재 지도 범위 관광지 ${markers.length}개 표시 완료');
+      debugPrint('현재 지도 범위 관광지 ${spots.length}개 표시 완료');
     } catch (error, stackTrace) {
       debugPrint('지도 관광지 조회 실패: $error\n$stackTrace');
 
@@ -161,6 +132,83 @@ class _MapPageState extends State<MapPage> {
     } finally {
       _isLoadingSpots = false;
     }
+  }
+
+  Future<void> _replaceSpotMarkers(
+    NaverMapController controller,
+    List<MapSpot> spots,
+  ) async {
+    final markers = <NAddableOverlay>{};
+
+    for (final spot in spots) {
+      final markerIcon = await _markerIcon(
+        color: _markerColor(spot.quietLevel, spot.quietScore),
+        quietScore: spot.quietScore,
+      );
+
+      final marker = NMarker(
+        id: 'spot_${spot.id}',
+        position: NLatLng(spot.latitude, spot.longitude),
+        icon: markerIcon,
+        size: const Size(44, 44),
+        anchor: const NPoint(0.5, 0.5),
+        caption: NOverlayCaption(text: spot.name),
+        captionOffset: 4,
+      );
+
+      marker.setOnTapListener((_) {
+        debugPrint('선택한 장소: id=${spot.id}, name=${spot.name}');
+        Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id);
+      });
+
+      markers.add(marker);
+    }
+
+    if (!mounted || !widget.isActive) return;
+
+    await controller.clearOverlays(type: NOverlayType.marker);
+    await controller.addOverlayAll(markers);
+  }
+
+  Future<void> _moveCameraToSearchResults(
+    NaverMapController controller,
+    List<MapSpot> spots,
+  ) async {
+    late final NCameraUpdate cameraUpdate;
+
+    if (spots.length == 1) {
+      final spot = spots.first;
+      cameraUpdate = NCameraUpdate.scrollAndZoomTo(
+        target: NLatLng(spot.latitude, spot.longitude),
+        zoom: 15,
+      );
+    } else {
+      var minLat = spots.first.latitude;
+      var maxLat = spots.first.latitude;
+      var minLng = spots.first.longitude;
+      var maxLng = spots.first.longitude;
+
+      for (final spot in spots.skip(1)) {
+        if (spot.latitude < minLat) minLat = spot.latitude;
+        if (spot.latitude > maxLat) maxLat = spot.latitude;
+        if (spot.longitude < minLng) minLng = spot.longitude;
+        if (spot.longitude > maxLng) maxLng = spot.longitude;
+      }
+
+      cameraUpdate = NCameraUpdate.fitBounds(
+        NLatLngBounds(
+          southWest: NLatLng(minLat, minLng),
+          northEast: NLatLng(maxLat, maxLng),
+        ),
+        padding: const EdgeInsets.fromLTRB(48, 120, 48, 80),
+      );
+    }
+
+    cameraUpdate.setAnimation(
+      animation: NCameraAnimation.easing,
+      duration: const Duration(milliseconds: 600),
+    );
+    await controller.updateCamera(cameraUpdate);
   }
 
   static const _initialCenter = NLatLng(35.1796, 129.0756);
@@ -218,7 +266,7 @@ class _MapPageState extends State<MapPage> {
       return;
     }
 
-    controller.setLocationTrackingMode(NLocationTrackingMode.follow);
+    controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
     _locationInitialized = true;
   }
 
@@ -246,21 +294,44 @@ class _MapPageState extends State<MapPage> {
 
     if (trimmedKeyword.isEmpty || _isSearching) return;
 
+    if (trimmedKeyword.length > 100) {
+      _showLocationMessage('검색어는 100자 이하로 입력해주세요.');
+      return;
+    }
+
+    final controller = _mapController;
+    if (controller == null) {
+      _showLocationMessage('지도를 불러온 뒤 다시 검색해주세요.');
+      return;
+    }
+
     _searchFocusNode.unfocus();
 
     setState(() {
       _isSearching = true;
+      _isShowingSearchResults = true;
     });
 
     try {
-      // TODO: 백엔드 장소 검색 API 연결
-      debugPrint('부산 장소 검색: $trimmedKeyword');
-    } catch (error) {
+      final spots = await _mapSpotService.search(keyword: trimmedKeyword);
+
+      if (!mounted || !widget.isActive) return;
+
+      await _replaceSpotMarkers(controller, spots);
+
+      if (spots.isEmpty) {
+        _showLocationMessage('검색 결과가 없어요.');
+        return;
+      }
+
+      await _moveCameraToSearchResults(controller, spots);
+      debugPrint('장소 검색 결과 ${spots.length}개 표시 완료');
+    } catch (error, stackTrace) {
+      debugPrint('장소 검색 실패: $error\n$stackTrace');
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('장소를 검색하지 못했어요.')));
+      _isShowingSearchResults = false;
+      _showLocationMessage('장소를 검색하지 못했어요.');
     } finally {
       if (mounted) {
         setState(() {
@@ -270,10 +341,18 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _clearSearch() {
+  Future<void> _clearSearch() async {
     _searchController.clear();
     _searchFocusNode.requestFocus();
-    setState(() {});
+
+    setState(() {
+      _isShowingSearchResults = false;
+    });
+
+    final controller = _mapController;
+    if (controller != null && widget.isActive) {
+      await _loadSpotsInCurrentBounds(controller);
+    }
   }
 
   @override
@@ -408,7 +487,6 @@ class _LegendItem extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'Paperlogy',
             fontSize: 12,
             color: Color(0xFF252B28),
           ),

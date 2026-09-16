@@ -79,7 +79,6 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                 '방문 확인을 위해 위치가 필요해요',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -92,7 +91,6 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                 '방문이 완료되거나 취소되면\n더 이상 위치를 확인하지 않아요.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 15,
                   color: Colors.black,
                 ),
@@ -108,7 +106,6 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
                           _viewModel.errorMessage!,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 12,
                             color: Colors.red,
                           ),

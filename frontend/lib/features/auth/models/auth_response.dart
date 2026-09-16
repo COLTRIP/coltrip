@@ -1,5 +1,8 @@
 import 'auth_user.dart';
 
+/// 인증 API 응답 데이터를 나타내는 모델입니다.
+///
+/// 액세스 토큰과 리프레시 토큰, 신규 사용자 여부 및 인증된 사용자 정보를 포함합니다.
 class AuthResponse {
   const AuthResponse({
     required this.accessToken,

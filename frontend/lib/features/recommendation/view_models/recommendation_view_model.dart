@@ -13,6 +13,12 @@ class RecommendationViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   String? emptyMessage;
+  int _requestId = 0;
+  bool _disposed = false;
+
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
 
   Future<void> loadSpots({String? category, String? mode}) async {
     isLoading = true;
@@ -36,10 +42,11 @@ class RecommendationViewModel extends ChangeNotifier {
     String? category,
     List<String> modes = const [],
   }) async {
+    final requestId = ++_requestId;
     isLoading = true;
     errorMessage = null;
     emptyMessage = null;
-    notifyListeners();
+    _safeNotify();
 
     try {
       final result = await _repository.getRecommendations(
@@ -47,14 +54,59 @@ class RecommendationViewModel extends ChangeNotifier {
         category: category,
         modes: modes,
       );
-      spots = result.spots;
-      emptyMessage = result.message;
+      if (requestId == _requestId) {
+        spots = result.spots;
+        emptyMessage = result.message;
+      }
     } catch (error) {
       debugPrint('추천 목록 조회 실패: $error');
-      errorMessage = '추천 목록을 불러오지 못했어요. 다시 시도해주세요.';
+      if (requestId == _requestId) {
+        errorMessage = '추천 목록을 불러오지 못했어요. 다시 시도해주세요.';
+      }
     } finally {
-      isLoading = false;
-      notifyListeners();
+      if (requestId == _requestId) {
+        isLoading = false;
+        _safeNotify();
+      }
     }
+  }
+
+  Future<void> loadCurrentRecommendations({
+    String? category,
+    List<String> modes = const [],
+  }) async {
+    final requestId = ++_requestId;
+    isLoading = true;
+    errorMessage = null;
+    emptyMessage = null;
+    _safeNotify();
+
+    try {
+      final result = await _repository.getCurrentRecommendations(
+        category: category,
+        modes: modes,
+      );
+      if (requestId == _requestId) {
+        spots = result.spots;
+        emptyMessage = result.message;
+      }
+    } catch (error) {
+      debugPrint('현재 추천 목록 조회 실패: $error');
+      if (requestId == _requestId) {
+        errorMessage = '추천 목록을 불러오지 못했어요. 다시 시도해주세요.';
+      }
+    } finally {
+      if (requestId == _requestId) {
+        isLoading = false;
+        _safeNotify();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _requestId++;
+    super.dispose();
   }
 }

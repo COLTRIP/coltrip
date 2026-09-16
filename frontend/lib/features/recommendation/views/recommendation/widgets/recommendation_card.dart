@@ -66,7 +66,6 @@ class RecommendationCard extends StatelessWidget {
                         Text(
                           spot.name,
                           style: const TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
                             color: Colors.black,
@@ -75,7 +74,6 @@ class RecommendationCard extends StatelessWidget {
                         Text(
                           spot.address,
                           style: const TextStyle(
-                            fontFamily: 'Paperlogy',
                             fontSize: 10,
                             fontWeight: FontWeight.w300,
                             color: Color(0xFF7C7C7C),
@@ -83,7 +81,7 @@ class RecommendationCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    _QuietScoreBar(quietScore: spot.quietScore ?? 0),
+                    _QuietScoreBar(quietScore: spot.quietScore),
                   ],
                 ),
               ),
@@ -96,13 +94,13 @@ class RecommendationCard extends StatelessWidget {
 }
 
 class _QuietScoreBar extends StatelessWidget {
-  final int quietScore;
+  final int? quietScore;
 
   const _QuietScoreBar({required this.quietScore});
 
   @override
   Widget build(BuildContext context) {
-    final ratio = quietScore.clamp(0, 100) / 100;
+    final ratio = (quietScore ?? 0).clamp(0, 100) / 100;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -112,16 +110,14 @@ class _QuietScoreBar extends StatelessWidget {
             const Text(
               '고요지수',
               style: TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,
               ),
             ),
             Text(
-              '$quietScore점',
+              quietScore == null ? '미측정' : '$quietScore점',
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,

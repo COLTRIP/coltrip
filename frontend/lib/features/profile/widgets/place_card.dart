@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/place.dart';
 
+/// 장소 정보를 카드 형태로 표시하는 위젯입니다.
+///
+/// 장소 이미지와 이름을 표시하며, 프로필 화면의 장소 캐러셀에서 사용됩니다.
 class PlaceCard extends StatelessWidget {
   const PlaceCard({super.key, required this.place, this.onTap});
 
@@ -58,7 +61,6 @@ class PlaceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                     color: Color(0xFF252B28),

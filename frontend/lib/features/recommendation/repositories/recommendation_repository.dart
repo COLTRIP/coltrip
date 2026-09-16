@@ -25,6 +25,13 @@ class RecommendationRepository {
     );
   }
 
+  Future<RecommendationResult> getCurrentRecommendations({
+    String? category,
+    List<String> modes = const [],
+  }) {
+    return _api.getCurrentRecommendations(category: category, modes: modes);
+  }
+
   Future<SpotDetail> getSpotDetail({required int spotId}) {
     return _api.getSpotDetail(spotId: spotId);
   }

@@ -68,6 +68,8 @@ class CurrentVisit {
       quietLevel: currentQuietLevel,
       quietScoreUpdatedAt: startedAt,
       isLiked: false,
+      visitRadiusMeters: visitRadiusMeters,
+      spotAreaType: null,
     );
   }
 }

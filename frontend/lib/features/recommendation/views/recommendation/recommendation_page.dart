@@ -43,20 +43,21 @@ class _RecommendationPageState extends State<RecommendationPage> {
   }
 
   void _loadSpots() {
-    _viewModel.loadRecommendations(
-      dateTime: _filterViewModel.filter.dateTime,
-      category: _filterViewModel.filter.category == '전체'
-          ? null
-          : _filterViewModel.filter.category,
-      modes: widget.modes,
-    );
-  }
-
-  String _moodLabel(String id) {
-    for (final mood in PlaceMoodData.items) {
-      if (mood.id == id) return mood.label;
+    final category = _filterViewModel.filter.category == '전체'
+        ? null
+        : _filterViewModel.filter.category;
+    if (_filterViewModel.isCurrent) {
+      _viewModel.loadCurrentRecommendations(
+        category: category,
+        modes: widget.modes,
+      );
+    } else {
+      _viewModel.loadRecommendations(
+        dateTime: _filterViewModel.filter.dateTime,
+        category: category,
+        modes: widget.modes,
+      );
     }
-    return id;
   }
 
   String get _categoryLabel {
@@ -109,7 +110,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
                   const Text(
                     '감성',
                     style: TextStyle(
-                      fontFamily: 'Paperlogy',
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -118,38 +118,52 @@ class _RecommendationPageState extends State<RecommendationPage> {
                   const SizedBox(height: 10),
                   SizedBox(
                     height: 40,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: widget.modes.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final mode = widget.modes[index];
+                    child: widget.modes.isEmpty
+                        ? const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '선택한 감성이 없어요.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF8A918E),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: widget.modes.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (context, index) {
+                              final mode = widget.modes[index];
 
-                        return Container(
-                          constraints: const BoxConstraints(minWidth: 88),
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFAFAFA),
-                            border: Border.all(
-                              color: const Color(0xFFE1E3E2),
-                              width: 1.2,
-                            ),
-                            borderRadius: BorderRadius.circular(24),
+                              return Container(
+                                constraints: const BoxConstraints(minWidth: 88),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFAFAFA),
+                                  border: Border.all(
+                                    color: const Color(0xFFE1E3E2),
+                                    width: 1.2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Text(
+                                  PlaceMoodData.labelFor(mode),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF474444),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                          child: Text(
-                            _moodLabel(mode),
-                            style: const TextStyle(
-                              fontFamily: 'Paperlogy',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF474444),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,6 +8,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/api_exception.dart';
 import '../models/alternative_spot.dart';
+import '../models/current_visit.dart';
 import '../models/recommendation.dart';
 import '../models/visit_status.dart';
 import '../repositories/visiting_spot_repository.dart';
@@ -70,6 +72,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   String? alternativesError; // 빈 배열이면 "대체지 없음" 안내
 
   Timer? _refreshTimer;
+  Future<CurrentVisit?>? _currentVisitRequest;
   bool _disposed = false;
 
   int? get startQuietScore => _startQuietScore;
@@ -98,16 +101,17 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      final pos = await _currentPosition();
-      visitId = await _repository.startVisit(
-        spotId: spot.id,
-        startLatitude: pos.latitude,
-        startLongitude: pos.longitude,
-      );
+      debugPrint('[VisitingSpotViewModel] 방문 시작 요청: spotId=${spot.id}');
+      visitId = await _repository.startVisit(spotId: spot.id);
+      debugPrint('[VisitingSpotViewModel] 방문 시작 성공: visitId=$visitId');
       if (_disposed) return; // 시작 요청 중 화면이 닫혔으면 옵저버/타이머 안 검
       WidgetsBinding.instance.addObserver(this);
       _scheduleRefresh();
     } on ApiException catch (e) {
+      debugPrint(
+        '[VisitingSpotViewModel] 방문 시작 API 오류: '
+        'code=${e.code}, status=${e.statusCode}, message=${e.message}',
+      );
       switch (e.code) {
         case 'AlreadyOngoingVisitException': // 409
           await _recoverOngoingVisit();
@@ -116,8 +120,9 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         default:
           startError = e.message;
       }
-    } catch (_) {
-      startError = '방문을 시작하지 못했어요. 위치 확인 후 다시 시도해주세요.';
+    } catch (error, stackTrace) {
+      debugPrint('[VisitingSpotViewModel] 방문 시작 원본 오류: $error\n$stackTrace');
+      startError = '방문을 시작하지 못했어요. 다시 시도해주세요.';
     } finally {
       isStarting = false;
       _safeNotify();
@@ -134,6 +139,11 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         return;
       }
 
+      debugPrint(
+        '[VisitingSpotViewModel] 기존 방문 발견: '
+        'visitId=${current.visitId}, spotId=${current.spotId}',
+      );
+
       Get.offNamed(
         AppRoutes.visitingSpot,
         arguments: {
@@ -141,14 +151,30 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
           'visit': current,
         },
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('[VisitingSpotViewModel] 기존 방문 복구 실패: $error\n$stackTrace');
       startError = '이미 진행 중인 방문이 있어요.';
     }
   }
 
   Future<void> retryStartVisit() => _startVisit();
 
-  Future<Position> _currentPosition() {
+  Future<Position> _currentPosition() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw const _LocationUnavailableException('기기의 위치 서비스를 켠 뒤 다시 시도해주세요.');
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied) {
+      throw const _LocationUnavailableException('방문을 확인하려면 위치 권한이 필요해요.');
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw const _LocationUnavailableException('설정에서 위치 권한을 허용한 뒤 다시 시도해주세요.');
+    }
+
     return Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -157,7 +183,41 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<void> cancelVisit(int visitId) async {
+  /// 메모리의 visitId가 유실되었으면 서버의 진행 중 방문으로 복구한다.
+  Future<int?> _resolveActiveVisitId({required bool requireSameSpot}) async {
+    if (visitId != null) return visitId;
+
+    debugPrint('[VisitingSpotViewModel] visitId 없음, 현재 방문 조회로 복구 시도');
+    final request = _currentVisitRequest ??= _repository.getCurrentVisit();
+    final CurrentVisit? current;
+    try {
+      current = await request;
+    } finally {
+      if (identical(_currentVisitRequest, request)) {
+        _currentVisitRequest = null;
+      }
+    }
+    if (current == null) {
+      errorMessage = '진행 중인 방문이 없어요. 장소 상세에서 다시 시작해주세요.';
+      return null;
+    }
+
+    debugPrint(
+      '[VisitingSpotViewModel] 현재 방문 조회 성공: '
+      'visitId=${current.visitId}, spotId=${current.spotId}, '
+      'selectedSpotId=${spot.id}',
+    );
+    if (requireSameSpot && current.spotId != spot.id) {
+      errorMessage = '현재 선택한 장소와 진행 중인 방문 장소가 달라요. 기존 방문을 먼저 취소해주세요.';
+      return null;
+    }
+
+    visitId = current.visitId;
+    debugPrint('[VisitingSpotViewModel] 방문 세션 복구 성공: visitId=$visitId');
+    return visitId;
+  }
+
+  Future<void> cancelVisit() async {
     if (isCancelling) return;
 
     isCancelling = true;
@@ -165,11 +225,21 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _safeNotify();
 
     try {
-      await _repository.cancelVisit(visitId: visitId);
+      debugPrint('[VisitingSpotViewModel] 방문 취소 버튼 클릭: visitId=$visitId');
+      final activeVisitId = await _resolveActiveVisitId(requireSameSpot: false);
+      if (activeVisitId == null) return;
+
+      developer.log(
+        '방문 취소 요청: visitId=$activeVisitId',
+        name: 'VisitingSpotViewModel',
+      );
+      await _repository.cancelVisit(visitId: activeVisitId);
       if (_disposed) return;
 
       _refreshTimer?.cancel();
-      Get.back();
+      // 이 화면은 진행 중 방문의 실수 이탈을 막기 위해 PopScope에서 pop을
+      // 차단한다. 취소가 성공한 경우에는 현재 화면을 장소 상세로 교체한다.
+      Get.offNamed(AppRoutes.recommendationDetail, arguments: spot.id);
     } on ApiException catch (e) {
       switch (e.code) {
         case 'InvalidVisitStateException':
@@ -262,20 +332,52 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> completeVisit() async {
-    if (visitId == null || isCompleting) return;
+    if (isCompleting) return;
 
     isCompleting = true;
     errorMessage = null;
     _safeNotify();
 
     try {
-      final pos = await _currentPosition();
+      debugPrint('[VisitingSpotViewModel] 방문 완료 버튼 클릭: visitId=$visitId');
+      final activeVisitId = await _resolveActiveVisitId(requireSameSpot: true);
+      if (activeVisitId == null) return;
 
-      await _repository.completeVisit(
-        visitId: visitId!,
-        arrivedLatitude: pos.latitude,
-        arrivedLongitude: pos.longitude,
+      final radius = spot.visitRadiusMeters;
+      if (radius == null) {
+        errorMessage = '방문 가능 반경 정보를 확인할 수 없어요.';
+        return;
+      }
+
+      developer.log(
+        '방문 완료 위치 확인 시작: visitId=$activeVisitId, '
+        'spotId=${spot.id}, radius=${radius}m',
+        name: 'VisitingSpotViewModel',
       );
+      final pos = await _currentPosition();
+      final distanceMeters = Geolocator.distanceBetween(
+        pos.latitude,
+        pos.longitude,
+        spot.latitude,
+        spot.longitude,
+      );
+      developer.log(
+        '방문 거리 계산: current=(${pos.latitude}, ${pos.longitude}), '
+        'spot=(${spot.latitude}, ${spot.longitude}), '
+        'distance=${distanceMeters.toStringAsFixed(1)}m',
+        name: 'VisitingSpotViewModel',
+      );
+
+      if (distanceMeters > radius) {
+        status = VisitStatus.notAtSpot;
+        return;
+      }
+
+      developer.log(
+        '방문 반경 진입 확인, 완료 API 호출: visitId=$activeVisitId',
+        name: 'VisitingSpotViewModel',
+      );
+      await _repository.completeVisit(visitId: activeVisitId);
       if (_disposed) return; // 완료 요청 중 화면이 닫혔으면 이동하지 않음
 
       _refreshTimer?.cancel();
@@ -284,13 +386,12 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
       Get.offNamed(
         AppRoutes.reviewWrite,
-        arguments: {'spot': spot, 'visitId': visitId!},
+        arguments: {'spot': spot, 'visitId': activeVisitId},
       );
+    } on _LocationUnavailableException catch (e) {
+      errorMessage = e.message;
     } on ApiException catch (e) {
       switch (e.code) {
-        case 'VisitConditionNotMetException': // 400 — 목적지 반경 밖
-          // 안내 박스 표시, 사용자가 아이콘 버튼 눌러야 visiting 으로 복귀
-          status = VisitStatus.notAtSpot;
         case 'InvalidVisitStateException': // 409 — 이미 완료/취소된 방문
           errorMessage = '이미 완료되었거나 취소된 방문이에요.';
         case 'VisitNotFoundException': // 404
@@ -298,7 +399,13 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         default:
           errorMessage = e.message;
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        '방문 완료 처리 실패',
+        name: 'VisitingSpotViewModel',
+        error: error,
+        stackTrace: stackTrace,
+      );
       errorMessage = '방문 완료 처리에 실패했어요. 다시 시도해주세요.';
     } finally {
       isCompleting = false;
@@ -313,4 +420,10 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+}
+
+class _LocationUnavailableException implements Exception {
+  const _LocationUnavailableException(this.message);
+
+  final String message;
 }

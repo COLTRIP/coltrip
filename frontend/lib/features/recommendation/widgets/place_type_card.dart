@@ -59,7 +59,6 @@ class PlaceTypeCard extends StatelessWidget {
                     child: Text(
                       item.label,
                       style: TextStyle(
-                        fontFamily: 'Paperlogy',
                         color: const Color(0xFF252B28),
                         fontSize: 15,
                         fontWeight: isSelected

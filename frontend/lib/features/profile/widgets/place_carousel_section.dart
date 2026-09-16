@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/place.dart';
 import 'place_card.dart';
 
+/// 장소 목록을 가로형 캐러셀로 표시하는 섹션 위젯입니다.
+///
+/// 지정된 개수까지 장소 카드를 표시하며, 추가 장소가 있는 경우 더보기 기능을 제공합니다.
 class PlaceCarouselSection extends StatelessWidget {
   const PlaceCarouselSection({
     super.key,
@@ -38,8 +41,7 @@ class PlaceCarouselSection extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontFamily: 'Paperlogy',
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF252B28),
                 ),
@@ -86,7 +88,6 @@ class PlaceCarouselSection extends StatelessWidget {
                 Text(
                   emptyMessage,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 14,
                     fontWeight: FontWeight.w300,
                     color: Color(0xFF7C8581),
@@ -122,7 +123,7 @@ class PlaceCarouselSection extends StatelessWidget {
   }
 }
 
-// 장소 캐러셀 5개 이상 넘어가면 더보기 카드 하나 추가하는 위젯
+/// 장소 캐러셀의 추가 항목을 확인하기 위한 더보기 카드입니다.
 class _MorePlaceCard extends StatelessWidget {
   const _MorePlaceCard({this.onTap});
 
@@ -154,7 +155,6 @@ class _MorePlaceCard extends StatelessWidget {
               const Text(
                 '더보기',
                 style: TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF252B28),

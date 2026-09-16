@@ -9,16 +9,8 @@ class VisitingSpotRepository {
   final VisitingSpotApiService _api;
 
   /// 방문 시작 → visitId 반환
-  Future<int> startVisit({
-    required int spotId,
-    required double startLatitude,
-    required double startLongitude,
-  }) {
-    return _api.startVisit(
-      spotId: spotId,
-      startLatitude: startLatitude,
-      startLongitude: startLongitude,
-    );
+  Future<int> startVisit({required int spotId}) {
+    return _api.startVisit(spotId: spotId);
   }
 
   Future<int?> viewQuietValue({required int spotId}) {
@@ -39,15 +31,7 @@ class VisitingSpotRepository {
   }
 
   /// 방문 완료 처리
-  Future<void> completeVisit({
-    required int visitId,
-    required double arrivedLatitude,
-    required double arrivedLongitude,
-  }) {
-    return _api.completeVisit(
-      visitId: visitId,
-      arrivedLatitude: arrivedLatitude,
-      arrivedLongitude: arrivedLongitude,
-    );
+  Future<void> completeVisit({required int visitId}) {
+    return _api.completeVisit(visitId: visitId);
   }
 }

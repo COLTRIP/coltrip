@@ -110,7 +110,6 @@ class _MoodButton extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 17,
                 fontWeight: FontWeight.w400,
                 color: Color(0xFF252B28),

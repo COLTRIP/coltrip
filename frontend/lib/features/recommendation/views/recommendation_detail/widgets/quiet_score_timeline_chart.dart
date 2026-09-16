@@ -27,7 +27,6 @@ class QuietScoreTimelineChart extends StatelessWidget {
           child: Text(
             '타임라인 데이터가 없어요.',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontSize: 12,
               color: Color(0xFF7C7C7C),
             ),
@@ -80,7 +79,6 @@ class QuietScoreTimelineChart extends StatelessWidget {
                       point.hour.toString().padLeft(2, '0'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 10,
                         color: Colors.black,
                       ),

@@ -4,6 +4,7 @@ import '../models/recommendation_filter.dart';
 
 class RecommendationFilterViewModel extends ChangeNotifier {
   RecommendationFilter filter;
+  bool isCurrent = true;
 
   RecommendationFilterViewModel({
     DateTime? initialDateTime,
@@ -14,6 +15,7 @@ class RecommendationFilterViewModel extends ChangeNotifier {
        );
 
   void updateDateTime(DateTime dateTime) {
+    isCurrent = false;
     filter = RecommendationFilter(
       dateTime: dateTime,
       category: filter.category,

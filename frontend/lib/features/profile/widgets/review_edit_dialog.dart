@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../models/place_review.dart';
 import '../models/review_edit_result.dart';
 
+/// 작성한 리뷰의 별점과 내용을 수정하는 다이얼로그를 표시합니다.
+///
+/// 수정이 완료되면 변경된 리뷰 정보를 반환하며, 취소한 경우 null을 반환합니다.
 Future<ReviewEditResult?> showReviewEditDialog({
   required PlaceReview review,
 }) async {

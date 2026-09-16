@@ -1,7 +1,8 @@
-import 'package:coltrip/features/recommendation/views/review_writing/widget/text_review.dart';
-import 'package:coltrip/shared/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../views/review_writing/widget/text_review.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../models/recommendation.dart';
 import '../../view_models/write_review_view_model.dart';
 import '../visiting_spot/widgets/visiting_spot_card.dart';
@@ -62,7 +63,6 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                       '방문했던 곳, 어떠셨나요?\n리뷰를 남겨주세요!',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'Paperlogy',
                         fontSize: 16,
                       ),
                       textAlign: TextAlign.center,
@@ -82,7 +82,6 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                         _viewModel.errorMessage!,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontFamily: 'Paperlogy',
                           fontSize: 12,
                           color: Color(0xFFC0392B),
                         ),
