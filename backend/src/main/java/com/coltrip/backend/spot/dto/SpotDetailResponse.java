@@ -2,6 +2,7 @@ package com.coltrip.backend.spot.dto;
 
 import com.coltrip.backend.domain.spot.QuietLevel;
 import com.coltrip.backend.domain.spot.TouristSpot;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ public record SpotDetailResponse(
         String quietLevel,
         LocalDateTime quietScoreUpdatedAt,
         Integer visitRadiusMeters,
+        @Schema(description = "visitRadiusMeters 판정 기준의 점형/면적형 구분", allowableValues = {"POINT", "AREA"})
         String spotAreaType,
         boolean isLiked
 ) {
