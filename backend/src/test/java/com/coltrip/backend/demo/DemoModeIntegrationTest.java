@@ -80,7 +80,7 @@ class DemoModeIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Test void allowedUserCanQueryBusanButInternalAndPushRemainDisabled() throws Exception {
+    @Test void allowedUserCanQueryBusanAndInternalWriteAndPushRemainDisabled() throws Exception {
         var spot = TouristSpot.builder().tourApiContentId(UUID.randomUUID().toString()).name("부산 시연 장소")
                 .address("부산").latitude(new BigDecimal("35.1796")).longitude(new BigDecimal("129.0756"))
                 .category(Category.PARK).build();
@@ -93,7 +93,8 @@ class DemoModeIntegrationTest {
                 .andExpect(status().isForbidden());
         assertTrue(context.getBeansOfType(FirebaseMessaging.class).isEmpty());
         assertTrue(context.getBeansOfType(BackgroundNudgeScheduler.class).isEmpty());
-        assertTrue(context.getBeansOfType(QuietIndexMapSyncScheduler.class).isEmpty());
+        // 읽기 전용 GET + 자기 DB만 갱신하는 배치라 demo에서도 켜져 있어야 한다(이슈 #127).
+        assertFalse(context.getBeansOfType(QuietIndexMapSyncScheduler.class).isEmpty());
     }
 
     @Test void googleVerificationOccursBeforeAllowlistAndDeniedSignupDoesNotWrite() throws Exception {

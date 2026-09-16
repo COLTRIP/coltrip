@@ -9,6 +9,7 @@
 ### 프로젝트 및 인증
 - [x] 시연 전용 demo 프로필, 허용 Google 계정 제한, 전용 DB/키 기동 검증 및 FCM/자동 배치 차단. [시연 명세](./demo-mode-spec.md).
 - [x] 시연 게스트 로그인(2026-09-16) — POST /api/demo/guest-session으로 Google 인증 없이 즉시 계정 발급. 심사위원 사전 계정 등록 불필요. demo.enabled=true에서만 라우트 존재(운영 404).
+- [x] 시연 환경 고요지수 자동 동기화 활성화(2026-09-16, 이슈 #127) — 읽기 전용 AI 호출 + 자기 DB만 갱신이라 운영 격리를 깨지 않으므로 demo 프로필에서도 QuietIndexMapSyncScheduler를 켜둠. 심사 중 실제 실시간 데이터로 보이게 함. Nudge/FCM은 계속 비활성.
 - [ ] 별도 테스트 DB/계정/키·네트워크 구성 및 프론트 로고 진입·가상 위치 실기기 검증. 방문 반경은 #113 기준 프론트 담당.
 - [x] Spring Boot 4.1.0, Java 21, Gradle wrapper, MySQL/JPA 구성.
 - [x] GitHub Actions backend CI: MySQL 8.4 서비스, Java 21, Gradle build(테스트 포함) 구성. 최근 실행 성공 여부는 CI에서 별도 확인.

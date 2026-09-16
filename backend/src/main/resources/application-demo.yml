@@ -23,6 +23,5 @@ jwt:
 fcm:
   credentials-path: ""
 
-quiet-index:
-  map-sync:
-    cron: "-"
+# quiet-index.map-sync.cron은 여기서 재정의하지 않는다 - 운영과 동일한 기본 주기(매시 5분)로
+# AI 고요지수 지도를 실제로 받아와 이 DB(coltrip_demo)만 갱신한다(이슈 #127).
