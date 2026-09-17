@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../shared/widgets/shared_app_bar.dart';
 
@@ -30,12 +31,52 @@ class AppInfoPage extends StatelessWidget {
               _DataSourceRow(
                 label: '혼잡도 데이터',
                 source: 'SK텔레콤 지오비전 퍼즐',
-                showDivider: false,
               ),
+              SizedBox(height: 28),
+              Text(
+                '앱 정보',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF252B28),
+                ),
+              ),
+              SizedBox(height: 18),
+              _AppVersionRow(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AppVersionRow extends StatefulWidget {
+  const _AppVersionRow();
+
+  @override
+  State<_AppVersionRow> createState() => _AppVersionRowState();
+}
+
+class _AppVersionRowState extends State<_AppVersionRow> {
+  late final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfo,
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        final version = info == null
+            ? '-'
+            : '${info.version} (${info.buildNumber})';
+
+        return _DataSourceRow(
+          label: '버전',
+          source: version,
+          showDivider: false,
+        );
+      },
     );
   }
 }

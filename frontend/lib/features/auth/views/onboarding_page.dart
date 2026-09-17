@@ -60,7 +60,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (_isFinishing) return;
     setState(() => _isFinishing = true);
     await _storage.markCompleted();
-    if (mounted) Get.offAllNamed(AppRoutes.login);
+    if (mounted) {
+      Get.offAllNamed(
+        AppRoutes.locationPermission,
+        arguments: AppRoutes.login,
+      );
+    }
   }
 
   @override

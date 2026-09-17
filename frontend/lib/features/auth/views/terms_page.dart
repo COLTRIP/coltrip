@@ -41,7 +41,14 @@ class _TermsPageState extends State<TermsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('이용약관')),
+      appBar: AppBar(
+          title: const Text(
+            '이용약관',
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+      ),
       body: SafeArea(
         child: Builder(
           builder: (context) {

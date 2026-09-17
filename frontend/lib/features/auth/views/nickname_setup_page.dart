@@ -195,6 +195,8 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
 
                       const Divider(height: 1, color: Color(0xFFE1E3E2)),
 
+                      const SizedBox(height: 5),
+
                       _TermsCheckbox(
                         label: '[필수] 서비스 이용약관 동의',
                         value: _isServiceTermsChecked,
@@ -217,24 +219,10 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                                 });
                               },
                       ),
-                      _TermsCheckbox(
-                        label: '[필수] 위치기반서비스 이용약관 동의',
-                        value: _isLocationTermsChecked,
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _isLocationTermsChecked = value ?? false;
-                                });
-                              },
-                      ),
-
-                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
 
               PrimaryButton(

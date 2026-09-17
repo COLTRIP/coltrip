@@ -18,6 +18,10 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
     with WidgetsBindingObserver {
   final _viewModel = LocationPermissionViewModel();
 
+  String? get _nextRoute => Get.arguments is String
+      ? Get.arguments as String
+      : null;
+
   @override
   void initState() {
     super.initState();
@@ -41,15 +45,25 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
   Future<void> _checkPermissionOnResume() async {
     await _viewModel.checkPermissionOnResume();
     if (_viewModel.granted && mounted) {
-      Get.back(result: true);
+      _finish(granted: true);
     }
   }
 
   Future<void> _requestPermission() async {
     await _viewModel.requestPermission();
     if (_viewModel.granted && mounted) {
-      Get.back(result: true);
+      _finish(granted: true);
     }
+  }
+
+  void _finish({required bool granted}) {
+    final nextRoute = _nextRoute;
+    if (nextRoute != null) {
+      Get.offAllNamed(nextRoute);
+      return;
+    }
+
+    Get.back(result: granted);
   }
 
   @override
@@ -64,7 +78,7 @@ class _LocationPermissionPageState extends State<LocationPermissionPage>
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  onPressed: () => Get.back(result: false),
+                  onPressed: () => _finish(granted: false),
                   icon: const Icon(Icons.close, color: Colors.black),
                 ),
               ),

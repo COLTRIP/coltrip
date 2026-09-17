@@ -61,7 +61,7 @@ class VisitingSpotCard extends StatelessWidget {
                   Text(
                     spot.name,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -72,7 +72,7 @@ class VisitingSpotCard extends StatelessWidget {
                       spot.address,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: Color(0xFF7C7C7C),
                       ),
                     ),

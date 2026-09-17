@@ -86,7 +86,10 @@ class _RecommendationPageState extends State<RecommendationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SharedAppBar(title: '추천 장소', showBackButton: true),
+      appBar: const SharedAppBar(
+          title: '추천 장소',
+          showBackButton: true
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -118,6 +118,10 @@ class _ProfilePageState extends State<ProfilePage> {
               },
             ),
             SettingMenuButton(
+              title: '위치 권한 설정',
+              onTap: () => Get.toNamed(AppRoutes.locationSettings),
+            ),
+            SettingMenuButton(
               title: '정보',
               onTap: () => Get.toNamed(AppRoutes.info),
             ),

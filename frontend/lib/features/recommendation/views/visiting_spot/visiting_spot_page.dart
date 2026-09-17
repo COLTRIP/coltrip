@@ -35,6 +35,17 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
         );
 
   @override
+  void initState() {
+    super.initState();
+
+    // TODO: 대체장소 추천 화면 촬영 후 상태 강제 변경과 조회 호출 제거
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewModel.status = VisitStatus.crowdingDetected;
+      _viewModel.findAlternatives();
+    });
+  }
+
+  @override
   void dispose() {
     _viewModel.dispose();
     super.dispose();
@@ -274,6 +285,7 @@ class _AlternativeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spot = alternative.spot;
+    final quietIndex = alternative.quietIndex;
     return InkWell(
       onTap: () =>
           Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
@@ -306,7 +318,7 @@ class _AlternativeCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '고요지수 ${spot.quietScore}',
+                  '고요지수 ${quietIndex?.round() ?? '-'}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
