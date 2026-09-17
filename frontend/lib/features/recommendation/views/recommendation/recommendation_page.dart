@@ -103,7 +103,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
             ),
             const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              padding: const EdgeInsets.fromLTRB(35, 0, 20, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

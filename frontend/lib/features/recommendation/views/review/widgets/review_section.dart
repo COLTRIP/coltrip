@@ -41,7 +41,6 @@ class ReviewSection extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 12),
         if (reviews.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 22),

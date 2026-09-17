@@ -47,8 +47,8 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
   Future<void> _startVisit(SpotDetail spot) async {
     final hasLocationPermission = await LocationPermissionViewModel.isGranted();
     if (!hasLocationPermission) {
-      final granted = await Get.toNamed<bool>(AppRoutes.locationPermission);
-      if (granted != true || !mounted) return;
+      final result = await Get.toNamed(AppRoutes.locationPermission);
+      if (result is! bool || !result || !mounted) return;
     }
 
     // 리뷰 작성까지 마치고 돌아오면 true → 리뷰 목록 새로고침
@@ -118,11 +118,14 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => Get.back(),
-                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    Transform.translate(
+                      offset: const Offset(-8, 0),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => Get.back(),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      ),
                     ),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
@@ -306,6 +309,7 @@ class _RecommendationDetailPageState extends State<RecommendationDetailPage> {
                         arguments: _reviewViewModel.reviews,
                       ),
                     ),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
