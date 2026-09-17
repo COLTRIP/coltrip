@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/storage/api_environment_storage.dart';
 import '../models/alternative_spot.dart';
 import '../models/current_visit.dart';
 import '../models/recommendation.dart';
@@ -17,7 +18,10 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
   VisitingSpotViewModel({
     required this.spot,
     VisitingSpotRepository? repository,
+    ApiEnvironmentStorage? environmentStorage,
   }) : _repository = repository ?? VisitingSpotRepository(),
+       _environmentStorage =
+           environmentStorage ?? const ApiEnvironmentStorage(),
        _startQuietScore = spot.quietScore,
        _currentQuietScore = spot.quietScore {
     _startVisit();
@@ -29,7 +33,10 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     required int? startQuietScore,
     required int? currentQuietScore,
     VisitingSpotRepository? repository,
+    ApiEnvironmentStorage? environmentStorage,
   }) : _repository = repository ?? VisitingSpotRepository(),
+       _environmentStorage =
+           environmentStorage ?? const ApiEnvironmentStorage(),
        // ignore: prefer_initializing_formals
        _startQuietScore = startQuietScore,
        // ignore: prefer_initializing_formals
@@ -42,6 +49,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   final SpotDetail spot;
   final VisitingSpotRepository _repository;
+  final ApiEnvironmentStorage _environmentStorage;
   static const _refreshHours = [9, 13, 17, 21];
 
   static const int _dropThreshold = 15;
@@ -183,6 +191,28 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  /// 운영 모드에서는 기기 GPS를, 시연 모드에서는 현재 장소의 좌표를 사용합니다.
+  ///
+  /// 시연 서버의 장소를 실제 부산 현장에 가지 않고도 방문 완료할 수 있도록
+  /// 장소 좌표 자체를 가상 현재 위치로 취급합니다.
+  Future<({double latitude, double longitude, bool isVirtual})>
+  _locationForVisitCheck() async {
+    if (await _environmentStorage.isDemoMode()) {
+      return (
+        latitude: spot.latitude,
+        longitude: spot.longitude,
+        isVirtual: true,
+      );
+    }
+
+    final position = await _currentPosition();
+    return (
+      latitude: position.latitude,
+      longitude: position.longitude,
+      isVirtual: false,
+    );
+  }
+
   /// 메모리의 visitId가 유실되었으면 서버의 진행 중 방문으로 복구한다.
   Future<int?> _resolveActiveVisitId({required bool requireSameSpot}) async {
     if (visitId != null) return visitId;
@@ -217,8 +247,8 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     return visitId;
   }
 
-  Future<void> cancelVisit() async {
-    if (isCancelling) return;
+  Future<bool> cancelVisit() async {
+    if (isCancelling) return false;
 
     isCancelling = true;
     errorMessage = null;
@@ -227,19 +257,17 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
     try {
       debugPrint('[VisitingSpotViewModel] 방문 취소 버튼 클릭: visitId=$visitId');
       final activeVisitId = await _resolveActiveVisitId(requireSameSpot: false);
-      if (activeVisitId == null) return;
+      if (activeVisitId == null) return false;
 
       developer.log(
         '방문 취소 요청: visitId=$activeVisitId',
         name: 'VisitingSpotViewModel',
       );
       await _repository.cancelVisit(visitId: activeVisitId);
-      if (_disposed) return;
+      if (_disposed) return false;
 
       _refreshTimer?.cancel();
-      // 이 화면은 진행 중 방문의 실수 이탈을 막기 위해 PopScope에서 pop을
-      // 차단한다. 취소가 성공한 경우에는 현재 화면을 장소 상세로 교체한다.
-      Get.offNamed(AppRoutes.recommendationDetail, arguments: spot.id);
+      return true;
     } on ApiException catch (e) {
       switch (e.code) {
         case 'InvalidVisitStateException':
@@ -255,6 +283,7 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
       isCancelling = false;
       _safeNotify();
     }
+    return false;
   }
 
   /// 다음 리프레시 경계 시각에 맞춰 one-shot 타이머 예약
@@ -354,15 +383,17 @@ class VisitingSpotViewModel extends ChangeNotifier with WidgetsBindingObserver {
         'spotId=${spot.id}, radius=${radius}m',
         name: 'VisitingSpotViewModel',
       );
-      final pos = await _currentPosition();
+      final location = await _locationForVisitCheck();
       final distanceMeters = Geolocator.distanceBetween(
-        pos.latitude,
-        pos.longitude,
+        location.latitude,
+        location.longitude,
         spot.latitude,
         spot.longitude,
       );
       developer.log(
-        '방문 거리 계산: current=(${pos.latitude}, ${pos.longitude}), '
+        '방문 거리 계산: '
+        'mode=${location.isVirtual ? 'demo' : 'device'}, '
+        'current=(${location.latitude}, ${location.longitude}), '
         'spot=(${spot.latitude}, ${spot.longitude}), '
         'distance=${distanceMeters.toStringAsFixed(1)}m',
         name: 'VisitingSpotViewModel',

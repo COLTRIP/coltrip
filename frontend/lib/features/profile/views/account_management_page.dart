@@ -25,13 +25,13 @@ class AccountManagementPage extends StatelessWidget {
           AccountMenuButton(
             title: '닉네임 변경',
             onTap: () async {
-              final nickname = await Get.toNamed<String>(
+              final result = await Get.toNamed(
                 AppRoutes.changeNickname,
                 arguments: profileController.nickname.value,
               );
 
-              if (nickname != null) {
-                profileController.nickname.value = nickname;
+              if (result is String) {
+                profileController.nickname.value = result;
               }
             },
           ),

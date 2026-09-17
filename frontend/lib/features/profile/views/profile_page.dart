@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 import '../views/account_management_page.dart';
 import '../views/liked_places_page.dart';
@@ -115,6 +116,14 @@ class _ProfilePageState extends State<ProfilePage> {
               onTap: () {
                 Get.to(() => const AccountManagementPage());
               },
+            ),
+            SettingMenuButton(
+              title: '위치 권한 설정',
+              onTap: () => Get.toNamed(AppRoutes.locationSettings),
+            ),
+            SettingMenuButton(
+              title: '정보',
+              onTap: () => Get.toNamed(AppRoutes.info),
             ),
 
             const SizedBox(height: 20),

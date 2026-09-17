@@ -107,7 +107,7 @@ class _ChangeNicknamePageState extends State<ChangeNicknamePage> {
                 decoration: InputDecoration(
                   hintText: '변경하고 싶은 닉네임(1~20자리 한글, 영문 및 숫자)',
                   hintStyle: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: Color(0xFF505653),
                   ),

@@ -20,23 +20,6 @@ class RecommendationViewModel extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  Future<void> loadSpots({String? category, String? mode}) async {
-    isLoading = true;
-    errorMessage = null;
-    emptyMessage = null;
-    notifyListeners();
-
-    try {
-      spots = await _repository.getSpots(category: category, mode: mode);
-    } catch (_) {
-      // 목록은 code별 특수 처리가 없어 서버/네트워크 에러 모두 동일 문구
-      errorMessage = '추천 목록을 불러오지 못했어요. 다시 시도해주세요.';
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<void> loadRecommendations({
     required DateTime dateTime,
     String? category,

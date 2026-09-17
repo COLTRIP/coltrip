@@ -16,6 +16,8 @@ void main() {
     expect(
       names,
       containsAll(<String>[
+        AppRoutes.startup,
+        AppRoutes.onboarding,
         AppRoutes.main,
         AppRoutes.login,
         AppRoutes.nickname,

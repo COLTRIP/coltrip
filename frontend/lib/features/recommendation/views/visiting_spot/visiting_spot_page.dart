@@ -23,6 +23,8 @@ class VisitingSpotPage extends StatefulWidget {
 }
 
 class _VisitingSpotPageState extends State<VisitingSpotPage> {
+  bool _canLeave = false;
+
   late final _viewModel = widget.resumeVisit == null
       ? VisitingSpotViewModel(spot: widget.spot)
       : VisitingSpotViewModel.resume(
@@ -31,6 +33,17 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           startQuietScore: widget.resumeVisit!.startQuietScore,
           currentQuietScore: widget.resumeVisit!.currentQuietScore,
         );
+
+  @override
+  void initState() {
+    super.initState();
+
+    // TODO: 대체장소 추천 화면 촬영 후 상태 강제 변경과 조회 호출 제거
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewModel.status = VisitStatus.crowdingDetected;
+      _viewModel.findAlternatives();
+    });
+  }
 
   @override
   void dispose() {
@@ -43,7 +56,7 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
     final spot = widget.spot;
 
     return PopScope(
-      canPop: false,
+      canPop: _canLeave,
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F9F8),
         appBar: AppBar(
@@ -54,7 +67,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           title: const Text(
             '방문중인 장소',
             style: TextStyle(
-              fontFamily: 'Paperlogy',
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black,
@@ -94,7 +106,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
           SizedBox(height: 16),
           Text(
             '방문을 시작하는 중...',
-            style: TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+            style: TextStyle(
+                fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -108,7 +122,9 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Paperlogy', fontSize: 14),
+          style: const TextStyle(
+              fontSize: 14,
+          ),
         ),
         const SizedBox(height: 20),
         PrimaryButton(
@@ -149,7 +165,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                 _viewModel.errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: 'Paperlogy',
                   fontSize: 12,
                   color: Color(0xFFC0392B),
                 ),
@@ -178,12 +193,24 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
               label: '방문 취소하기',
               icon: Icons.close,
               isLoading: _viewModel.isCancelling,
-              onPressed: _viewModel.cancelVisit,
+              onPressed: _cancelVisit,
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _cancelVisit() async {
+    final cancelled = await _viewModel.cancelVisit();
+    if (!cancelled || !mounted) return;
+
+    setState(() {
+      _canLeave = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Get.back();
+    });
   }
 
   Widget _buildAlternativesBody(SpotDetail spot) {
@@ -204,7 +231,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                 const Text(
                   '다른 장소 둘러보기',
                   style: TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -226,7 +252,6 @@ class _VisitingSpotPageState extends State<VisitingSpotPage> {
                     child: Text(
                       _viewModel.alternativesError!,
                       style: const TextStyle(
-                        fontFamily: 'Paperlogy',
                         fontSize: 13,
                         color: Color(0xFF7C7C7C),
                       ),
@@ -260,6 +285,7 @@ class _AlternativeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spot = alternative.spot;
+    final quietIndex = alternative.quietIndex;
     return InkWell(
       onTap: () =>
           Get.toNamed(AppRoutes.recommendationDetail, arguments: spot.id),
@@ -286,16 +312,14 @@ class _AlternativeCard extends StatelessWidget {
                 Text(
                   spot.name,
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),
                 Text(
-                  '고요지수 ${spot.quietScore}',
+                  '고요지수 ${quietIndex?.round() ?? '-'}',
                   style: const TextStyle(
-                    fontFamily: 'Paperlogy',
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF589C7E),
@@ -307,7 +331,6 @@ class _AlternativeCard extends StatelessWidget {
             Text(
               alternative.recommendReason,
               style: const TextStyle(
-                fontFamily: 'Paperlogy',
                 fontSize: 12,
                 fontWeight: FontWeight.w300,
                 color: Color(0xFF474444),

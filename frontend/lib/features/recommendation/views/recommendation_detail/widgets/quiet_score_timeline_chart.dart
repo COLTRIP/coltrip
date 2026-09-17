@@ -7,17 +7,22 @@ class QuietScoreTimelineChart extends StatelessWidget {
 
   const QuietScoreTimelineChart({super.key, required this.points});
 
+  static const _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
   Color _barColor(int score) {
     if (score >= 70) return const Color(0xFF589C7E);
-    if (score >= 40) return const Color(0xFFD0F094);
-    return const Color(0xFFFFD483);
+    if (score >= 40) return const Color(0xFFE4A94B);
+    return const Color(0xFFC96363);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (points.isEmpty) {
+    final hasTimelineData = points.any((point) => point.score != null);
+
+    if (!hasTimelineData) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: const Color(0xFFD9D9D9)),
@@ -25,11 +30,9 @@ class QuietScoreTimelineChart extends StatelessWidget {
         ),
         child: const Center(
           child: Text(
-            '타임라인 데이터가 없어요.',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF7C7C7C),
-            ),
+            '해당 장소의 타임라인 정보가 제공되지 않아요.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Color(0xFF7C7C7C)),
           ),
         ),
       );
@@ -42,53 +45,79 @@ class QuietScoreTimelineChart extends StatelessWidget {
         border: Border.all(color: const Color(0xFFD9D9D9)),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 120,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: points.map((point) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Container(
-                      width: 16,
-                      height: 120 * (point.score.clamp(0, 100) / 100),
-                      decoration: BoxDecoration(
-                        color: _barColor(point.score),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 132,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: points.map((point) {
+                final score = point.score;
+                final barHeight = score == null
+                    ? 4.0
+                    : 94 * (score.clamp(0, 100) / 100);
+
+                return Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        score?.toString() ?? '-',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF59605D),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const Divider(height: 10, color: Color(0x33252B28)),
-            Row(
-              children: points.map((point) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: SizedBox(
-                    width: 16,
-                    child: Text(
-                      point.hour.toString().padLeft(2, '0'),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black,
+                      const SizedBox(height: 5),
+                      Container(
+                        width: 22,
+                        height: barHeight,
+                        decoration: BoxDecoration(
+                          color: score == null
+                              ? const Color(0xFFE5E8E6)
+                              : _barColor(score),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(5),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 );
               }).toList(),
             ),
-          ],
-        ),
+          ),
+          const Divider(height: 10, color: Color(0x33252B28)),
+          Row(
+            children: points.map((point) {
+              return Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      _weekdays[point.targetAt.weekday - 1],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF252B28),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${point.targetAt.month}/${point.targetAt.day}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF8A918E),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

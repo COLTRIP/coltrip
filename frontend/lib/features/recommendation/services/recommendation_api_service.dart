@@ -2,54 +2,23 @@ import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 
-import '../../../core/network/api_exception.dart';
+import '../../../core/network/api_request.dart';
 import '../../../core/network/dio_client.dart';
 import '../models/recommendation.dart';
 import '../models/quiet_score_point.dart';
 
-// TODO(예외처리 통합): try/catch(DioException) → ApiException 변환 반복.
-//   api_exception.dart 계획대로 에러 인터셉터로 중앙화 예정.
 class RecommendationApiService {
   RecommendationApiService({Dio? dio}) : _dio = dio ?? DioClient.instance;
 
   final Dio _dio;
-
-  // TODO: 리스트 불러올 때 일단 임의로 부산 전체
-  static const _busanSwLat = 34.98;
-  static const _busanSwLng = 128.75;
-  static const _busanNeLat = 35.40;
-  static const _busanNeLng = 129.30;
-
-  /// GET /api/spots — bounding box 안의 추천 장소 목록
-  Future<List<Spot>> getSpots({String? category, String? mode}) async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/spots',
-        queryParameters: {
-          'swLat': _busanSwLat,
-          'swLng': _busanSwLng,
-          'neLat': _busanNeLat,
-          'neLng': _busanNeLng,
-          if (category != null && category.isNotEmpty && category != '전체')
-            'category': category,
-          if (mode != null && mode.isNotEmpty) 'mode': mode,
-        },
-      );
-
-      final list = response.data?['spots'] as List? ?? const [];
-      return list.cast<Map<String, dynamic>>().map(Spot.fromJson).toList();
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
-  }
 
   /// GET /api/spots/recommendations — 날짜/시간대별 예측 추천
   Future<RecommendationResult> getRecommendations({
     required DateTime dateTime,
     String? category,
     List<String> modes = const [],
-  }) async {
-    try {
+  }) {
+    return executeApiRequest(() async {
       final requestModes = modes.isEmpty ? <String?>[null] : modes;
       final date = _formatDate(dateTime);
 
@@ -101,29 +70,15 @@ class RecommendationApiService {
       );
 
       return RecommendationResult(spots: spots, message: responseMessage);
-    } on DioException catch (e, stackTrace) {
-      developer.log(
-        '추천 API 실패'
-        '\ntype=${e.type}'
-        '\nmethod=${e.requestOptions.method}'
-        '\nuri=${e.requestOptions.uri}'
-        '\nstatusCode=${e.response?.statusCode}'
-        '\nresponse=${e.response?.data}'
-        '\nmessage=${e.message}',
-        name: 'RecommendationApiService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      throw ApiException.fromDioException(e);
-    }
+    }, onError: _logRecommendationError);
   }
 
   /// GET /api/spots/recommendations/current — 현재 고요지수 기준 추천
   Future<RecommendationResult> getCurrentRecommendations({
     String? category,
     List<String> modes = const [],
-  }) async {
-    try {
+  }) {
+    return executeApiRequest(() async {
       final requestModes = modes.isEmpty ? <String?>[null] : modes;
       final responses = await Future.wait(
         requestModes.map(
@@ -155,9 +110,7 @@ class RecommendationApiService {
 
       final spots = spotsById.values.toList()..sort(_compareQuietScore);
       return RecommendationResult(spots: spots, message: responseMessage);
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
   int _compareQuietScore(Spot a, Spot b) {
@@ -176,44 +129,38 @@ class RecommendationApiService {
     return '${dateTime.year}-$month-$day';
   }
 
-  Future<SpotDetail> getSpotDetail({required int spotId}) async {
-    try {
+  Future<SpotDetail> getSpotDetail({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId',
       );
       return SpotDetail.fromJson(response.data!);
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
-  Future<bool> likeSpot({required int spotId}) async {
-    try {
+  Future<bool> likeSpot({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.post<Map<String, dynamic>>(
         '/api/spots/$spotId/like',
       );
       return response.data!['liked'] as bool;
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
-  Future<bool> unlikeSpot({required int spotId}) async {
-    try {
+  Future<bool> unlikeSpot({required int spotId}) {
+    return executeApiRequest(() async {
       final response = await _dio.delete<Map<String, dynamic>>(
         '/api/spots/$spotId/like',
       );
       return response.data!['liked'] as bool;
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+    });
   }
 
   Future<List<QuietScorePoint>> getTimeline({
     required int spotId,
     required DateTime dateTime,
-  }) async {
-    try {
+  }) {
+    return executeApiRequest(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/spots/$spotId/quiet-index/forecast',
         queryParameters: {'date': _formatDate(dateTime), 'hour': dateTime.hour},
@@ -223,14 +170,25 @@ class RecommendationApiService {
 
       return timeline
           .cast<Map<String, dynamic>>()
-          .where(
-            (item) => item['targetAt'] != null && item['quietIndex'] != null,
-          )
+          .where((item) => item['targetAt'] != null)
           .map(QuietScorePoint.fromTimelineJson)
           .toList()
-        ..sort((a, b) => a.hour.compareTo(b.hour));
-    } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
-    }
+        ..sort((a, b) => a.targetAt.compareTo(b.targetAt));
+    });
+  }
+
+  void _logRecommendationError(DioException error, StackTrace stackTrace) {
+    developer.log(
+      '추천 API 실패'
+      '\ntype=${error.type}'
+      '\nmethod=${error.requestOptions.method}'
+      '\nuri=${error.requestOptions.uri}'
+      '\nstatusCode=${error.response?.statusCode}'
+      '\nresponse=${error.response?.data}'
+      '\nmessage=${error.message}',
+      name: 'RecommendationApiService',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 }

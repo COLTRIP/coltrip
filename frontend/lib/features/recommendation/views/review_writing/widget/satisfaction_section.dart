@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class SatisfactionSection extends StatelessWidget {
   const SatisfactionSection({
@@ -12,17 +11,7 @@ class SatisfactionSection extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   static const _primary = Color(0xFF589C7E);
-  static const _idleBg = Color(0xFFE5E5E5);
-  static const _iconColor = Color(0xFF111827);
-  static const _labelColor = Color(0xFF6B7280);
-
-  static const _steps = <_ScaleStep>[
-    _ScaleStep(score: 1, asset: 'assets/icons/face_angry.svg'),
-    _ScaleStep(score: 2, asset: 'assets/icons/face_frown.svg'),
-    _ScaleStep(score: 3, asset: 'assets/icons/face_meh.svg'),
-    _ScaleStep(score: 4, asset: 'assets/icons/face_smile.svg'),
-    _ScaleStep(score: 5, asset: 'assets/icons/face_star.svg'),
-  ];
+  static const _idle = Color(0xFFD5DBD8);
 
   @override
   Widget build(BuildContext context) {
@@ -31,54 +20,73 @@ class SatisfactionSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '만족도',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black,
-            ),
+          const Row(
+            children: [
+              Text(
+                '만족도',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(width: 8),
+              _RequiredBadge(),
+            ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _steps.map((step) {
-              final isSelected = selected == step.score;
-              return Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => onSelected(step.score),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: isSelected ? _primary : _idleBg,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: SvgPicture.asset(
-                        step.asset,
-                        width: 18,
-                        height: 18,
-                        colorFilter: ColorFilter.mode(
-                          isSelected ? Colors.white : _iconColor,
-                          BlendMode.srcIn,
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F9F8),
+              border: Border.all(
+                  color: const Color(0xFFE0E5E2),
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(5, (index) {
+                    final score = index + 1;
+                    final isActive = selected != null && score <= selected!;
+
+                    return Semantics(
+                      button: true,
+                      label: '만족도 $score점',
+                      selected: selected == score,
+                      child: InkResponse(
+                        onTap: () => onSelected(score),
+                        radius: 25,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            isActive
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            size: 36,
+                            color: isActive ? _primary : _idle,
+                          ),
                         ),
                       ),
-                    ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  selected == null ? '별점을 선택해주세요' : '$selected점을 선택했어요',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: selected == null
+                        ? const Color(0xFF8A918E)
+                        : _primary,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${step.score}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _labelColor,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -86,9 +94,28 @@ class SatisfactionSection extends StatelessWidget {
   }
 }
 
-class _ScaleStep {
-  final int score;
-  final String asset;
+class _RequiredBadge extends StatelessWidget {
+  const _RequiredBadge();
 
-  const _ScaleStep({required this.score, required this.asset});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 3
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE7F2ED),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        '필수',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF39765D),
+        ),
+      ),
+    );
+  }
 }
