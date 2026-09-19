@@ -73,6 +73,38 @@ class ForecastQueryServiceTest {
         assertThrows(InvalidForecastRequestException.class, () -> service.timeline(1L, now.plusDays(7).toLocalDate(), 12));
     }
 
+    @Test void weeklyTimelineHas7DailySlotsAndNeverFillsMissingValues() {
+        when(spots.existsById(1L)).thenReturn(true);
+        var value = forecast(1L, "80", "35");
+        when(forecasts.findTimeline(anyLong(), any(), any(), anyString(), any())).thenReturn(List.of(value));
+        var result = service.weeklyTimeline(1L, now.toLocalDate(), 13);
+        assertEquals(7, result.timeline().size());
+        assertEquals(bd("80"), result.timeline().getFirst().quietIndex());
+        assertNull(result.timeline().get(1).quietIndex());
+        assertNull(result.timeline().get(1).generatedAt());
+        assertEquals("FORECAST", result.timeline().get(1).type());
+        verify(forecasts).findTimeline(eq(1L), eq(now.withMinute(0).withHour(13)),
+                eq(now.withMinute(0).withHour(13).plusDays(7)), eq("coltrip-ai"), eq(now));
+    }
+
+    @Test void weeklyTimelineOnlyFillsMatchingDaySlotsNotOtherHours() {
+        when(spots.existsById(1L)).thenReturn(true);
+        // 같은 날짜지만 다른 시각 - 매칭 안 되어야 함
+        TouristSpot spot = mock(TouristSpot.class);
+        when(spot.getId()).thenReturn(1L);
+        QuietForecast wrongHour = new QuietForecast(spot, now.withMinute(0).withHour(9).plusDays(2), now.minusHours(1), "coltrip-ai");
+        wrongHour.correct(bd("50"), now.plusHours(2), now, "test-model");
+        when(forecasts.findTimeline(anyLong(), any(), any(), anyString(), any())).thenReturn(List.of(wrongHour));
+        var result = service.weeklyTimeline(1L, now.toLocalDate(), 13);
+        assertTrue(result.timeline().stream().allMatch(p -> p.quietIndex() == null));
+    }
+
+    @Test void weeklyMissingSpotAndHorizonOverflowAreRejected() {
+        assertThrows(SpotNotFoundException.class, () -> service.weeklyTimeline(999L, now.toLocalDate(), 13));
+        assertThrows(InvalidForecastRequestException.class,
+                () -> service.weeklyTimeline(1L, now.plusDays(3).toLocalDate(), 13));
+    }
+
     private QuietForecast forecast(Long id, String score, String latitude) {
         TouristSpot spot = mock(TouristSpot.class);
         when(spot.getId()).thenReturn(id);

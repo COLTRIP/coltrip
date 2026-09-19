@@ -82,4 +82,26 @@ public class ForecastQueryService {
         }
         return new Timeline("Asia/Seoul", spotId, points);
     }
+
+    // /recommendations는 상위 limit개만 반환하는 순위 목록이라, 특정 장소가 그날 순위 밖으로 밀리면
+    // 응답에서 통째로 빠진다(이슈 #134). 순위와 무관하게 한 장소의 날짜별 예측만 직접 조회하는 API.
+    // 24시간 timeline()과 동일한 구조 - 시간 단위 대신 일 단위로 7번(같은 시각) 반복한다.
+    public Timeline weeklyTimeline(Long spotId, LocalDate date, Integer hour) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime start = policy.target(date, hour, now);
+        LocalDateTime last = start.plusDays(6);
+        policy.target(last.toLocalDate(), last.getHour(), now);
+        if (!spots.existsById(spotId)) {
+            throw new SpotNotFoundException();
+        }
+        Map<LocalDateTime, QuietForecast> byDay = forecasts.findTimeline(spotId, start, start.plusDays(7), source, now)
+                .stream().collect(Collectors.toMap(QuietForecast::getTargetAt, f -> f));
+        List<Point> points = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            LocalDateTime target = start.plusDays(i);
+            QuietForecast forecast = byDay.get(target);
+            points.add(forecast == null ? Point.empty(target) : Point.from(forecast));
+        }
+        return new Timeline("Asia/Seoul", spotId, points);
+    }
 }
