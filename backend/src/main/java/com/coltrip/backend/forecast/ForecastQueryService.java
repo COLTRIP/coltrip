@@ -88,9 +88,7 @@ public class ForecastQueryService {
     // 24시간 timeline()과 동일한 구조 - 시간 단위 대신 일 단위로 7번(같은 시각) 반복한다.
     public Timeline weeklyTimeline(Long spotId, LocalDate date, Integer hour) {
         LocalDateTime now = LocalDateTime.now(clock);
-        LocalDateTime start = policy.target(date, hour, now);
-        LocalDateTime last = start.plusDays(6);
-        policy.target(last.toLocalDate(), last.getHour(), now);
+        LocalDateTime start = policy.weeklyTarget(date, hour, now);
         if (!spots.existsById(spotId)) {
             throw new SpotNotFoundException();
         }

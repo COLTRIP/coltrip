@@ -105,6 +105,21 @@ class ForecastQueryServiceTest {
                 () -> service.weeklyTimeline(1L, now.plusDays(3).toLocalDate(), 13));
     }
 
+    @Test void weeklyTimelineAllowsTodayEvenWhenRepresentativeHourAlreadyPassed() {
+        // now = 2026-09-13 12:30. hour=1은 오늘 기준 이미 지난 시각이지만, 주간 API의 hour는
+        // AI가 하루 1값만 주는 현재 관례상 실시간 의미 없는 대표 슬롯이라 거부하면 안 된다(이슈 #134 피드백).
+        when(spots.existsById(1L)).thenReturn(true);
+        when(forecasts.findTimeline(anyLong(), any(), any(), anyString(), any())).thenReturn(List.of());
+        var result = service.weeklyTimeline(1L, now.toLocalDate(), 1);
+        assertEquals(7, result.timeline().size());
+        assertEquals(now.toLocalDate().atTime(1, 0), result.timeline().getFirst().targetAt().toLocalDateTime());
+    }
+
+    @Test void weeklyTimelineRejectsYesterdayRegardlessOfHour() {
+        assertThrows(InvalidForecastRequestException.class,
+                () -> service.weeklyTimeline(1L, now.toLocalDate().minusDays(1), 23));
+    }
+
     private QuietForecast forecast(Long id, String score, String latitude) {
         TouristSpot spot = mock(TouristSpot.class);
         when(spot.getId()).thenReturn(id);
