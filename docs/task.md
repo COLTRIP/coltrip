@@ -78,6 +78,7 @@
 - [x] quiet_forecast 저장 구조 및 내부 예측 배치 수신.
 - [x] 날짜/시간 추천, category/mode 필터, 정렬/개수 제한(2026-09-15, 이슈 #115로 위치·반경 파라미터 제거).
 - [x] 24시간 예측 타임라인 및 관측 이력 분리. 없거나 만료된 예측은 현재값으로 대체하지 않음.
+- [x] 특정 장소의 주간(7일) 예측 타임라인 GET .../quiet-index/forecast/week(2026-09-19, 이슈 #134) — /recommendations가 상위 limit개만 반환하는 순위 목록이라 순위 밖으로 밀린 장소는 응답에서 빠지는 문제를 순위 무관 직접 조회로 해결. 24시간 버전과 동일 구조, 일 단위로 7번 반복.
 - [x] 예측 입력·필터·저장/조회 테스트 및 [예측 명세](./forecast-api-spec.md).
 - [ ] AI 실제 날짜별 예측 가능 기간과 generatedAt/targetAt/validUntil/source/modelVersion 계약 확정.
 - [ ] AI 전송 및 실제 MySQL/프론트 통합 검증.

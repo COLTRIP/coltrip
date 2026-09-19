@@ -54,6 +54,21 @@ public class ForecastController {
         return ResponseEntity.ok().body(query.timeline(spotId, date, hour));
     }
 
+    @Operation(summary = "예측 고요지수 주간(7일) 타임라인", description = """
+            date/hour부터 하루씩 밀며 총 7개 슬롯(같은 시각 기준 오늘부터 6일 뒤까지)을 반환합니다.
+            마지막 슬롯까지 현재 시간 슬롯 기준 7일 이내여야 합니다. /recommendations는 상위 limit개만
+            반환하는 순위 목록이라 이 장소가 특정 날짜에 순위 밖으로 밀리면 응답에서 빠지는데, 이 API는
+            순위와 무관하게 이 장소의 날짜별 예측만 직접 조회합니다. 값이 없으면
+            quietIndex/generatedAt/validUntil/source/modelVersion은 null입니다.
+            """)
+    @SecurityRequirements
+    @GetMapping("/api/spots/{spotId}/quiet-index/forecast/week")
+    public ResponseEntity<Timeline> weeklyTimeline(@PathVariable Long spotId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam Integer hour) {
+        return ResponseEntity.ok().body(query.weeklyTimeline(spotId, date, hour));
+    }
+
     @Operation(summary = "예측 배치 수신 (AI팀 협의용 신규 계약)", description = """
             AI가 아직 이 계약으로 전송하는 것은 아닙니다. X-Internal-Api-Key 인증, TourAPI contentId 기준.
             시간 필드는 UTC offset 필수. 생성 시각/대상 시각/유효기간/모델 출처를 보존합니다.

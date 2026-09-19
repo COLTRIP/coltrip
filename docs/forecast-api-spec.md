@@ -127,6 +127,36 @@ GET /api/spots/42/quiet-index/forecast?date=2026-09-14&hour=0
 
 예시는 첫 슬롯만 표시했으며 실제 응답은 항상 24개다. 누락된 시간의 점수는 null이다. 현재 점수, 인접 시간 점수, 전날 같은 시각으로 채우지 않는다.
 
+## GET /api/spots/{spotId}/quiet-index/forecast/week (2026-09-19, 이슈 #134)
+
+```text
+GET /api/spots/42/quiet-index/forecast/week?date=2026-09-22&hour=15
+```
+
+`GET .../quiet-index/forecast`(24시간용)와 완전히 같은 구조이며, 시간 단위 대신 **일 단위로 7번**(같은 시각 기준 오늘부터 6일 뒤까지) 반복한다는 것만 다르다. 응답 형식도 동일한 `Timeline`/`Point`를 그대로 재사용하며, 실제 응답은 항상 7개다.
+
+```json
+{
+  "timezone": "Asia/Seoul",
+  "spotId": 42,
+  "timeline": [
+    {
+      "type": "FORECAST",
+      "targetAt": "2026-09-22T15:00:00+09:00",
+      "quietIndex": 82.35,
+      "generatedAt": "2026-09-21T12:00:00+09:00",
+      "validUntil": "2026-09-22T16:00:00+09:00",
+      "source": "coltrip-ai",
+      "modelVersion": "forecast-v1"
+    }
+  ]
+}
+```
+
+**왜 필요한가**: `GET /api/spots/recommendations`는 상위 limit개(기본 20, 최대 50)만 반환하는 순위 목록이다. 특정 장소가 그날 순위 밖으로 밀리면 응답 자체에서 빠지므로, 프론트가 이 API를 날짜별로 반복 호출해 "이 장소가 있는지" 찾는 방식으로 주간 화면을 구현하면 순위 밖으로 밀린 날짜가 빈 값처럼 보인다. 이 API는 순위와 무관하게 **한 장소의 날짜별 예측만 직접 조회**하므로 이 문제가 없다.
+
+24시간 버전과 마찬가지로 마지막 슬롯(6일 뒤)까지 현재 시간 슬롯 기준 7일 이내여야 하며, 값이 없는 슬롯은 null이다(0점이나 인접 날짜 값으로 대체하지 않음). AI가 하루 1값(15시 고정)만 제공하는 현재 관례([위 참고](#운영-관례--현재-예측은-하루-1값2026-09-16))상, 실질적으로는 `hour=15`로 조회해야 값이 채워진다.
+
 같은 대상 시간에 대한 추천 목록과 타임라인은 동일한 예측 버전을 사용한다. 조회 사이에 새로운 예측이 도착했다면 응답이 달라질 수 있으며 generatedAt을 비교하면 된다.
 
 ## POST /api/internal/quiet-index/forecasts
