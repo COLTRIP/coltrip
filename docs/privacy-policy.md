@@ -3,7 +3,7 @@
 | 구분 | 내용 |
 |---|---|
 | 서비스명 | COLTRIP(콜트립) |
-| 운영 주체 | mute (COLTRIP 운영팀) |
+| 운영 주체 | MUTE (COLTRIP 운영팀) |
 | 문서 검토일 | 2026년 9월 16일 |
 | 시행일 | 2026년 9월 16일 |
 | 개인정보 담당자·공개 문의처 | qwe7480qwe@kookmin.ac.kr |
@@ -111,7 +111,7 @@ AWS와 DB 구성은 [배포 이슈 #47](https://github.com/COLTRIP/coltrip/issue
 
 | 구분 | 현재 확인 상태 |
 |---|---|
-| 운영 주체 | mute (COLTRIP 운영팀) |
+| 운영 주체 | MUTE (COLTRIP 운영팀) |
 | 개인정보 문의 이메일·전화번호 등 연락처 | qwe7480qwe@kookmin.ac.kr |
 
 외부 침해 상담·분쟁조정 경로는 [개인정보침해신고센터](https://privacy.kisa.or.kr/)와 [개인정보분쟁조정위원회](https://www.kopico.go.kr/)입니다. 이 기관의 연락처는 COLTRIP의 자체 문의처를 대신하지 않습니다.
