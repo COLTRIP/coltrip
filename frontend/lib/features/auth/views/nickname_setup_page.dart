@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/network/api_exception.dart';
@@ -18,10 +17,6 @@ class NicknameSetupPage extends StatefulWidget {
 }
 
 class _NicknameSetupPageState extends State<NicknameSetupPage> {
-  static final _termsUri = Uri.parse(
-    'https://github.com/COLTRIP/coltrip/blob/develop/docs/privacy-policy.md',
-  );
-
   final TextEditingController _nicknameController = TextEditingController();
   final ProfileService _profileService = ProfileService();
 
@@ -44,25 +39,6 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
       _isPrivacyPolicyChecked = isChecked;
       _isLocationTermsChecked = isChecked;
     });
-  }
-
-  Future<void> _openTerms() async {
-    var launched = false;
-
-    try {
-      launched = await launchUrl(
-        _termsUri,
-        mode: LaunchMode.externalApplication,
-      );
-    } catch (_) {
-      launched = false;
-    }
-
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('약관 페이지를 열 수 없어요.')));
-    }
   }
 
   Future<void> _submitNickname() async {
@@ -183,7 +159,7 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _openTerms,
+                            onPressed: () => Get.toNamed(AppRoutes.terms),
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
@@ -219,6 +195,8 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
 
                       const Divider(height: 1, color: Color(0xFFE1E3E2)),
 
+                      const SizedBox(height: 5),
+
                       _TermsCheckbox(
                         label: '[필수] 서비스 이용약관 동의',
                         value: _isServiceTermsChecked,
@@ -241,24 +219,10 @@ class _NicknameSetupPageState extends State<NicknameSetupPage> {
                                 });
                               },
                       ),
-                      _TermsCheckbox(
-                        label: '[필수] 위치기반서비스 이용약관 동의',
-                        value: _isLocationTermsChecked,
-                        onChanged: _isLoading
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _isLocationTermsChecked = value ?? false;
-                                });
-                              },
-                      ),
-
-                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
 
               PrimaryButton(

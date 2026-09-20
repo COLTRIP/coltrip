@@ -81,9 +81,35 @@ class RecommendationDetailViewModel extends ChangeNotifier {
     _safeNotify();
 
     try {
-      timelinePoints = await _repository.getTimeline(
-        spotId: spotId,
-        dateTime: timelineDateTime,
+      final now = DateTime.now();
+      final baseHour = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        timelineDateTime.hour,
+      );
+
+      // API는 24시간 단위 응답을 유지하므로, 오늘부터 7일의
+      // 같은 시간대를 각각 조회해 주간 데이터를 구성한다.
+      timelinePoints = await Future.wait(
+        List.generate(7, (index) async {
+          final target = baseHour.add(Duration(days: index));
+
+          try {
+            final points = await _repository.getTimeline(
+              spotId: spotId,
+              dateTime: target,
+            );
+
+            for (final point in points) {
+              if (_isSameHour(point.targetAt, target)) return point;
+            }
+          } catch (_) {
+            // 한 요일 조회 실패가 일주일 전체 그래프를 가리지 않도록 빈 값 처리
+          }
+
+          return QuietScorePoint(targetAt: target, score: null);
+        }),
       );
     } catch (_) {
       timelinePoints = [];
@@ -91,6 +117,13 @@ class RecommendationDetailViewModel extends ChangeNotifier {
       isTimelineLoading = false;
       _safeNotify();
     }
+  }
+
+  bool _isSameHour(DateTime a, DateTime b) {
+    return a.year == b.year &&
+        a.month == b.month &&
+        a.day == b.day &&
+        a.hour == b.hour;
   }
 
   @override

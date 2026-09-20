@@ -57,24 +57,39 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    VisitingSpotCard(spot: widget.spot),
-                    const SizedBox(height: 30),
-                    const Text(
-                      '방문했던 곳, 어떠셨나요?\n리뷰를 남겨주세요!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: VisitingSpotCard(spot: widget.spot),
                     ),
-                    const SizedBox(height: 20),
-                    const Divider(height: 24, color: Color(0x33252B28)),
                     const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 13,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC6E0D4),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        '방문했던 곳, 어떠셨나요?\n소중한 경험을 리뷰로 남겨주세요.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 24, color: Color(0x33252B28)),
+                    const SizedBox(height: 12),
                     SatisfactionSection(
                       selected: _viewModel.rating,
                       onSelected: _viewModel.setRating,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     TextReview(controller: _viewModel.contentController),
                     const SizedBox(height: 24),
                     if (_viewModel.errorMessage != null) ...[

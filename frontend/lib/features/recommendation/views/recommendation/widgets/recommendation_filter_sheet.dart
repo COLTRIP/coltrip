@@ -16,36 +16,28 @@ class RecommendationFilterSheet extends StatelessWidget {
 
   Future<void> _changeDate(BuildContext context) async {
     final current = viewModel.filter.dateTime;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastAvailableDate = today.add(const Duration(days: 6));
+    final currentDate = DateTime(current.year, current.month, current.day);
+    final initialDate = currentDate.isBefore(today)
+        ? today
+        : currentDate.isAfter(lastAvailableDate)
+        ? lastAvailableDate
+        : currentDate;
+
     final date = await showDatePicker(
       context: context,
-      initialDate: current,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: lastAvailableDate,
+      helpText: '예측 날짜 선택',
+      cancelText: '취소',
+      confirmText: '선택',
     );
     if (date == null || !context.mounted) return;
 
-    viewModel.updateDateTime(
-      DateTime(date.year, date.month, date.day, current.hour, current.minute),
-    );
-  }
-
-  Future<void> _changeTime(BuildContext context) async {
-    final current = viewModel.filter.dateTime;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(current),
-    );
-    if (time == null || !context.mounted) return;
-
-    viewModel.updateDateTime(
-      DateTime(
-        current.year,
-        current.month,
-        current.day,
-        time.hour,
-        time.minute,
-      ),
-    );
+    viewModel.updateDate(date);
   }
 
   Future<void> _changeCategory(BuildContext context) async {
@@ -97,26 +89,10 @@ class RecommendationFilterSheet extends StatelessWidget {
           const SizedBox(height: 7),
           const Divider(thickness: 0.5, color: Color(0x33252B28)),
           const SizedBox(height: 7),
-          Row(
-            children: [
-              Expanded(
-                child: _FilterBox(
-                  // 날짜
-                  value: viewModel.formattedDate,
-                  icon: Icons.calendar_month,
-                  onTap: () => _changeDate(context),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _FilterBox(
-                  // 시간
-                  value: viewModel.formattedTime,
-                  icon: Icons.access_time,
-                  onTap: () => _changeTime(context),
-                ),
-              ),
-            ],
+          _FilterBox(
+            value: viewModel.formattedDate,
+            icon: Icons.calendar_month,
+            onTap: () => _changeDate(context),
           ),
         ],
       ),

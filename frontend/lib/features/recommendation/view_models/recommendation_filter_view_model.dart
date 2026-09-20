@@ -14,10 +14,11 @@ class RecommendationFilterViewModel extends ChangeNotifier {
          category: category,
        );
 
-  void updateDateTime(DateTime dateTime) {
+  void updateDate(DateTime date) {
+    final fixedTime = filter.dateTime;
     isCurrent = false;
     filter = RecommendationFilter(
-      dateTime: dateTime,
+      dateTime: DateTime(date.year, date.month, date.day, fixedTime.hour),
       category: filter.category,
     );
     notifyListeners();
@@ -34,13 +35,5 @@ class RecommendationFilterViewModel extends ChangeNotifier {
   String get formattedDate {
     final dt = filter.dateTime;
     return '${dt.year}년 ${dt.month}월 ${dt.day}일';
-  }
-
-  String get formattedTime {
-    final dt = filter.dateTime;
-    final hour12 = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final period = dt.hour < 12 ? '오전' : '오후';
-    final minute = dt.minute.toString().padLeft(2, '0');
-    return '$period $hour12시 $minute분';
   }
 }

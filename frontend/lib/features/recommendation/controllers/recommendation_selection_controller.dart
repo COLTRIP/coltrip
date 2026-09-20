@@ -31,24 +31,14 @@ class RecommendationSelectionController extends GetxController {
       return null;
     }
 
+    final selectedPlaceType = PlaceTypeData.items.firstWhere(
+      (item) => item.id == placeTypeId,
+    );
+
     return RecommendationPageArguments(
-      category: _toApiCategory(placeTypeId),
-      categoryLabel: PlaceTypeData.items
-          .firstWhere((item) => item.id == placeTypeId)
-          .label,
+      category: selectedPlaceType.apiCategory,
+      categoryLabel: selectedPlaceType.label,
       modes: selectedMoodIds.toList(growable: false),
     );
-  }
-
-  // 현재 추천 API enum과 화면의 장소 유형 id가 다른 항목을 변환한다.
-  // EXPERIENCE는 대응하는 서버 category가 없어 전체 카테고리로 조회한다.
-  String? _toApiCategory(String placeTypeId) {
-    return switch (placeTypeId) {
-      'NATURE' => 'PARK',
-      'CULTURE' => 'GALLERY',
-      'BOOK' => 'LIBRARY',
-      'EXPERIENCE' => null,
-      _ => placeTypeId,
-    };
   }
 }

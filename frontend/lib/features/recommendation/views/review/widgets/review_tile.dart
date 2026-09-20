@@ -16,6 +16,7 @@ class ReviewTile extends StatelessWidget {
     return Stack(
       children: [
         Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -47,9 +48,7 @@ class ReviewTile extends StatelessWidget {
                         ),
                         Text(
                           ' ${review.rating}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
@@ -59,14 +58,18 @@ class ReviewTile extends StatelessWidget {
             ),
             if (review.content != null && review.content!.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Align(
-                alignment: AlignmentGeometry.centerLeft,
-                child: Text(
-                  review.content!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300,
-                    color: Colors.black,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    review.content!,
+                    textAlign: TextAlign.left,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),

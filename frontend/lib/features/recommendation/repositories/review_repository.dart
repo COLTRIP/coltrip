@@ -11,7 +11,7 @@ class ReviewRepository {
     return _api.getReviews(spotId: spotId);
   }
 
-  Future<SpotReview> createReview({
+  Future<void> createReview({
     required int visitId,
     required int rating,
     String? content,
